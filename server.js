@@ -26,7 +26,7 @@ function getAuthCookie(req){
   if(!match) return false;
   const value = decodeURIComponent(match[1]);
   const [ts, sig] = value.split(".");
-  if(!ts || !sig || !/^\\d+$/.test(ts)) return false;
+  if(!ts || !sig || !/^\d+$/.test(ts)) return false;
   const age = Date.now() - Number(ts);
   if(age < 0 || age > ACCESS_SESSION_TTL) return false;
   const expected = signAuth(ts);
