@@ -1794,10 +1794,7 @@ function serializeLogicState(){
       // Diese Einstellungen werden bewusst gemeinsam übertragen:
       // Key-Zuweisungen, Switch-/Output-Namen, Timerwerte und Clock-Frequenz.
       if(n.type === "key") d.assignedKey = n.assignedKey || "";
-      if(n.type === "switch" || n.type === "output"){
-        d.name = n.name || "";
-        if(n.type === "switch") d.state = !!n.state;
-      }
+      if(n.type === "switch" || n.type === "output") d.name = n.name || "";
       if(n.type === "timer"){
         d.delay = Number(n.delay)||0;
         d.stay = !!n.stay;
@@ -1847,7 +1844,6 @@ function applyLogicState(state){
       }
       if(type === "switch" || type === "output"){
         n.name = d.name || "";
-        if(type === "switch" && Object.prototype.hasOwnProperty.call(d, "state")) n.state = !!d.state;
       }
       if(type === "timer"){
         n.delay = Number(d.delay)||0;
@@ -1918,7 +1914,8 @@ logicSocket.on("state", state => {
 // - Switch-/Output-Namen
 // - Timerwerte
 // - Clock-Frequenzen
-// Laufende Zustände wie Memory, laufende Timer/Clocks und gedrückte Tasten bleiben lokal.\n// Der AN/AUS-Zustand von Switches wird dagegen bewusst synchronisiert.
+// Laufende Zustände wie Switch ON/OFF, Memory-Zustände, Clock-/Timer-Laufzustände
+// und gedrückte Tasten bleiben lokal.
 setInterval(() => {
   if(!logicSyncReady || applyingRemoteLogicState) return;
 
