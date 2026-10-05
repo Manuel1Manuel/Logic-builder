@@ -13,7 +13,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const ACCESS_CODE = process.env.LOGIC_ACCESS_CODE || "";
+const ACCESS_CODE = String(process.env.LOGIC_ACCESS_CODE || "").trim();
 const ACCESS_SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
 
 function signAuth(ts){
@@ -74,6 +74,10 @@ app.post("/login", (req, res) => {
 });
 
 app.use((req, res, next) => {
+  if(!ACCESS_CODE){
+    res.status(503).send("LOGIC_ACCESS_CODE ist in Render nicht gesetzt. Bitte die Environment Variable setzen und den Service neu deployen.");
+    return;
+  }
   if(req.path === "/login" || hasValidAuth(req)){
     next();
     return;
@@ -108,6 +112,19 @@ const saveState = db.prepare(`
 
 // Website-Dateien
 app.use(express.static(path.join(__dirname, "public")));
+
+io.use((socket, next) => {
+  if(!ACCESS_CODE){
+    next(new Error("LOGIC_ACCESS_CODE fehlt"));
+    return;
+  }
+
+  const cookie = socket.handshake.headers.cookie || "";
+  const fakeReq = { headers: { cookie } };
+
+  if(hasValidAuth(fakeReq)) next();
+  else next(new Error("unauthorized"));
+});
 
 io.on("connection", (socket) => {
 
@@ -145,4 +162,5 @@ const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
   console.log(`Server läuft auf Port ${PORT}`);
+  console.log(`LOGIC_ACCESS_CODE gesetzt: ${ACCESS_CODE ? "JA" : "NEIN"}`);
 });
