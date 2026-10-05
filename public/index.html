@@ -66,6 +66,7 @@ Chip? <input id="bpChip" type="checkbox">
 <input id="nameInput" type="text" placeholder="Name">
 <button id="nameSave">Save</button>
 </div>
+<script src="/socket.io/socket.io.js"></script>
 <script>
 
 const canvas=document.getElementById("c");
@@ -1761,6 +1762,138 @@ function simLoop(){let t0=performance.now();try{evaluateTick();}catch(err){conso
 loop();simLoop();
 
 loadPreblueprints();
+
+
+/* ===== Gemeinsamer Online-Zustand ===== */
+const logicSocket = io();
+let applyingRemoteLogicState = false;
+let logicSyncReady = false;
+let lastLogicSnapshot = "";
+
+function serializeLogicState(){
+  return JSON.stringify({
+    version: 1,
+    tickMs,
+    nodes: nodes.map(n => ({
+      x:n.x, y:n.y, type:n.type,
+      state:!!n.state,
+      memoryState:!!n.memoryState,
+      name:n.name || "",
+      hidden:!!n.hidden,
+      delay:Number(n.delay)||0,
+      stay:!!n.stay,
+      interval:Number(n.interval)||0,
+      assignedKey:n.assignedKey || "",
+      chipId:n.chipId || null,
+      chipName:n.chipName || "",
+      chipPin:n.chipPin || "",
+      chipShell:n.chipShell || null,
+      ledColor:n.ledColor || "",
+      clockState:!!n.clockState
+    })),
+    wires: wires.map(w => ({
+      from:nodes.indexOf(w.from),
+      to:nodes.indexOf(w.to),
+      inputIndex:Number.isFinite(w.inputIndex) ? w.inputIndex : 0
+    })).filter(w => w.from >= 0 && w.to >= 0),
+    blueprints: Array.isArray(blueprints) ? blueprints : []
+  });
+}
+
+function applyLogicState(state){
+  if(!state || !Array.isArray(state.nodes) || !Array.isArray(state.wires)) return false;
+
+  applyingRemoteLogicState = true;
+  try{
+    tickMs = Number(state.tickMs) || 0;
+
+    nodes.length = 0;
+    wires.length = 0;
+
+    for(const d of state.nodes){
+      const n = new Node(Number(d.x)||0, Number(d.y)||0, d.type || "switch");
+      n.state = !!d.state;
+      n.memoryState = !!d.memoryState;
+      n.name = d.name || "";
+      n.hidden = !!d.hidden;
+      n.delay = Number(d.delay)||0;
+      n.stay = !!d.stay;
+      n.interval = Number(d.interval)||0;
+      n.assignedKey = d.assignedKey || "";
+      n.chipId = d.chipId || null;
+      n.chipName = d.chipName || "";
+      n.chipPin = d.chipPin || "";
+      n.chipShell = d.chipShell || null;
+      n.ledColor = d.ledColor || "";
+      n.clockState = !!d.clockState;
+      nodes.push(n);
+    }
+
+    for(const w of state.wires){
+      const from = nodes[w.from];
+      const to = nodes[w.to];
+      if(from && to){
+        wires.push({
+          from,
+          to,
+          inputIndex:Number.isFinite(w.inputIndex) ? w.inputIndex : 0
+        });
+      }
+    }
+
+    if(Array.isArray(state.blueprints)){
+      blueprints.length = 0;
+      for(const bp of state.blueprints) blueprints.push(bp);
+    }
+
+    selectedNodes.length = 0;
+    selectionActive = false;
+    selectionBox = null;
+    drag = null;
+    connectFrom = null;
+    selecting = false;
+    blueprint = null;
+    libraryDrag = null;
+
+    evaluate();
+    return true;
+  }finally{
+    applyingRemoteLogicState = false;
+  }
+}
+
+function sendLogicState(){
+  if(!logicSyncReady || applyingRemoteLogicState) return;
+  const snapshot = serializeLogicState();
+  if(snapshot === lastLogicSnapshot) return;
+  lastLogicSnapshot = snapshot;
+  logicSocket.emit("stateChange", JSON.parse(snapshot));
+}
+
+logicSocket.on("state", state => {
+  if(state && Array.isArray(state.nodes) && Array.isArray(state.wires)){
+    if(applyLogicState(state)){
+      lastLogicSnapshot = serializeLogicState();
+    }
+  }
+  logicSyncReady = true;
+  if(!lastLogicSnapshot) lastLogicSnapshot = serializeLogicState();
+});
+
+/*
+ * Die vorhandene App bleibt unverändert. Dieser kleine Beobachter erkennt
+ * Änderungen an Bauteilen, Positionen, Leitungen und Einstellungen automatisch.
+ * Dadurch müssen nicht alle vorhandenen Maus-/Touch-Funktionen einzeln umgebaut
+ * werden und keine bestehende Funktion geht verloren.
+ */
+setInterval(() => {
+  if(!logicSyncReady || applyingRemoteLogicState) return;
+  const snapshot = serializeLogicState();
+  if(snapshot !== lastLogicSnapshot){
+    lastLogicSnapshot = snapshot;
+    logicSocket.emit("stateChange", JSON.parse(snapshot));
+  }
+}, 250);
 
 </script>
 </body>
