@@ -51,7 +51,7 @@ app.post("/login", (req, res) => {
   }
   const code = String(req.body.code || "");
   if(code !== ACCESS_CODE){
-    res.status(401).sendFile(path.join(__dirname, "public", "login.html"));
+    res.redirect("/login?error=1");
     return;
   }
   const ts = Date.now();
