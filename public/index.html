@@ -1794,7 +1794,7 @@ function serializeLogicState(){
       // Diese Einstellungen werden bewusst gemeinsam übertragen:
       // Key-Zuweisungen, Switch-/Output-Namen, Timerwerte und Clock-Frequenz.
       if(n.type === "key") d.assignedKey = n.assignedKey || "";
-      if(n.type === "switch" || n.type === "output") d.name = n.name || "";
+      if(n.type === "switch" || n.type === "output") {\n        d.name = n.name || "";\n        d.state = !!n.state;\n      }
       if(n.type === "timer"){
         d.delay = Number(n.delay)||0;
         d.stay = !!n.stay;
