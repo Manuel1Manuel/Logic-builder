@@ -13,52 +13,60 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // Datenbank
-const db = new Database("clicks.db");
+const db = new Database("logic-builder.db");
 
 db.exec(`
-  CREATE TABLE IF NOT EXISTS counter (
+  CREATE TABLE IF NOT EXISTS app_state (
     id INTEGER PRIMARY KEY,
-    clicks INTEGER NOT NULL
+    data TEXT NOT NULL
   )
 `);
 
 db.prepare(`
-  INSERT OR IGNORE INTO counter (id, clicks)
-  VALUES (1, 0)
+  INSERT OR IGNORE INTO app_state (id, data)
+  VALUES (1, '{}')
 `).run();
 
-const getClicks = db.prepare(
-  "SELECT clicks FROM counter WHERE id = 1"
-);
+const getState = db.prepare(`
+  SELECT data FROM app_state WHERE id = 1
+`);
 
-const addClick = db.prepare(
-  "UPDATE counter SET clicks = clicks + 1 WHERE id = 1"
-);
+const saveState = db.prepare(`
+  UPDATE app_state
+  SET data = ?
+  WHERE id = 1
+`);
 
 // Website-Dateien
 app.use(express.static(path.join(__dirname, "public")));
 
-// Aktuellen Stand abfragen
-app.get("/api/clicks", (req, res) => {
-  res.json({
-    clicks: getClicks.get().clicks
-  });
-});
-
 // Besucher verbinden
 io.on("connection", (socket) => {
 
-  // aktuellen Stand an neuen Besucher senden
-  socket.emit("clicks", getClicks.get().clicks);
+  // Aktuellen Logic-Builder-Zustand an neuen Besucher senden
+  const row = getState.get();
 
-  // Klick empfangen
-  socket.on("click", () => {
+  try {
+    socket.emit("state", JSON.parse(row.data));
+  } catch {
+    socket.emit("state", {});
+  }
 
-    // Zähler erhöhen
-    addClick.run();
+  // Änderung von einem Besucher empfangen
+  socket.on("stateChange", (state) => {
 
-    // neuen Stand an ALLE Besucher schicken
-    io.emit("clicks", getClicks.get().clicks);
+    try {
+      const data = JSON.stringify(state);
+
+      // Zustand speichern
+      saveState.run(data);
+
+      // Zustand sofort an ALLE Besucher senden
+      io.emit("state", state);
+
+    } catch (error) {
+      console.error("Fehler beim Speichern des Zustands:", error);
+    }
   });
 });
 
