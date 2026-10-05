@@ -2,6 +2,7 @@ import express from "express";
 import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
+import crypto from "crypto";
 import Database from "better-sqlite3";
 import { Server } from "socket.io";
 
@@ -11,6 +12,74 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+const ACCESS_CODE = process.env.LOGIC_ACCESS_CODE || "";
+const ACCESS_SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
+
+function signAuth(ts){
+  return crypto.createHmac("sha256", ACCESS_CODE).update(String(ts)).digest("hex");
+}
+
+function hasValidAuth(req){
+  if(!ACCESS_CODE) return true;
+
+  const raw = req.headers.cookie || "";
+  const match = raw.match(/(?:^|;\s*)logic_auth=([^;]+)/);
+  if(!match) return false;
+
+  const value = decodeURIComponent(match[1]);
+  const [ts, sig] = value.split(".");
+  if(!ts || !sig || !/^\d+$/.test(ts)) return false;
+
+  const age = Date.now() - Number(ts);
+  if(age < 0 || age > ACCESS_SESSION_TTL) return false;
+
+  const expected = signAuth(ts);
+  return sig.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+}
+
+app.use(express.urlencoded({ extended: false }));
+
+app.get("/login", (req, res) => {
+  if(hasValidAuth(req)){
+    res.redirect("/");
+    return;
+  }
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+app.post("/login", (req, res) => {
+  if(!ACCESS_CODE){
+    res.redirect("/");
+    return;
+  }
+
+  const code = String(req.body.code || "");
+  if(code !== ACCESS_CODE){
+    res.redirect("/login?error=1");
+    return;
+  }
+
+  const ts = Date.now();
+  const token = encodeURIComponent(ts + "." + signAuth(ts));
+
+  res.setHeader(
+    "Set-Cookie",
+    "logic_auth=" + token +
+    "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" +
+    Math.floor(ACCESS_SESSION_TTL / 1000)
+  );
+  res.redirect("/");
+});
+
+app.use((req, res, next) => {
+  if(req.path === "/login" || hasValidAuth(req)){
+    next();
+    return;
+  }
+  res.redirect("/login");
+});
 
 // Datenbank
 const db = new Database("logic-builder.db");
