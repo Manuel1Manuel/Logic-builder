@@ -937,7 +937,11 @@ function handleCanvasMouseUp(e){
   return;
  }
 
- if(drag&&e.button===0)drag=null;
+ if(drag&&e.button===0){
+  drag=null;
+  // Änderungen (z.B. Switch AN/AUS) sofort übertragen, ohne auf den nächsten Poll zu warten.
+  if(typeof sendLogicState==="function") sendLogicState();
+}
 
  if(selecting){
   selecting=false;
@@ -1933,7 +1937,7 @@ setInterval(() => {
     lastLogicSnapshot = snapshot;
     logicSocket.emit("stateChange", JSON.parse(snapshot));
   }
-}, 150);
+}, 50);
 </script>
 </body>
 </html>
