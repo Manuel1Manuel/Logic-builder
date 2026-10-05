@@ -61,8 +61,10 @@ io.on("connection", (socket) => {
       // Zustand speichern
       saveState.run(data);
 
-      // Zustand sofort an ALLE Besucher senden
-      io.emit("state", state);
+      // Die Änderung nur an die ANDEREN Besucher senden.
+      // Der Absender behält seine lokale Maus-/Drag-Bewegung und bekommt
+      // nicht sofort seinen eigenen Stand vom Server zurück.
+      socket.broadcast.emit("state", state);
 
     } catch (error) {
       console.error("Fehler beim Speichern des Zustands:", error);
