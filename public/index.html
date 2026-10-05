@@ -1887,13 +1887,24 @@ function sendLogicState(){
 }
 
 logicSocket.on("state", state => {
+  const legacyState = !state || Number(state.version || 1) < 3;
+
   if(state && Array.isArray(state.nodes) && Array.isArray(state.wires)){
     if(applyLogicState(state)){
-      lastLogicSnapshot = serializeLogicState();
+      // Alte gespeicherte Zustände werden nach dem Einlesen einmal
+      // in das neue Format mit Keys/Namen/Timer/Clocks umgewandelt.
+      if(!legacyState) lastLogicSnapshot = serializeLogicState();
     }
   }
+
   logicSyncReady = true;
-  if(!lastLogicSnapshot) lastLogicSnapshot = serializeLogicState();
+
+  if(legacyState){
+    lastLogicSnapshot = "";
+    sendLogicState();
+  }else if(!lastLogicSnapshot){
+    lastLogicSnapshot = serializeLogicState();
+  }
 });
 
 // Synchronisiert nur:
