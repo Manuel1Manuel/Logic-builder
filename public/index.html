@@ -866,9 +866,7 @@ socket.on("state",(data)=>{
  isApplyingRemoteState=false;
 });
 
-socket.on("connect",()=>{
- socket.emit("getState");
-});
+socket.on("connect",()=>{});
 
 function handleCanvasMouseMove(e){
  mouseScreen.x=e.clientX;
@@ -959,6 +957,7 @@ function handleCanvasMouseDown(e){
   drag=n;
   drag.dragOffsetX=ns.w/2;
   drag.dragOffsetY=ns.h/2;
+  if(!isApplyingRemoteState)broadcastStateChange();
   return;
  }
  if(e.button===0){
@@ -1066,7 +1065,7 @@ function handleCanvasMouseUp(e){
  }
 
  if(drag&&e.button===0){
-  if(drag.type==="switch"&&!drag.chipId){broadcastStateChange();}
+  if(!isApplyingRemoteState)broadcastStateChange();
   drag=null;
  }
 
