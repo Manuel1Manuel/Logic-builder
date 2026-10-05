@@ -22,7 +22,7 @@ function signAuth(ts){
 
 function getAuthCookie(req){
   const raw = req.headers.cookie || "";
-  const match = raw.match(/(?:^|;\\s*)logic_auth=([^;]+)/);
+  const match = raw.match(/(?:^|;\s*)logic_auth=([^;]+)/);
   if(!match) return false;
   const value = decodeURIComponent(match[1]);
   const [ts, sig] = value.split(".");
