@@ -13,9 +13,11 @@ h1{margin:0 0 10px}p{color:#b8c2d0}.error{margin:0 0 12px;padding:10px;border-ra
 <body>
 <form class="box" method="post" action="/login">
 <h1>Logic Builder</h1>
-<p>Bitte den Zugriffscode eingeben.</p>\n<p class="error" id="error">Der Zugriffscode ist nicht korrekt.</p>
+<p>Bitte den Zugriffscode eingeben.</p>
+<p class="error" id="error">Der Zugriffscode ist nicht korrekt.</p>
 <input name="code" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" autofocus required>
-<button type="submit">Öffnen</button>\n<script>if(new URLSearchParams(location.search).get("error")==="1"){document.body.classList.add("error-state");}</script>
+<button type="submit">Öffnen</button>
+<script>if(new URLSearchParams(location.search).get("error")==="1"){document.body.classList.add("error-state");}</script>
 </form>
 </body>
 </html>
