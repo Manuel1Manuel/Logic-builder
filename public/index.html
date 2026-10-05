@@ -1764,24 +1764,45 @@ loop();simLoop();
 loadPreblueprints();
 
 
-/* ===== Gemeinsamer Online-Zustand: nur Blöcke + Wire-Verbindungen ===== */
+/* ===== Gemeinsamer Online-Zustand: Struktur + ausgewählte Einstellungen ===== */
 const logicSocket = io();
 let applyingRemoteLogicState = false;
 let logicSyncReady = false;
 let lastLogicSnapshot = "";
 
+function getLogicSyncId(n){
+  if(!n.__logicSyncId){
+    n.__logicSyncId = "node_" + Math.random().toString(36).slice(2) + "_" + Date.now().toString(36);
+  }
+  return n.__logicSyncId;
+}
+
 function serializeLogicState(){
   return JSON.stringify({
-    version: 2,
-    nodes: nodes.map(n => ({
-      x:Number(n.x)||0,
-      y:Number(n.y)||0,
-      type:n.type || "switch",
-      chipId:n.chipId || null,
-      chipName:n.chipName || "",
-      chipPin:n.chipPin || "",
-      chipShell:n.chipShell || null
-    })),
+    version: 3,
+    nodes: nodes.map(n => {
+      const d = {
+        id:getLogicSyncId(n),
+        x:Number(n.x)||0,
+        y:Number(n.y)||0,
+        type:n.type || "switch",
+        chipId:n.chipId || null,
+        chipPin:n.chipPin || "",
+        chipShell:n.chipShell || null
+      };
+
+      // Diese Einstellungen werden bewusst gemeinsam übertragen:
+      // Key-Zuweisungen, Switch-/Output-Namen, Timerwerte und Clock-Frequenz.
+      if(n.type === "key") d.assignedKey = n.assignedKey || "";
+      if(n.type === "switch" || n.type === "output") d.name = n.name || "";
+      if(n.type === "timer"){
+        d.delay = Number(n.delay)||0;
+        d.stay = !!n.stay;
+      }
+      if(n.type === "clock") d.interval = Number(n.interval)||1000;
+
+      return d;
+    }),
     wires: wires.map(w => ({
       from:nodes.indexOf(w.from),
       to:nodes.indexOf(w.to),
@@ -1793,37 +1814,51 @@ function serializeLogicState(){
 function applyLogicState(state){
   if(!state || !Array.isArray(state.nodes) || !Array.isArray(state.wires)) return false;
 
-  // Während der eigenen Mausbewegung niemals die Position zurücksetzen.
+  // Während der eigenen Mausbewegung niemals die Position oder Einstellungen zurücksetzen.
   if(drag || groupDragging || chipDrag || libraryDrag || selecting) return false;
 
   applyingRemoteLogicState = true;
   try{
     const oldNodes = nodes.slice();
-
-    // Nur die Block-Struktur und Positionen werden übernommen.
-    // Alle anderen lokalen Werte (state, memoryState, Timer, Clock usw.)
-    // bleiben bei bereits vorhandenen Blöcken unangetastet.
-    nodes.length = 0;
+    const oldById = new Map(oldNodes.map(n => [n.__logicSyncId, n]));
+    const newNodes = [];
 
     for(let i=0;i<state.nodes.length;i++){
       const d = state.nodes[i];
-      let n = oldNodes[i];
+      const type = d.type || "switch";
+      let n = d.id ? oldById.get(d.id) : oldNodes[i];
 
-      if(!n || n.type !== (d.type || "switch")){
-        n = new Node(Number(d.x)||0, Number(d.y)||0, d.type || "switch");
+      if(!n || n.type !== type){
+        n = new Node(Number(d.x)||0, Number(d.y)||0, type);
       }
 
+      n.__logicSyncId = d.id || n.__logicSyncId || getLogicSyncId(n);
       n.x = Number(d.x)||0;
       n.y = Number(d.y)||0;
       n.chipId = d.chipId || null;
-      n.chipName = d.chipName || "";
-      n.chipPin = d.chipPin || "";
+      n.chipPin = d.chipPin || null;
       n.chipShell = d.chipShell || null;
 
-      nodes.push(n);
+      if(type === "key"){
+        n.assignedKey = d.assignedKey || "";
+      }
+      if(type === "switch" || type === "output"){
+        n.name = d.name || "";
+      }
+      if(type === "timer"){
+        n.delay = Number(d.delay)||0;
+        n.stay = !!d.stay;
+      }
+      if(type === "clock"){
+        n.interval = Number(d.interval)||1000;
+      }
+
+      newNodes.push(n);
     }
 
-    // Nur Wire-Verbindungen synchronisieren.
+    nodes.length = 0;
+    nodes.push(...newNodes);
+
     wires.length = 0;
     for(const w of state.wires){
       const from = nodes[w.from];
@@ -1861,13 +1896,20 @@ logicSocket.on("state", state => {
   if(!lastLogicSnapshot) lastLogicSnapshot = serializeLogicState();
 });
 
-// Nur Änderungen an Blöcken/Positionen/Wires werden erkannt.
-// Zustände, Timer, Memory, Clock, Namen usw. werden NICHT übertragen.
+// Synchronisiert nur:
+// - Blöcke, Typen und Positionen
+// - Wire-Verbindungen
+// - Key-Zuweisungen
+// - Switch-/Output-Namen
+// - Timerwerte
+// - Clock-Frequenzen
+// Laufende Zustände wie Switch ON/OFF, Memory-Zustände, Clock-/Timer-Laufzustände
+// und gedrückte Tasten bleiben lokal.
 setInterval(() => {
   if(!logicSyncReady || applyingRemoteLogicState) return;
 
   // Während man einen Block bewegt, darf der Server die Mausbewegung
-  // nicht zurücksetzen. Danach wird der aktuelle Stand sofort gesendet.
+  // nicht zurücksetzen. Danach wird der aktuelle Stand übertragen.
   if(drag || groupDragging || chipDrag || libraryDrag || selecting) return;
 
   const snapshot = serializeLogicState();
