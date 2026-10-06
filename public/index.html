@@ -1995,7 +1995,11 @@ function serializeLogicState(){
       from:nodeIds.get(w.from),
       to:nodeIds.get(w.to),
       inputIndex:Number.isFinite(w.inputIndex) ? w.inputIndex : 0
-    })).filter(w => w.from && w.to)
+    })).filter(w => w.from && w.to),
+    // Die Blueprint-Bibliothek gehört zum gemeinsamen Projektzustand.
+    // Dadurch werden erstellte/importierte Blueprints auf allen Tabs geteilt
+    // und nach einem Reload aus der SQLite-Persistenz wiederhergestellt.
+    blueprints:blueprints.map(bp => sanitizeBlueprintForStorage(bp))
   });
 }
 function applyLogicState(state){
@@ -2046,6 +2050,18 @@ function applyLogicState(state){
 
     nodes.length = 0;
     nodes.push(...newNodes);
+
+    // Gemeinsame Blueprint-Bibliothek ebenfalls vom Server übernehmen.
+    // Pre-Blueprints bleiben erhalten, falls ein älterer Serverzustand noch
+    // keine Blueprint-Liste enthält.
+    if(Array.isArray(state.blueprints)){
+      blueprints.length = 0;
+      for(const raw of state.blueprints){
+        const bp = expandBlueprint(cloneBlueprint(raw));
+        if(bp && Array.isArray(bp.nodes)) blueprints.push(bp);
+      }
+      clampBlueprintScroll();
+    }
 
     wires.length = 0;
     const nodesBySyncId = new Map(nodes.map(n => [n.__logicSyncId, n]));
@@ -2105,6 +2121,7 @@ logicSocket.on("state", state => {
 // - Switch-AN/AUS-Zustand
 // - Timerwerte
 // - Clock-Frequenzen
+// - Blueprint-Bibliothek
 // Laufende Zustände wie Memory-Zustände, Clock-/Timer-Laufzustände
 // und gedrückte Tasten bleiben lokal. Der Switch-AN/AUS-Zustand wird bewusst synchronisiert.
 setInterval(() => {
