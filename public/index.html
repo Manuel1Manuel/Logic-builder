@@ -1945,6 +1945,7 @@ const logicSocket = io();
 let applyingRemoteLogicState = false;
 let logicSyncReady = false;
 let lastLogicSnapshot = "";
+let logicServerRevision = 0;
 let lastBlueprintSerializedVersion = -1;
 let lastBlueprintSyncData = [];
 let lastBlueprintSentVersion = -1;
@@ -2110,7 +2111,9 @@ function sendLogicState(){
   const snapshot = serializeLogicState();
   if(snapshot === lastLogicSnapshot) return;
   lastLogicSnapshot = snapshot;
-  logicSocket.emit("stateChange", JSON.parse(snapshot));
+  const payload = JSON.parse(snapshot);
+  payload.baseRevision = logicServerRevision;
+  logicSocket.emit("stateChange", payload);
 }
 
 function applyBlueprintLibraryState(list){
@@ -2140,6 +2143,12 @@ function sendBlueprintLibrary(){
   logicSocket.emit("blueprintLibraryChange", payload);
 }
 
+logicSocket.on("stateAck", ack => {
+  if(Number.isInteger(ack?.serverRevision) && ack.serverRevision > logicServerRevision){
+    logicServerRevision = ack.serverRevision;
+  }
+});
+
 logicSocket.on("blueprintLibrary", library => {
   if(library && Array.isArray(library.blueprints)){
     applyBlueprintLibraryState(library.blueprints);
@@ -2147,6 +2156,10 @@ logicSocket.on("blueprintLibrary", library => {
 });
 
 logicSocket.on("state", state => {
+  const incomingRevision = Number.isInteger(state?.serverRevision) ? state.serverRevision : 0;
+  if(incomingRevision < logicServerRevision) return;
+  logicServerRevision = incomingRevision;
+
   const legacyState = !state || Number(state.version || 1) < 3;
 
   const hasBlueprintLibrary = state && Array.isArray(state.blueprints);
@@ -2199,7 +2212,9 @@ setInterval(() => {
   const snapshot = serializeLogicState();
   if(snapshot !== lastLogicSnapshot){
     lastLogicSnapshot = snapshot;
-    logicSocket.emit("stateChange", JSON.parse(snapshot));
+    const payload = JSON.parse(snapshot);
+    payload.baseRevision = logicServerRevision;
+    logicSocket.emit("stateChange", payload);
   }
   sendBlueprintLibrary();
 }, 50);
@@ -2233,7 +2248,7 @@ aiAsk.addEventListener("click", async () => {
     const data = await response.json();
 
     if(!response.ok){
-      throw new Error(data?.error || "Unbekannter Fehler");
+      throw new Error((data?.error || "Unbekannter Fehler") + (data?.details ? " — " + data.details : ""));
     }
 
     aiStatus.textContent = data.text || "Gemini hat keine Antwort geliefert.";
