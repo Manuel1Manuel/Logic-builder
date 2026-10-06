@@ -716,7 +716,7 @@ function getConnectTargetAtPoint(wx,wy){
 function getPinHitAtPoint(wx,wy,target){if(target){if(target.chipPin){let p=target.inputs?.[0]||target.outputs?.[0]||{x:11,y:11};let px=target.x+p.x,py=target.y+p.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:target,kind:target.chipPin==="in"?"input":"output",index:0};return null;}for(let i=0;i<(target.inputs||[]).length;i++){let inp=target.inputs[i];let px=target.x+inp.x,py=target.y+inp.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:target,kind:"input",index:i};}for(let i=0;i<(target.outputs||[]).length;i++){let out=target.outputs[i];let px=target.x+out.x,py=target.y+out.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:target,kind:"output",index:i};}return null;}for(let i=nodes.length-1;i>=0;i--){let n=nodes[i];if(n.hidden)continue;if(n.chipPin){let p=n.inputs?.[0]||n.outputs?.[0]||{x:11,y:11};let px=n.x+p.x,py=n.y+p.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:n,kind:n.chipPin==="in"?"input":"output",index:0};continue;}for(let j=0;j<(n.inputs||[]).length;j++){let inp=n.inputs[j];let px=n.x+inp.x,py=n.y+inp.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:n,kind:"input",index:j};}for(let j=0;j<(n.outputs||[]).length;j++){let out=n.outputs[j];let px=n.x+out.x,py=n.y+out.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:n,kind:"output",index:j};}}return null;}
 function connectSelectionToTarget(target,pinHit){let sources=expandActionNodes(selectedNodes).filter(n=>n!==target&&!n.hidden);for(let src of sources){let idx=pinHit&&pinHit.node===target&&pinHit.kind==="input"?pinHit.index:(target.chipPin?0:(target.type==="switch"||target.type==="output"||target.type==="not"?0:getFreeSlot(target)));if(idx===-1)continue;wires.push({from:src,to:target,inputIndex:idx});}}
 function connectSourceToSelection(source){let targets=expandActionNodes(selectedNodes).filter(n=>n!==source&&!n.hidden);for(let target of targets){let idx=target.chipPin?0:(target.type==="switch"||target.type==="output"||target.type==="not"?0:getFreeSlot(target));if(idx===-1)continue;wires.push({from:source,to:target,inputIndex:idx});}}
-function tryConnectFrom(src,wx,wy){let target=getConnectTargetAtPoint(wx,wy);if(!target||target===src)return;if(src.outputs&&target.inputs){if(target.type==="output"){wires.push({from:src,to:target,inputIndex:0});return;}if(target.type==="not"){wires.push({from:src,to:target,inputIndex:0});return;}let idx=target.chipPin?0:getInputIndexAtPoint(target,wx,wy);if(idx===-1)idx=target.type==="switch"?0:getFreeSlot(target);if(idx!==-1||target.type==="switch"){if(target.type==="switch"){wires.push({from:src,to:target,inputIndex:0});}else{wires.push({from:src,to:target,inputIndex:idx});}}}}
+function tryConnectFrom(src,wx,wy){if(!src||src.chipPin==="in")return;let target=getConnectTargetAtPoint(wx,wy);if(!target||target===src)return;if(target.chipPin==="out")return;if(src.outputs&&target.inputs){if(target.type==="output"){wires.push({from:src,to:target,inputIndex:0});return;}if(target.type==="not"){wires.push({from:src,to:target,inputIndex:0});return;}let idx=target.chipPin?0:getInputIndexAtPoint(target,wx,wy);if(idx===-1)idx=target.type==="switch"?0:getFreeSlot(target);if(idx!==-1||target.type==="switch"){if(target.type==="switch"){wires.push({from:src,to:target,inputIndex:0});}else{wires.push({from:src,to:target,inputIndex:idx});}}}}
 
 document.getElementById("nameSave").onclick=()=>{if(nameNode){let v=document.getElementById("nameInput").value.trim();if(v)nameNode.name=v;}document.getElementById("namePopup").style.display="none";nameNode=null;};
 document.getElementById("copyYes").onclick=()=>{if(copyPending)copyToClipboard(JSON.stringify(copyPending));copyPending=null;document.getElementById("copyPopup").style.display="none";};
@@ -1366,15 +1366,18 @@ function drawGrid(){
 }
 
 function drawChipShells(){
- if(simpleGraphics){
-  let seen=new Set();
-  for(let n of nodes){
-   if(!n||!n.chipId||seen.has(n.chipId))continue;
-   seen.add(n.chipId);
-   let shell=getChipShellRect(n.chipId);
-   if(!shell||!Number.isFinite(shell.x)||!Number.isFinite(shell.y)||!Number.isFinite(shell.w)||!Number.isFinite(shell.h))continue;
-   let selected=selectedNodes.some(s=>s&&s.chipId===n.chipId);
-   ctx.save();
+ let seen=new Set();
+ for(let n of nodes){
+  if(!n||!n.chipId||seen.has(n.chipId))continue;
+  seen.add(n.chipId);
+  let shell=getChipShellRect(n.chipId);
+  if(!shell||!Number.isFinite(shell.x)||!Number.isFinite(shell.y)||!Number.isFinite(shell.w)||!Number.isFinite(shell.h))continue;
+  let chipNodes=getChipNodesById(n.chipId);
+  let inputs=chipNodes.filter(p=>p.chipPin==="in").sort((a,b)=>a.y-b.y);
+  let outputs=chipNodes.filter(p=>p.chipPin==="out").sort((a,b)=>a.y-b.y);
+  let selected=selectedNodes.some(s=>s&&s.chipId===n.chipId);
+  ctx.save();
+  if(simpleGraphics){
    ctx.fillStyle=selected?"#666":"#777";
    ctx.strokeStyle=selected?"#ffffff":"#bdbdbd";
    ctx.lineWidth=3/zoom;
@@ -1383,43 +1386,51 @@ function drawChipShells(){
    ctx.fillStyle="#111";
    ctx.font="16px Arial";
    ctx.fillText((n.chipName||"CHIP").slice(0,18),shell.x+12,shell.y+22);
-   ctx.restore();
+  }else{
+   let g=ctx.createLinearGradient(shell.x,shell.y,shell.x,shell.y+shell.h);
+   if(selected){g.addColorStop(0,"#58b1ff");g.addColorStop(.22,"#2f77ff");g.addColorStop(.55,"#1f4fb8");g.addColorStop(1,"#0b1c3e");ctx.shadowBlur=26;ctx.shadowColor="rgba(80,160,255,.92)";}else{g.addColorStop(0,"#9aa4b3");g.addColorStop(.2,"#66717f");g.addColorStop(.55,"#424c5b");g.addColorStop(1,"#151b27");ctx.shadowBlur=16;ctx.shadowColor="rgba(0,0,0,.5)";}
+   ctx.fillStyle=g;
+   ctx.strokeStyle=selected?"#e8f5ff":"rgba(255,255,255,.30)";
+   ctx.lineWidth=3/zoom;
+   roundPath(shell.x,shell.y,shell.w,shell.h,22);
+   ctx.fill();ctx.stroke();
+   ctx.shadowBlur=0;
+   ctx.fillStyle="rgba(255,255,255,.22)";
+   roundPath(shell.x+6,shell.y+6,shell.w-12,10,8);ctx.fill();
+   ctx.fillStyle="rgba(0,0,0,.22)";
+   roundPath(shell.x+8,shell.y+shell.h-17,shell.w-16,8,6);ctx.fill();
+   ctx.fillStyle="rgba(255,255,255,.08)";
+   ctx.fillRect(shell.x+20,shell.y+24,shell.w-40,1);
+   ctx.fillRect(shell.x+20,shell.y+shell.h-24,shell.w-40,1);
+   ctx.fillStyle="rgba(8,10,14,.35)";
+   roundPath(shell.x+18,shell.y+30,shell.w-36,shell.h-60,14);ctx.fill();
+   ctx.fillStyle=selected?"#f4fbff":"#e2e8f0";
+   ctx.font="bold 16px Arial";
+   ctx.fillText((n.chipName||"CHIP").slice(0,18),shell.x+14,shell.y+24);
+   ctx.fillStyle="rgba(255,255,255,.13)";
+   for(let i=0;i<Math.max(3,Math.ceil((inputs.length+outputs.length)/3));i++)ctx.fillRect(shell.x+30,shell.y+18+i*14,shell.w-60,1);
+   ctx.fillStyle="rgba(255,255,255,.08)";
+   ctx.fillRect(shell.x+18,shell.y+shell.h/2-1,shell.w-36,2);
   }
-  return;
- }
- let seen=new Set();
- for(let n of nodes){
-  if(!n||!n.chipId||seen.has(n.chipId))continue;
-  seen.add(n.chipId);
-  let shell=getChipShellRect(n.chipId);
-  if(!shell||!Number.isFinite(shell.x)||!Number.isFinite(shell.y)||!Number.isFinite(shell.w)||!Number.isFinite(shell.h))continue;
-  let selected=selectedNodes.some(s=>s&&s.chipId===n.chipId);
-  ctx.save();
-  let g=ctx.createLinearGradient(shell.x,shell.y,shell.x,shell.y+shell.h);
-  if(selected){g.addColorStop(0,"#58b1ff");g.addColorStop(.22,"#2f77ff");g.addColorStop(.55,"#1f4fb8");g.addColorStop(1,"#0b1c3e");ctx.shadowBlur=26;ctx.shadowColor="rgba(80,160,255,.92)";}else{g.addColorStop(0,"#9aa4b3");g.addColorStop(.2,"#66717f");g.addColorStop(.55,"#424c5b");g.addColorStop(1,"#151b27");ctx.shadowBlur=16;ctx.shadowColor="rgba(0,0,0,.5)";}
-  ctx.fillStyle=g;
-  ctx.strokeStyle=selected?"#e8f5ff":"rgba(255,255,255,.30)";
-  ctx.lineWidth=3/zoom;
-  roundPath(shell.x,shell.y,shell.w,shell.h,22);
-  ctx.fill();ctx.stroke();
-  ctx.shadowBlur=0;
-  ctx.fillStyle="rgba(255,255,255,.22)";
-  roundPath(shell.x+6,shell.y+6,shell.w-12,10,8);ctx.fill();
-  ctx.fillStyle="rgba(0,0,0,.22)";
-  roundPath(shell.x+8,shell.y+shell.h-17,shell.w-16,8,6);ctx.fill();
-  ctx.fillStyle="rgba(255,255,255,.08)";
-  ctx.fillRect(shell.x+20,shell.y+24,shell.w-40,1);
-  ctx.fillRect(shell.x+20,shell.y+shell.h-24,shell.w-40,1);
-  ctx.fillStyle="rgba(8,10,14,.35)";
-  roundPath(shell.x+18,shell.y+30,shell.w-36,shell.h-60,14);ctx.fill();
-  ctx.fillStyle=selected?"#f4fbff":"#e2e8f0";
-  ctx.font="bold 16px Arial";
-  ctx.fillText((n.chipName||"CHIP").slice(0,18),shell.x+14,shell.y+24);
-  let pinCount=Math.max(0,(n.inputs?.length||0)+(n.outputs?.length||0));
-  ctx.fillStyle="rgba(255,255,255,.13)";
-  for(let i=0;i<Math.max(3,Math.ceil(pinCount/3));i++)ctx.fillRect(shell.x+30,shell.y+18+i*14,shell.w-60,1);
-  ctx.fillStyle="rgba(255,255,255,.08)";
-  ctx.fillRect(shell.x+18,shell.y+shell.h/2-1,shell.w-36,2);
+  if(selected){
+   ctx.textBaseline="middle";
+   ctx.font="bold 11px Arial";
+   ctx.textAlign="left";
+   ctx.fillStyle="#baffdf";
+   if(inputs.length)ctx.fillText("INPUTS",shell.x+18,shell.y+shell.h-18);
+   ctx.fillStyle="#bcecff";
+   ctx.textAlign="right";
+   if(outputs.length)ctx.fillText("OUTPUTS",shell.x+shell.w-18,shell.y+shell.h-18);
+   ctx.font="bold 10px Arial";
+   ctx.fillStyle="#baffdf";
+   ctx.textAlign="left";
+   inputs.forEach((p,i)=>ctx.fillText("IN "+(i+1),shell.x+18,p.y+6));
+   ctx.fillStyle="#bcecff";
+   ctx.textAlign="right";
+   outputs.forEach((p,i)=>ctx.fillText("OUT "+(i+1),shell.x+shell.w-18,p.y+6));
+   ctx.textAlign="left";
+   ctx.textBaseline="alphabetic";
+  }
   ctx.restore();
  }
 }
