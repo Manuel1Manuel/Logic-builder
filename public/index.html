@@ -2280,13 +2280,13 @@ const aiClose = document.getElementById("aiClose");
 aiClose.addEventListener("click", () => { aiPopup.style.display = "none"; });
 
 function getAiContext(){
-  const visibleNodes = nodes.filter(n => !n.hidden).map((n,index) => ({
-    index, type:n.type, name:n.name||"", x:Math.round(n.x||0), y:Math.round(n.y||0),
+  const visibleNodes = nodes.map((n,index) => ({
+    index, hidden:!!n.hidden, type:n.type, name:n.name||"", x:Math.round(n.x||0), y:Math.round(n.y||0),
     state:n.type==="switch" ? !!n.state : undefined,
     delay:n.type==="timer" ? Number(n.delay)||0 : undefined,
     interval:n.type==="clock" ? Number(n.interval)||1000 : undefined,
     assignedKey:n.type==="key" ? n.assignedKey||"" : undefined
-  }));
+  })).filter(n => !n.hidden);
   const nodeIndex = new Map(nodes.map((n,i)=>[n,i]));
   const wireData = wires.map(w=>({from:nodeIndex.get(w.from),to:nodeIndex.get(w.to),inputIndex:Number.isFinite(w.inputIndex)?w.inputIndex:0}));
   const blueprintInfo = blueprints.map((bp,i)=>({index:i,name:bp.name||("Blueprint "+(i+1)),nodes:Array.isArray(bp.nodes)?bp.nodes.length:0,wires:Array.isArray(bp.wires)?bp.wires.length:0}));
