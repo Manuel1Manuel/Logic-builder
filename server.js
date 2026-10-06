@@ -392,10 +392,15 @@ io.on("connection", (socket) => {
         sourceSocketId: socket.id
       };
 
+      const nodeCount = Array.isArray(stored.nodes) ? stored.nodes.length : 0;
+      const wireCount = Array.isArray(stored.wires) ? stored.wires.length : 0;
+
       io.emit("state", broadcastState);
       socket.emit("stateAck", {
         serverRevision: stateRevision,
-        confirmed: true
+        confirmed: true,
+        nodeCount,
+        wireCount
       });
 
     } catch (error) {
