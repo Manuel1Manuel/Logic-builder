@@ -274,10 +274,10 @@ io.on("connection", (socket) => {
     socket.emit("state", { serverRevision: stateRevision });
   }
 
-  // Der Client darf nur auf Basis des letzten von ihm bestätigten
-  // Server-Zustands schreiben. So kann ein alter Client niemals eine
-  // gerade gelöschte Schaltung wieder zurückschreiben.
-  socket.lastAppliedRevision = stateRevision;
+  // Erst nach dem Empfang und Anwenden des initialen Server-Zustands darf
+  // dieser Client wieder schreiben. Dadurch kann ein alter lokaler Stand
+  // niemals den gerade geladenen Serverstand überschreiben.
+  socket.lastAppliedRevision = stateRevision - 1;
 
   socket.on("stateApplied", (revision) => {
     if(Number.isInteger(revision) && revision === stateRevision){
@@ -298,7 +298,9 @@ io.on("connection", (socket) => {
         const current = getState.get();
         const currentState = JSON.parse(current.data || "{}");
         currentState.serverRevision = stateRevision;
+        currentState.sourceSocketId = "server-rejected";
         socket.emit("state", currentState);
+        socket.emit("stateRejected", { serverRevision: stateRevision });
         return;
       }
       // Der normale Realtime-Zustand enthält absichtlich keine komplette
@@ -328,15 +330,21 @@ io.on("connection", (socket) => {
       saveState.run(JSON.stringify(stored));
       stateRevision++;
       saveRevision.run(stateRevision);
+      socket.lastAppliedRevision = stateRevision;
 
-      const broadcastState = { ...cleanState, serverRevision: stateRevision };
+      // Wirklich den gespeicherten Serverstand zurückgeben, nicht nur das
+      // eingegangene Paket. Der Absender bekommt ihn ebenfalls zurück.
+      const broadcastState = {
+        ...stored,
+        serverRevision: stateRevision,
+        sourceSocketId: socket.id
+      };
 
-      // Der Server ist die Quelle der Wahrheit: Erst speichern, dann bekommen
-      // ALLE Clients (einschließlich des Absenders) den exakt gespeicherten
-      // Zustand zurück. So kann der Absender sehen, dass sein Update bestätigt
-      // wurde, und es wird kein alter lokaler Stand als "neue" Version behandelt.
       io.emit("state", broadcastState);
-      socket.emit("stateAck", { serverRevision: stateRevision });
+      socket.emit("stateAck", {
+        serverRevision: stateRevision,
+        confirmed: true
+      });
 
     } catch (error) {
       console.error("Fehler beim Speichern des Zustands:", error);
