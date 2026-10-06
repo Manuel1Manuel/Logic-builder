@@ -1871,42 +1871,50 @@ function getLogicSyncId(n){
 }
 
 function serializeLogicState(){
+  const snapshotNodes = nodes.map(n => {
+    const d = {
+      id:getLogicSyncId(n),
+      x:Number(n.x)||0,
+      y:Number(n.y)||0,
+      relX:Number(n.x)||0,
+      relY:Number(n.y)||0,
+      type:n.type || "switch",
+      state:getSavedNodeState(n),
+      delay:Number(n.delay)||0,
+      stay:!!n.stay,
+      name:n.name || "",
+      chipId:n.chipId || null,
+      chipName:n.chipName || "",
+      chipPin:n.chipPin || "",
+      chipShell:n.chipShell || null,
+      hidden:!!n.hidden,
+      assignedKey:n.assignedKey || "",
+      interval:Number(n.interval)||1000,
+      memoryState:!!n.memoryState,
+      timerRunning:!!n.timerRunning,
+      offTimerRunning:!!n.offTimerRunning,
+      timerStart:Number(n.timerStart)||0,
+      offTimerStart:Number(n.offTimerStart)||0,
+      clockState:n.clockState !== false,
+      clockLastToggle:Number(n.clockLastToggle)||0
+    };
+    if(n.type === "switch") d.state = !!(n.state || n.output);
+    return d;
+  });
+
   return JSON.stringify({
-    version: 3,
-    nodes: nodes.map(n => {
-      const d = {
-        id:getLogicSyncId(n),
-        x:Number(n.x)||0,
-        y:Number(n.y)||0,
-        type:n.type || "switch",
-        chipId:n.chipId || null,
-        chipPin:n.chipPin || "",
-        chipShell:n.chipShell || null
-      };
-
-      // Diese Einstellungen werden bewusst gemeinsam übertragen:
-      // Key-Zuweisungen, Switch-/Output-Namen, Timerwerte und Clock-Frequenz.
-      if(n.type === "key") d.assignedKey = n.assignedKey || "";
-      if(n.type === "switch" || n.type === "output"){
-        d.name = n.name || "";
-        if(n.type === "switch") d.state = !!n.state;
-      }
-      if(n.type === "timer"){
-        d.delay = Number(n.delay)||0;
-        d.stay = !!n.stay;
-      }
-      if(n.type === "clock") d.interval = Number(n.interval)||1000;
-
-      return d;
-    }),
-    wires: wires.map(w => ({
+    version:4,
+    name:"Logic Builder",
+    chip:false,
+    mixedChipSelection:false,
+    nodes:snapshotNodes,
+    wires:wires.map(w => ({
       from:nodes.indexOf(w.from),
       to:nodes.indexOf(w.to),
       inputIndex:Number.isFinite(w.inputIndex) ? w.inputIndex : 0
     })).filter(w => w.from >= 0 && w.to >= 0)
   });
 }
-
 function applyLogicState(state){
   if(!state || !Array.isArray(state.nodes) || !Array.isArray(state.wires)) return false;
 
