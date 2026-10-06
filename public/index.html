@@ -2176,7 +2176,10 @@ logicSocket.on("connect_error", () => {
 logicSocket.on("stateAck", ack => {
   if(Number.isInteger(ack?.serverRevision) && ack.serverRevision >= logicServerRevision){
     logicServerRevision = ack.serverRevision;
-    setServerStatus("Server = Client · deine Änderung wurde gespeichert (Version "+logicServerRevision+").");
+    const counts = Number.isInteger(ack?.nodeCount)
+      ? " · "+ack.nodeCount+" Gatter"+(Number.isInteger(ack?.wireCount) ? ", "+ack.wireCount+" Wires" : "")
+      : "";
+    setServerStatus("Server = Client · deine Änderung wurde gespeichert (Version "+logicServerRevision+counts+").");
   }
 });
 logicSocket.on("stateRejected", info => {
@@ -2196,13 +2199,16 @@ logicSocket.on("state", state => {
   if(incomingRevision < logicServerRevision) return;
   logicServerRevision = incomingRevision;
 
+  const savedNodeCount = Array.isArray(state?.nodes) ? state.nodes.length : 0;
+  const savedWireCount = Array.isArray(state?.wires) ? state.wires.length : 0;
+  const counts = " · "+savedNodeCount+" Gatter, "+savedWireCount+" Wires";
   const isOwnConfirmedChange = state?.sourceSocketId === logicSocket.id;
   if(isOwnConfirmedChange){
-    setServerStatus("Server = Client · deine Änderung wurde vom Server bestätigt (Version "+incomingRevision+").");
+    setServerStatus("Server = Client · deine Änderung bestätigt (Version "+incomingRevision+counts+").");
   }else if(state?.sourceSocketId && state.sourceSocketId !== "server-rejected"){
-    setServerStatus("Server ≠ Client · anderer Benutzer hat geändert, Client wird aktualisiert ...");
+    setServerStatus("Server ≠ Client · anderer Benutzer hat geändert, Client wird aktualisiert"+counts+" ...");
   }else{
-    setServerStatus("Serverstand wird übernommen (Version "+incomingRevision+") ...");
+    setServerStatus("Serverstand wird übernommen (Version "+incomingRevision+counts+") ...");
   }
 
   const legacyState = !state || Number(state.version || 1) < 3;
