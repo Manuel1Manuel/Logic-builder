@@ -1985,7 +1985,7 @@ function formatStorageSize(bytes){
 
 function getClientStorageBytes(){
   let state={};
-  try{state=JSON.parse(lastLogicSnapshot||serializeLogicState())||{};}catch{}
+  try{state=JSON.parse(serializeLogicState())||{};}catch{}
   const stored={...state,blueprints:getBlueprintSyncData()};
   return new Blob([JSON.stringify(stored)]).size;
 }
