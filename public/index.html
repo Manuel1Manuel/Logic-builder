@@ -661,15 +661,23 @@ function setBlueprintScrollFromY(clientY){let track=getLibraryScrollTrackRect();
 function deleteBlueprintAtIndex(index){if(index<0||index>=blueprints.length)return;blueprints.splice(index,1);clampBlueprintScroll();}
 function openBlueprintActionPopup(index){bpActionIndex=index;let bp=blueprints[index];document.getElementById("bpActionText").textContent=bp?(bp.name||"Blueprint"):"Blueprint";document.getElementById("bpActionPopup").style.display="flex";}
 function closeBlueprintActionPopup(){bpActionIndex=-1;document.getElementById("bpActionPopup").style.display="none";}
+function isChipInputNode(n){return !!n&&n.chipPin==="in";}
+function isChipOutputNode(n){return !!n&&n.chipPin==="out";}
+function isValidWireEndpoints(from,to){return !!from&&!!to&&!isChipInputNode(from)&&!isChipOutputNode(to);}
+
 function collectSelectionPins(list,kind){
  let ordered=sortByPosition(expandActionNodes(list).filter(n=>!n.hidden));
  let pins=[];
  for(let n of ordered){
   if(kind==="outputs"){
+   // Chip-Eingänge sind ausschließlich Ziele und niemals Quellen.
+   if(isChipInputNode(n))continue;
    if(n.outputs&&n.outputs.length){
     for(let i=0;i<n.outputs.length;i++)pins.push({node:n,index:i});
    }
   }else{
+   // Chip-Ausgänge sind ausschließlich Quellen und niemals Ziele.
+   if(isChipOutputNode(n))continue;
    if(n.inputs&&n.inputs.length){
     for(let i=0;i<n.inputs.length;i++){
      if(!wires.some(w=>w.to===n&&w.inputIndex===i))pins.push({node:n,index:i});
@@ -1140,12 +1148,15 @@ function connectSelectionsPairwise(sourceNodes,targetNodes){
  let ins=collectSelectionPins(targetNodes,"inputs");
  let count=Math.min(outs.length,ins.length);
  for(let i=0;i<count;i++){
-  wires.push({from:outs[i].node,to:ins[i].node,inputIndex:ins[i].index});
+  let from=outs[i].node,to=ins[i].node;
+  if(!isValidWireEndpoints(from,to))continue;
+  wires.push({from,to,inputIndex:ins[i].index});
  }
 }
 function getOrderedInputSlots(node){
+ if(isChipOutputNode(node))return[];
+ if(isChipInputNode(node))return[0];
  let used=new Set(wires.filter(w=>w.to===node).map(w=>w.inputIndex));
- if(node&&node.chipPin)return[0];
  if(node&&node.inputs&&node.inputs.length){
   let slots=[];
   for(let i=0;i<node.inputs.length;i++)if(!used.has(i))slots.push(i);
@@ -1156,26 +1167,30 @@ function getOrderedInputSlots(node){
 }
 function connectSelectionsChunked(sourceNodes,targetNodes){
  let outs=collectSelectionPins(sourceNodes,"outputs");
- let targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden));
+ let targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden&&!isChipOutputNode(n)));
  let o=0;
  for(let target of targets){
   let slots=getOrderedInputSlots(target);
   for(let slot of slots){
    if(o>=outs.length)return;
-   wires.push({from:outs[o].node,to:target,inputIndex:slot});
-   o++;
+   let from=outs[o].node;
+   if(isValidWireEndpoints(from,target)){
+    wires.push({from,to:target,inputIndex:slot});
+    o++;
+   }
   }
- }
-}
+ }}
 function connectSelectionsFirstFree(sourceNodes,targetNodes){
  let outs=collectSelectionPins(sourceNodes,"outputs");
- let targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden));
+ let targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden&&!isChipOutputNode(n)));
  let count=Math.min(outs.length,targets.length);
  for(let i=0;i<count;i++){
   let target=targets[i];
   let slots=getOrderedInputSlots(target);
   if(!slots.length)continue;
-  wires.push({from:outs[i].node,to:target,inputIndex:slots[0]});
+  let from=outs[i].node;
+  if(!isValidWireEndpoints(from,target))continue;
+  wires.push({from,to:target,inputIndex:slots[0]});
  }
 }
 function startBatchConnect(mode="chunked"){
