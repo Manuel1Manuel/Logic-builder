@@ -1784,6 +1784,8 @@ function drawBlueprintPreview(){
 function drawPanel(){
  ctx.setTransform(1,0,0,1,0,0);
  if(simpleGraphics){
+  // UI-Rahmen dürfen nicht die Welt-Zoomstärke übernehmen.
+  ctx.lineWidth=1;
   let barH=mode==="pc"?90:56;
   ctx.fillStyle="rgba(0,0,0,0.6)";
   ctx.fillRect(0,h-barH,w,barH);
