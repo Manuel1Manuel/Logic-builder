@@ -246,9 +246,6 @@ db.prepare(`
 const getState = db.prepare(`
   SELECT data FROM app_state WHERE id = 1
 `);
-function getStoredStateStorageBytes(serialized){
-  return Buffer.byteLength(String(serialized || "{}"), "utf8");
-}
 
 const saveState = db.prepare(`
   UPDATE app_state
@@ -312,7 +309,6 @@ io.on("connection", (socket) => {
   try {
     const initialState = JSON.parse(row.data);
     initialState.serverRevision = stateRevision;
-    initialState.serverStorageBytes = getStoredStateStorageBytes(row.data);
     socket.emit("state", initialState);
   } catch {
     socket.emit("state", { serverRevision: stateRevision });
@@ -354,7 +350,6 @@ io.on("connection", (socket) => {
         const current = getState.get();
         const currentState = JSON.parse(current.data || "{}");
         currentState.serverRevision = stateRevision;
-        currentState.serverStorageBytes = getStoredStateStorageBytes(current.data);
         currentState.sourceSocketId = "server-rejected";
         socket.emit("state", currentState);
         socket.emit("stateRejected", { serverRevision: stateRevision });
@@ -391,11 +386,9 @@ io.on("connection", (socket) => {
 
       // Wirklich den gespeicherten Serverstand zurückgeben, nicht nur das
       // eingegangene Paket. Der Absender bekommt ihn ebenfalls zurück.
-      const serverStorageBytes = getStoredStateStorageBytes(JSON.stringify(stored));
       const broadcastState = {
         ...stored,
         serverRevision: stateRevision,
-        serverStorageBytes,
         sourceSocketId: socket.id
       };
 
@@ -405,7 +398,6 @@ io.on("connection", (socket) => {
       io.emit("state", broadcastState);
       socket.emit("stateAck", {
         serverRevision: stateRevision,
-        serverStorageBytes,
         confirmed: true,
         nodeCount,
         wireCount
@@ -431,10 +423,8 @@ io.on("connection", (socket) => {
 
       stored.blueprints = library.blueprints;
       saveState.run(JSON.stringify(stored));
-      const serverStorageBytes = getStoredStateStorageBytes(JSON.stringify(stored));
 
-      socket.broadcast.emit("blueprintLibrary", { ...library, serverStorageBytes });
-      socket.emit("blueprintLibrary", { ...library, serverStorageBytes });
+      socket.broadcast.emit("blueprintLibrary", library);
     } catch (error) {
       console.error("Fehler beim Speichern der Blueprint-Bibliothek:", error);
     }
