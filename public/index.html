@@ -2169,6 +2169,7 @@ logicSocket.on("state", state => {
 
   if(state && Array.isArray(state.nodes) && Array.isArray(state.wires)){
     if(applyLogicState(state)){
+      if(Number.isInteger(incomingRevision)) logicSocket.emit("stateApplied", incomingRevision);
       // Alte gespeicherte Zustände werden nach dem Einlesen einmal
       // in das neue Format mit Keys/Namen/Timer/Clocks umgewandelt.
       if(!legacyState) lastLogicSnapshot = serializeLogicState();
