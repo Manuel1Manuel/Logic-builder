@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Logic Builder Ultra</title>
 <style>
-body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none;}canvas{display:block;background:radial-gradient(circle at center,#1a1a1a,#050505);touch-action:none;}#modeToggle{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:8px 14px;z-index:120;cursor:pointer;}#touchModeToggle{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:70;display:none;cursor:pointer;}#menuBtn{position:fixed;left:10px;top:50%;transform:translateY(80px);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:80;cursor:pointer;}#memoryUsage{position:fixed;left:10px;top:calc(50% + 38px);transform:translateY(-100%);background:#111;border:1px solid #00ffff;color:white;padding:5px 8px;z-index:79;font:12px Arial;white-space:nowrap;pointer-events:none;}#serverStatus{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);width:min(760px,calc(100vw - 30px));box-sizing:border-box;background:#111;border:1px solid #00ffff;color:white;padding:5px 8px;z-index:85;font:12px Arial;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;text-align:center;}#aiBtn{position:fixed;left:10px;top:96px;width:42px;height:26px;box-sizing:border-box;background:#111;border:1px solid #00ffff;color:white;padding:2px 6px;z-index:81;cursor:pointer;}#aiPopup{position:fixed;left:10px;top:132px;transform:none;width:min(380px,calc(100vw - 30px));max-height:calc(100vh - 150px);overflow:auto;background:#111;border:1px solid #00ffff;color:white;padding:10px;z-index:100;display:block;box-sizing:border-box;}#aiClose{float:right;background:none;border:1px solid #00ffff;color:white;padding:1px 7px;cursor:pointer;font-size:16px;}#aiPrompt{width:100%;height:90px;box-sizing:border-box;background:#222;color:white;border:1px solid #00ffff;resize:vertical;padding:7px;}#aiAsk{margin-top:7px;background:#00ffff;border:0;padding:7px 12px;cursor:pointer;}#aiStatus{margin-top:7px;font-size:12px;color:#ccc;white-space:pre-wrap;max-height:180px;overflow:auto;}#menuPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:90;display:none;flex-direction:column;gap:10px;color:white;min-width:250px;max-width:min(92vw,420px);max-height:80vh;overflow:auto;}#menuPopup input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#menuPopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#bpPopup{position:fixed;top:-220px;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:10;transition:top 0.3s;display:flex;flex-direction:column;gap:10px;}#bpPopup input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;}#bpPopup button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImport{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:8px;z-index:20;display:flex;gap:6px;align-items:center;}#bpImport input,#bpImport textarea{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;width:420px;box-sizing:border-box;}#bpImport textarea{height:70px;resize:vertical;font-family:monospace;font-size:11px;}#bpImport button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImportStatus{position:absolute;top:100%;left:0;margin-top:6px;width:100%;background:#111;border:1px solid #00ffff;padding:7px;box-sizing:border-box;color:white;font-size:12px;display:none;}#bpImportBar{height:6px;background:#222;border:1px solid #555;margin-top:5px;overflow:hidden;}#bpImportBarFill{height:100%;width:0%;background:#00ffff;transition:width .12s;}#copyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:50;display:none;flex-direction:column;gap:10px;align-items:center;}#copyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#timerMenu{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:10px;z-index:60;display:none;flex-direction:column;gap:8px;color:white;min-width:340px;max-height:80vh;overflow:auto;}#timerMenu input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#timerMenu button{background:#00ffff;border:none;padding:5px;cursor:pointer;}#menuList{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;padding-right:4px;}#menuList label{display:flex;align-items:center;gap:8px;white-space:nowrap;}#namePopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;}#namePopup input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#namePopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#keyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#keyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#clockMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#clockMenu input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#clockMenu button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#bpActionPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:14px;z-index:110;display:none;flex-direction:column;gap:10px;align-items:center;}#bpActionPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;width:140px;}@media (pointer:coarse){#touchModeToggle{display:block;}}
+body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none;}canvas{display:block;background:radial-gradient(circle at center,#1a1a1a,#050505);touch-action:none;}#modeToggle{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:8px 14px;z-index:120;cursor:pointer;}#touchModeToggle{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:70;display:none;cursor:pointer;}#menuBtn{position:fixed;left:10px;top:50%;transform:translateY(80px);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:80;cursor:pointer;}#memoryUsage{position:fixed;left:10px;top:calc(50% + 116px);transform:none;max-width:min(420px,calc(100vw - 20px));box-sizing:border-box;background:#111;border:1px solid #00ffff;color:white;padding:6px 9px;z-index:79;font:12px Arial;line-height:1.35;white-space:normal;pointer-events:none;}#serverStatus{position:fixed;left:10px;top:calc(50% + 166px);bottom:auto;transform:none;width:min(420px,calc(100vw - 20px));box-sizing:border-box;background:#111;border:1px solid #00ffff;color:white;padding:6px 9px;z-index:85;font:12px Arial;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;text-align:left;}#aiBtn{position:fixed;left:10px;top:96px;width:42px;height:26px;box-sizing:border-box;background:#111;border:1px solid #00ffff;color:white;padding:2px 6px;z-index:81;cursor:pointer;}#aiPopup{position:fixed;left:10px;top:132px;transform:none;width:min(380px,calc(100vw - 30px));max-height:calc(100vh - 150px);overflow:auto;background:#111;border:1px solid #00ffff;color:white;padding:10px;z-index:100;display:block;box-sizing:border-box;}#aiClose{float:right;background:none;border:1px solid #00ffff;color:white;padding:1px 7px;cursor:pointer;font-size:16px;}#aiPrompt{width:100%;height:90px;box-sizing:border-box;background:#222;color:white;border:1px solid #00ffff;resize:vertical;padding:7px;}#aiAsk{margin-top:7px;background:#00ffff;border:0;padding:7px 12px;cursor:pointer;}#aiStatus{margin-top:7px;font-size:12px;color:#ccc;white-space:pre-wrap;max-height:180px;overflow:auto;}#menuPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:90;display:none;flex-direction:column;gap:10px;color:white;min-width:250px;max-width:min(92vw,420px);max-height:80vh;overflow:auto;}#menuPopup input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#menuPopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#bpPopup{position:fixed;top:-220px;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:10;transition:top 0.3s;display:flex;flex-direction:column;gap:10px;}#bpPopup input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;}#bpPopup button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImport{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:8px;z-index:20;display:flex;gap:6px;align-items:center;}#bpImport input,#bpImport textarea{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;width:420px;box-sizing:border-box;}#bpImport textarea{height:70px;resize:vertical;font-family:monospace;font-size:11px;}#bpImport button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImportStatus{position:absolute;top:100%;left:0;margin-top:6px;width:100%;background:#111;border:1px solid #00ffff;padding:7px;box-sizing:border-box;color:white;font-size:12px;display:none;}#bpImportBar{height:6px;background:#222;border:1px solid #555;margin-top:5px;overflow:hidden;}#bpImportBarFill{height:100%;width:0%;background:#00ffff;transition:width .12s;}#copyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:50;display:none;flex-direction:column;gap:10px;align-items:center;}#copyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#timerMenu{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:10px;z-index:60;display:none;flex-direction:column;gap:8px;color:white;min-width:340px;max-height:80vh;overflow:auto;}#timerMenu input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#timerMenu button{background:#00ffff;border:none;padding:5px;cursor:pointer;}#menuList{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;padding-right:4px;}#menuList label{display:flex;align-items:center;gap:8px;white-space:nowrap;}#namePopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;}#namePopup input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#namePopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#keyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#keyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#clockMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#clockMenu input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#clockMenu button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#bpActionPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:14px;z-index:110;display:none;flex-direction:column;gap:10px;align-items:center;}#bpActionPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;width:140px;}@media (pointer:coarse){#touchModeToggle{display:block;}}
 </style>
 </head>
 <body>
@@ -14,6 +14,10 @@ body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none
 <div id="touchModeToggle">Links</div>
 <div id="memoryUsage">Speicher: 0 B · 0 bit</div><div id="serverStatus">Server: Verbinde ...</div><button id="aiBtn">AI</button><div id="aiPopup"><button id="aiClose" title="Chat schließen">×</button><div style="font-size:16px;margin-bottom:7px;">Logic Builder AI</div><textarea id="aiPrompt" placeholder="Beschreibe, was du wissen oder mit der Schaltung machen möchtest ..."></textarea><button id="aiAsk">Fragen</button><div id="aiStatus"></div></div><div id="menuBtn">Menü</div>
 <div id="menuPopup">
+<label style="color:white;display:flex;gap:8px;align-items:center;">
+<input id="advancedToggle" type="checkbox" checked> Advanced
+</label>
+<div style="height:1px;background:#00ffff;margin:4px 0"></div>
 <label style="color:white;display:flex;gap:8px;align-items:center;">
 <input id="tickOff" type="checkbox"> Aus
 </label>
@@ -99,6 +103,20 @@ const preblueprints=[{"name":"PONG","chip":false,"mixedChipSelection":false,"nod
 const modeToggle=document.getElementById("modeToggle");
 const touchModeToggle=document.getElementById("touchModeToggle");
 const menuList=document.getElementById("menuList");
+const advancedToggle=document.getElementById("advancedToggle");
+let advancedMode=true;
+function updateAdvancedMode(){
+ advancedMode=advancedToggle ? advancedToggle.checked : true;
+ for(const id of ["aiBtn","aiPopup","memoryUsage","serverStatus"]){
+  const el=document.getElementById(id);
+  if(el) el.style.display=advancedMode ? "" : "none";
+ }
+ if(!advancedMode){
+  const aiPopup=document.getElementById("aiPopup");
+  if(aiPopup) aiPopup.style.display="none";
+ }
+}
+if(advancedToggle) advancedToggle.onchange=updateAdvancedMode;
 
 function updateModeUI(){modeToggle.textContent=mode==="pc"?"PC":"iPad";touchModeToggle.style.display=mode==="ipad"?"block":"none";touchModeToggle.textContent=touchMode==="left"?"Links":"Rechts";}
 modeToggle.onclick=()=>{mode=mode==="pc"?"ipad":"pc";if(mode==="pc")touchMode="left";updateModeUI();};
@@ -113,18 +131,19 @@ function updateHidePinsButton(){document.getElementById("hidePinsBtn").textConte
 document.getElementById("hidePinsBtn").onclick=()=>{hiddenInputPins=!hiddenInputPins;updateHidePinsButton();};
 updateHidePinsButton();
 updateModeUI();
+updateAdvancedMode();
 
-function applyUiSkin(){const base={borderRadius:"16px",boxShadow:"0 12px 28px rgba(0,0,0,.45)",backdropFilter:"blur(14px)",WebkitBackdropFilter:"blur(14px)",fontFamily:"Arial"};Object.assign(modeToggle.style,{borderRadius:"999px",padding:"10px 16px",background:"linear-gradient(180deg,rgba(18,24,34,.96),rgba(6,9,13,.96))",boxShadow:"0 8px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)",border:"1px solid rgba(120,220,255,.85)"});Object.assign(touchModeToggle.style,{borderRadius:"999px",padding:"10px 16px",background:"linear-gradient(180deg,rgba(18,24,34,.96),rgba(6,9,13,.96))",boxShadow:"0 8px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)",border:"1px solid rgba(120,220,255,.85)"});Object.assign(document.getElementById("menuBtn").style,{borderRadius:"999px",padding:"10px 16px",background:"linear-gradient(180deg,rgba(18,24,34,.96),rgba(6,9,13,.96))",boxShadow:"0 8px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)",border:"1px solid rgba(120,220,255,.85)"});for(const id of ["menuPopup","bpPopup","copyPopup","bpActionPopup","timerMenu","keyPopup","clockMenu","namePopup"]){const el=document.getElementById(id);if(!el)continue;Object.assign(el.style,base,{border:"1px solid rgba(120,220,255,.78)",background:"linear-gradient(180deg,rgba(14,18,26,.96),rgba(6,8,12,.98))"});}const bpImport=document.getElementById("bpImport");if(bpImport)Object.assign(bpImport.style,{borderRadius:"14px",boxShadow:"0 10px 24px rgba(0,0,0,.35)",background:"linear-gradient(180deg,rgba(14,18,26,.96),rgba(6,8,12,.98))",border:"1px solid rgba(120,220,255,.78)"});const menuPopup=document.getElementById("menuPopup");if(menuPopup)Object.assign(menuPopup.style,{padding:"14px",gap:"10px"});for(const id of ["modeToggle","touchModeToggle","menuBtn"]){const btn=document.getElementById(id);if(btn)Object.assign(btn.style,{color:"#fff",cursor:"pointer"});}}
+function applyUiSkin(){const base={borderRadius:"16px",boxShadow:"0 12px 28px rgba(0,0,0,.45)",backdropFilter:"blur(14px)",WebkitBackdropFilter:"blur(14px)",fontFamily:"Arial"};Object.assign(modeToggle.style,{borderRadius:"999px",padding:"10px 16px",background:"linear-gradient(180deg,rgba(18,24,34,.96),rgba(6,9,13,.96))",boxShadow:"0 8px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)",border:"1px solid rgba(120,220,255,.85)"});Object.assign(touchModeToggle.style,{borderRadius:"999px",padding:"10px 16px",background:"linear-gradient(180deg,rgba(18,24,34,.96),rgba(6,9,13,.96))",boxShadow:"0 8px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)",border:"1px solid rgba(120,220,255,.85)"});Object.assign(document.getElementById("menuBtn").style,{borderRadius:"999px",padding:"10px 16px",background:"linear-gradient(180deg,rgba(18,24,34,.96),rgba(6,9,13,.96))",boxShadow:"0 8px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)",border:"1px solid rgba(120,220,255,.85)"});for(const id of ["menuPopup","bpPopup","copyPopup","bpActionPopup","timerMenu","keyPopup","clockMenu","namePopup","aiBtn","aiPopup","memoryUsage","serverStatus"]){const el=document.getElementById(id);if(!el)continue;Object.assign(el.style,base,{border:"1px solid rgba(120,220,255,.78)",background:"linear-gradient(180deg,rgba(14,18,26,.96),rgba(6,8,12,.98))"});}const bpImport=document.getElementById("bpImport");if(bpImport)Object.assign(bpImport.style,{borderRadius:"14px",boxShadow:"0 10px 24px rgba(0,0,0,.35)",background:"linear-gradient(180deg,rgba(14,18,26,.96),rgba(6,8,12,.98))",border:"1px solid rgba(120,220,255,.78)"});const menuPopup=document.getElementById("menuPopup");if(menuPopup)Object.assign(menuPopup.style,{padding:"14px",gap:"10px"});Object.assign(document.getElementById("aiBtn").style,{color:"#fff",cursor:"pointer"});}}
 applyUiSkin();
 function updateUiTheme(){
  const blue=themeBlue();
  const radius=simpleGraphics?"0px":"14px";
  const buttonRadius=simpleGraphics?"0px":"9px";
  const inputRadius=simpleGraphics?"0px":"7px";
- const ids=["modeToggle","touchModeToggle","menuBtn","menuPopup","bpPopup","copyPopup","bpActionPopup","timerMenu","keyPopup","clockMenu","namePopup","bpImport"];
+ const ids=["modeToggle","touchModeToggle","menuBtn","menuPopup","bpPopup","copyPopup","bpActionPopup","timerMenu","keyPopup","clockMenu","namePopup","bpImport","aiBtn","aiPopup","memoryUsage","serverStatus","bpImportStatus"];
  for(const id of ids){const el=document.getElementById(id);if(!el)continue;el.style.borderColor=blue;el.style.borderRadius=radius;}
- for(const el of document.querySelectorAll("#menuPopup button,#bpPopup button,#copyPopup button,#timerMenu button,#namePopup button,#keyPopup button,#clockMenu button,#bpActionPopup button,#bpImport button")){el.style.background=blue;el.style.borderColor=blue;el.style.borderRadius=buttonRadius;}
- for(const el of document.querySelectorAll("#menuPopup input,#bpPopup input,#bpImport input,#timerMenu input,#namePopup input,#clockMenu input")){el.style.borderColor=blue;el.style.borderRadius=inputRadius;}
+ for(const el of document.querySelectorAll("#menuPopup button,#bpPopup button,#copyPopup button,#timerMenu button,#namePopup button,#keyPopup button,#clockMenu button,#bpActionPopup button,#bpImport button,#aiBtn,#aiClose,#aiAsk")){el.style.background=blue;el.style.borderColor=blue;el.style.borderRadius=buttonRadius;}
+ for(const el of document.querySelectorAll("#menuPopup input,#bpPopup input,#bpImport input,#bpImport textarea,#timerMenu input,#namePopup input,#clockMenu input,#aiPrompt")){el.style.borderColor=blue;el.style.borderRadius=inputRadius;}
 }
 updateUiTheme();
 
@@ -1954,6 +1973,8 @@ let lastBlueprintSerializedVersion = -1;
 let lastBlueprintSyncData = [];
 let lastBlueprintSentVersion = -1;
 let lastDisplayedStorageBytes = 0;
+let serverStorageBytes = null;
+const SERVER_SYNC_TOLERANCE_BITS = 1000;
 
 function formatStorageSize(bytes){
   if(bytes >= 1024*1024) return (bytes/(1024*1024)).toFixed(2)+" MB";
@@ -1961,19 +1982,24 @@ function formatStorageSize(bytes){
   return Math.round(bytes)+" B";
 }
 
+function getClientStorageBytes(){
+  let state={};
+  try{state=JSON.parse(lastLogicSnapshot||serializeLogicState())||{};}catch{}
+  const stored={...state,blueprints:getBlueprintSyncData()};
+  return new Blob([JSON.stringify(stored)]).size;
+}
+function formatStorageDelta(bytes){
+  const sign=bytes>0?"+":bytes<0?"−":"±";
+  return sign+" "+formatStorageSize(Math.abs(bytes));
+}
 function updateStorageDisplay(){
   const el=document.getElementById("memoryUsage");
   if(!el) return;
-  let blueprintBytes=0;
-  if(lastBlueprintSerializedVersion !== blueprintLibraryVersion){
-    const data=getBlueprintSyncData();
-    blueprintBytes=new Blob([JSON.stringify(data)]).size;
-  }else{
-    blueprintBytes=new Blob([JSON.stringify(lastBlueprintSyncData)]).size;
-  }
-  const stateBytes=new Blob([lastLogicSnapshot||serializeLogicState()]).size;
-  lastDisplayedStorageBytes=stateBytes+blueprintBytes;
-  el.textContent="Speicher: "+formatStorageSize(lastDisplayedStorageBytes)+" · "+(lastDisplayedStorageBytes*8).toLocaleString("de-DE")+" bit";
+  lastDisplayedStorageBytes=getClientStorageBytes();
+  const deltaBytes=Number.isFinite(serverStorageBytes) ? lastDisplayedStorageBytes-serverStorageBytes : 0;
+  const deltaText=Number.isFinite(serverStorageBytes) ? formatStorageDelta(deltaBytes) : "—";
+  const serverText=Number.isFinite(serverStorageBytes) ? formatStorageSize(serverStorageBytes) : "—";
+  el.innerHTML="Speicher: "+formatStorageSize(lastDisplayedStorageBytes)+" · Δ "+deltaText+"<br>Server-Speicher: "+serverText;
 }
 
 function getBlueprintSyncData(){
@@ -2114,11 +2140,25 @@ function setServerStatus(text){
   const el=document.getElementById("serverStatus");
   if(el) el.textContent="Server: "+text;
 }
-function setServerEqualStatus(){
-  setServerStatus("Server = Client · gleicher Stand (Version "+logicServerRevision+")");
+function updateServerSyncStatus(){
+  if(!advancedMode || !Number.isFinite(serverStorageBytes) || !logicSyncReady) return;
+  const diffBytes=lastDisplayedStorageBytes-serverStorageBytes;
+  const diffBits=Math.abs(diffBytes*8);
+  if(diffBits<=SERVER_SYNC_TOLERANCE_BITS){
+    setServerStatus("Server = Client · gleicher Stand (Version "+logicServerRevision+")");
+  }else if(diffBytes>0){
+    setServerStatus("Server ≠ Client · Client enthält "+formatStorageDelta(diffBytes)+" gegenüber dem Server");
+  }else{
+    setServerStatus("Server ≠ Client · Server enthält "+formatStorageSize(Math.abs(diffBytes))+" mehr als der Client");
+  }
 }
+function setServerEqualStatus(){ updateStorageDisplay(); updateServerSyncStatus(); }
 function sendStateChange(payload){
-  setServerStatus("Server ≠ Client · deine Änderung wird gespeichert ...");
+  updateStorageDisplay();
+  updateServerSyncStatus();
+  if(advancedMode && Number.isFinite(serverStorageBytes) && Math.abs((lastDisplayedStorageBytes-serverStorageBytes)*8)>SERVER_SYNC_TOLERANCE_BITS){
+    setServerStatus("Server ≠ Client · deine Änderung wird gespeichert ...");
+  }
   logicSocket.emit("stateChange", payload);
 }
 function sendLogicState(){
@@ -2160,12 +2200,17 @@ function sendBlueprintLibrary(){
   if(lastBlueprintSentVersion === blueprintLibraryVersion) return;
   const payload = {version:1,blueprints:getBlueprintSyncData()};
   lastBlueprintSentVersion = blueprintLibraryVersion;
-  setServerStatus("Blueprint-Änderung wird an den Server gesendet ...");
+  updateStorageDisplay();
+  updateServerSyncStatus();
+  if(advancedMode && Number.isFinite(serverStorageBytes) && Math.abs((lastDisplayedStorageBytes-serverStorageBytes)*8)>SERVER_SYNC_TOLERANCE_BITS){
+    setServerStatus("Server ≠ Client · Blueprint-Änderung wird gespeichert ...");
+  }
   logicSocket.emit("blueprintLibraryChange", payload);
 }
 
 logicSocket.on("connect", () => {
   setServerStatus("Verbunden, warte auf Serverstand ...");
+  updateStorageDisplay();
 });
 logicSocket.on("disconnect", () => {
   setServerStatus("Verbindung zum Server getrennt.");
@@ -2174,6 +2219,7 @@ logicSocket.on("connect_error", () => {
   setServerStatus("Verbindung fehlgeschlagen.");
 });
 logicSocket.on("stateAck", ack => {
+  if(Number.isInteger(ack?.serverStorageBytes)) serverStorageBytes = ack.serverStorageBytes;
   if(Number.isInteger(ack?.serverRevision) && ack.serverRevision >= logicServerRevision){
     logicServerRevision = ack.serverRevision;
     const counts = Number.isInteger(ack?.nodeCount)
@@ -2183,18 +2229,21 @@ logicSocket.on("stateAck", ack => {
   }
 });
 logicSocket.on("stateRejected", info => {
+  if(Number.isInteger(info?.serverStorageBytes)) serverStorageBytes = info.serverStorageBytes;
   if(Number.isInteger(info?.serverRevision)) logicServerRevision = info.serverRevision;
   pendingLogicSnapshot = "";
   setServerStatus("Server ≠ Client · dein Stand war veraltet, Serverstand wird übernommen ...");
 });
 
 logicSocket.on("blueprintLibrary", library => {
+  if(Number.isInteger(library?.serverStorageBytes)) serverStorageBytes = library.serverStorageBytes;
   if(library && Array.isArray(library.blueprints)){
     applyBlueprintLibraryState(library.blueprints);
   }
 });
 
 logicSocket.on("state", state => {
+  if(Number.isInteger(state?.serverStorageBytes)) serverStorageBytes = state.serverStorageBytes;
   const incomingRevision = Number.isInteger(state?.serverRevision) ? state.serverRevision : 0;
   if(incomingRevision < logicServerRevision) return;
   logicServerRevision = incomingRevision;
@@ -2266,11 +2315,14 @@ setInterval(() => {
   // nicht zurücksetzen. Danach wird der aktuelle Stand übertragen.
   if(drag || groupDragging || chipDrag || libraryDrag || selecting) return;
 
+  updateStorageDisplay();
   const snapshot = serializeLogicState();
   if(snapshot !== lastLogicSnapshot && snapshot !== pendingLogicSnapshot){
     sendLogicState();
   }else if(snapshot === lastLogicSnapshot && !pendingLogicSnapshot){
     setServerEqualStatus();
+  }else{
+    updateServerSyncStatus();
   }
   sendBlueprintLibrary();
 }, 50);
