@@ -56,6 +56,7 @@ app.post("/api/gemini", async (req, res) => {
   }
 
   const prompt = typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
+  const context = typeof req.body?.context === "string" ? req.body.context : "";
   if(!prompt){
     res.status(400).json({ error: "Kein Prompt angegeben." });
     return;
@@ -64,6 +65,22 @@ app.post("/api/gemini", async (req, res) => {
     res.status(413).json({ error: "Der Prompt ist zu lang." });
     return;
   }
+
+  const systemContext = `Du bist die integrierte KI des Logic Builder Ultra.
+Du kennst die Logikgatter dieses Editors:
+switch = Schalter/Eingang, lamp = Lampe, not = NOT, or3 = OR mit 3 Eingängen,
+and = AND mit 2 Eingängen, or = OR mit 2 Eingängen, xor = XOR mit 2 Eingängen,
+timer = Zeitglied, output = Ausgang, key = Tasteneingang, clock = Taktgeber,
+memory = Speicherbaustein, led = LED.
+Jeder Block hat eine Position x/y auf der Arbeitsfläche. wires verbinden from zu to; inputIndex ist der Eingang des Zielblocks.
+Die aktuelle Schaltung und die Blueprint-Bibliothek werden dir als Kontext übergeben.
+Wenn der Nutzer nur etwas wissen will, gib eine normale Antwort und keine Aktionen.
+Wenn der Nutzer ausdrücklich darum bittet, Gatter/Blöcke zu erstellen oder zu verändern, kannst du passende Aktionen zurückgeben.
+Erfinde keine vorhandenen Blöcke und ändere nichts ohne ausdrücklichen Auftrag.
+${context ? "\nAKTUELLER APP-KONTEXT:\n" + context : ""}
+
+NUTZERANFRAGE:
+${prompt}`;
 
   try{
     const response = await fetch(
@@ -75,7 +92,31 @@ app.post("/api/gemini", async (req, res) => {
           "x-goog-api-key": process.env.GEMINI_API_KEY
         },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
+          contents: [{ parts: [{ text: systemContext }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                answer: { type: "STRING" },
+                actions: {
+                  type: "ARRAY",
+                  items: {
+                    type: "OBJECT",
+                    properties: {
+                      action: { type: "STRING", enum: ["add_gate"] },
+                      type: { type: "STRING", enum: ["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"] },
+                      x: { type: "NUMBER" },
+                      y: { type: "NUMBER" },
+                      name: { type: "STRING" }
+                    },
+                    required: ["action","type","x","y"]
+                  }
+                }
+              },
+              required: ["answer","actions"]
+            }
+          }
         })
       }
     );
@@ -88,11 +129,18 @@ app.post("/api/gemini", async (req, res) => {
       return;
     }
 
-    const text = data?.candidates?.[0]?.content?.parts
-      ?.map(part => part.text || "")
-      .join("") || "";
+    const raw = data?.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("") || "{}";
+    let result;
+    try{
+      result = JSON.parse(raw);
+    }catch{
+      result = { answer: raw, actions: [] };
+    }
 
-    res.json({ text });
+    res.json({
+      text: result.answer || "",
+      actions: Array.isArray(result.actions) ? result.actions : []
+    });
   }catch(error){
     console.error("Gemini Anfrage fehlgeschlagen:", error);
     res.status(502).json({ error: "Gemini konnte nicht erreicht werden." });
@@ -208,6 +256,14 @@ io.on("connection", (socket) => {
   socket.on("stateChange", (state) => {
 
     try {
+      const baseRevision = Number.isInteger(state?.baseRevision) ? state.baseRevision : null;
+      if(baseRevision !== null && baseRevision !== stateRevision){
+        const current = getState.get();
+        const currentState = JSON.parse(current.data || "{}");
+        currentState.serverRevision = stateRevision;
+        socket.emit("state", currentState);
+        return;
+      }
       const baseRevision = Number.isInteger(state?.baseRevision) ? state.baseRevision : null;
 
       // Veraltete Vollzustände dürfen niemals einen neueren Zustand zurücksetzen.
