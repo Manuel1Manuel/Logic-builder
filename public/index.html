@@ -747,7 +747,7 @@ async function loadBlueprintString(str){
   bp.wires=Array.isArray(bp.wires)?bp.wires.filter(w=>w&&w.from!==undefined&&w.to!==undefined).map(w=>({from:w.from,to:w.to,inputIndex:Number.isFinite(w.inputIndex)?w.inputIndex:0})):[]; 
   bp.chip=!!bp.chip;bp.mixedChipSelection=!!bp.mixedChipSelection;
   setBlueprintImportStatus("Blueprint wird gespeichert …",80,true);await new Promise(r=>setTimeout(r,0));
-  bp=sanitizeBlueprintForStorage(bp);blueprints.push(cloneBlueprint(bp));blueprintScroll=Math.max(0,blueprints.length-blueprintVisibleRows);clampBlueprintScroll();
+  bp=sanitizeBlueprintForStorage(bp);blueprints.push(bp);blueprintScroll=Math.max(0,blueprints.length-blueprintVisibleRows);clampBlueprintScroll();
   setBlueprintImportStatus("✓ Blueprint erfolgreich importiert.",100,true);return true;
  }catch(e){setBlueprintImportStatus("Fehler beim Import: "+(e&&e.message?e.message:"unbekannter Fehler"),100,false);return false;}
 }
