@@ -1279,7 +1279,13 @@ addEventListener("keydown",e=>{
   }
  }
 
- if(e.key.toLowerCase()==="z"){\n  copyLogicStateToClipboard();\n  e.preventDefault();\n  return;\n }\n\n if(e.key.toLowerCase()==="a"){
+ if(e.key.toLowerCase()==="z"){
+  copyLogicStateToClipboard();
+  e.preventDefault();
+  return;
+ }
+
+ if(e.key.toLowerCase()==="a"){
   if(selectionActive&&selectedNodes.length){
    arrangeSelection();
    e.preventDefault();
