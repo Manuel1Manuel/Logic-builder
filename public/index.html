@@ -606,7 +606,43 @@ function getNodeRect(n){if(n.chipId&&n.chipShell)return{x:n.chipShell.x,y:n.chip
 function getSelectionBounds(list){if(!list.length)return null;let r=list.map(getNodeRect);let minX=Math.min(...r.map(v=>v.x));let minY=Math.min(...r.map(v=>v.y));let maxX=Math.max(...r.map(v=>v.x+v.w));let maxY=Math.max(...r.map(v=>v.y+v.h));return{x:minX,y:minY,w:maxX-minX,h:maxY-minY};}
 function clearSelection(){selectedNodes=[];selectionActive=false;selectionBox=null;selectionWireMode=null;}
 function cancelSelectionContext(){batchConnect=null;clearSelection();}
-function restoreTriggerSelection(list){let kept=expandActionNodes(list).filter(n=>!n.hidden&&nodes.includes(n));selectedNodes=kept;selectionActive=!!kept.length;selectionBox=selectionActive?getSelectionBounds(kept):null;}
+function restoreTriggerSelection(list){let kept=expandActionNodes(list).filter(n=>!n.hidden&&nodes.includes(n));selectedNodes=kept;selectionActive=!!kept.length;selectionBox=selectionActive?getSelectionBounds(kept):null;}function arrangeSelection(){
+ if(!selectionActive||!selectedNodes.length)return;
+ let base=selectedNodes.filter(n=>!n.hidden&&nodes.includes(n));
+ if(!base.length)return;
+ let groups=[],seenChips=new Set();
+ for(let n of sortByPosition(base)){
+  if(n.chipId){
+   if(seenChips.has(n.chipId))continue;
+   seenChips.add(n.chipId);
+   let members=nodes.filter(x=>x.chipId===n.chipId);
+   let visible=members.filter(x=>!x.hidden);
+   let rects=(visible.length?visible:members).map(getNodeRect);
+   let minX=Math.min(...rects.map(r=>r.x)),minY=Math.min(...rects.map(r=>r.y));
+   let maxX=Math.max(...rects.map(r=>r.x+r.w)),maxY=Math.max(...rects.map(r=>r.y+r.h));
+   groups.push({members,x:minX,y:minY,w:maxX-minX,h:maxY-minY});
+  }else{
+   let r=getNodeRect(n);
+   groups.push({members:[n],x:r.x,y:r.y,w:r.w,h:r.h});
+  }
+ }
+ if(groups.length<2)return;
+ let cols=Math.max(1,Math.ceil(Math.sqrt(groups.length)));
+ let rows=Math.ceil(groups.length/cols);
+ let gapX=28,gapY=28;
+ let cellW=Math.max(...groups.map(g=>g.w))+gapX;
+ let cellH=Math.max(...groups.map(g=>g.h))+gapY;
+ let minX=Math.min(...groups.map(g=>g.x));
+ let minY=Math.min(...groups.map(g=>g.y));
+ groups.forEach((g,i)=>{
+  let col=i%cols,row=Math.floor(i/cols);
+  let nx=minX+col*cellW+(cellW-g.w)/2;
+  let ny=minY+row*cellH+(cellH-g.h)/2;
+  let dx=nx-g.x,dy=ny-g.y;
+  for(let n of g.members){n.x+=dx;n.y+=dy;}
+ });
+ selectionBox=getSelectionBounds(base);
+}
 function expandActionNodes(list){let out=[],seen=new Set(),chipIds=new Set();for(let n of list){if(n.chipId)chipIds.add(n.chipId);else if(!seen.has(n)){seen.add(n);out.push(n);}}if(chipIds.size){for(let n of nodes){if(n.chipId&&chipIds.has(n.chipId)&&!seen.has(n)){seen.add(n);out.push(n);}}}return out;}
 function resetAllClocks(){let now=performance.now();for(let n of nodes){if(n.type==="clock"){n.clockState=true;n.clockLastToggle=now;n.clockProgress=0;n.output=true;}if(n.type==="timer"){n.timerRunning=false;n.offTimerRunning=false;n.timerStart=0;n.offTimerStart=0;n.timerSweep=0;n.output=false;}}}
 function pruneSelectionState(){
@@ -1200,14 +1236,25 @@ function startBatchConnect(mode="chunked"){
  batchConnect={sourceNodes:sortByPosition(sourceNodes),triggerNodes:sortByPosition(sourceNodes),sourceBox:getSelectionBounds(sourceNodes),targetNodes:[],targetBox:null,phase:"target",connectMode:mode};
  clearSelection();
 }
-function finalizeBatchConnect(){if(!batchConnect)return;let targets=batchConnect.targetNodes.length?batchConnect.targetNodes:collectConnectionTargets(selectedNodes);if(!targets.length)return;if(batchConnect.connectMode==="firstFree")connectSelectionsFirstFree(batchConnect.sourceNodes,targets);else connectSelectionsPairwise(batchConnect.sourceNodes,targets);let triggerNodes=batchConnect.triggerNodes||batchConnect.sourceNodes;batchConnect=null;clearSelection();restoreTriggerSelection(triggerNodes);}
+function finalizeBatchConnect(){
+ if(!batchConnect)return;
+ let targets=batchConnect.targetNodes.length?batchConnect.targetNodes:collectConnectionTargets(selectedNodes);
+ if(!targets.length)return;
+ // K füllt die freien Eingänge auf. L verbindet parallel 1:1 und füllt keine weiteren Eingänge.
+ if(batchConnect.connectMode==="chunked")connectSelectionsChunked(batchConnect.sourceNodes,targets);
+ else connectSelectionsPairwise(batchConnect.sourceNodes,targets);
+ let triggerNodes=batchConnect.triggerNodes||batchConnect.sourceNodes;
+ batchConnect=null;
+ clearSelection();
+ restoreTriggerSelection(triggerNodes);
+}
 function runQuickConnect(mode){
  if(!selectionActive||!selectedNodes.length)return false;
  let sourceNodes=collectConnectionSources(selectedNodes);
  let targetNodes=collectConnectionTargets(selectedNodes);
  if(!sourceNodes.length||!targetNodes.length)return false;
- if(mode==="firstFree")connectSelectionsFirstFree(sourceNodes,targetNodes);
- else if(mode==="chunked")connectSelectionsChunked(sourceNodes,targetNodes);
+ // K = auffüllen, L = parallel 1:1.
+ if(mode==="chunked")connectSelectionsChunked(sourceNodes,targetNodes);
  else connectSelectionsPairwise(sourceNodes,targetNodes);
  restoreTriggerSelection(sourceNodes);
  return true;
@@ -1230,6 +1277,14 @@ addEventListener("keydown",e=>{
    e.preventDefault();
    return;
   }
+ }
+
+ if(e.key.toLowerCase()==="a"){
+  if(selectionActive&&selectedNodes.length){
+   arrangeSelection();
+   e.preventDefault();
+  }
+  return;
  }
 
  if(e.key.toLowerCase()==="i"){
@@ -1266,19 +1321,19 @@ addEventListener("keydown",e=>{
 
  if(e.key.toLowerCase()==="l"){
   if(batchConnect&&batchConnect.phase==="target"){
-   batchConnect.connectMode="firstFree";
+   batchConnect.connectMode="parallel";
    if(batchConnect.targetNodes.length){
     finalizeBatchConnect();
    }
    e.preventDefault();
    return;
   }
-  if(runQuickConnect("firstFree")){
+  if(runQuickConnect("parallel")){
    e.preventDefault();
    return;
   }
   if(selectionActive&&selectedNodes.length){
-   startBatchConnect("firstFree");
+   startBatchConnect("parallel");
    e.preventDefault();
   }
   return;
