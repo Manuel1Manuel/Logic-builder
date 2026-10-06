@@ -1948,6 +1948,7 @@ const logicSocket = io();
 let applyingRemoteLogicState = false;
 let logicSyncReady = false;
 let lastLogicSnapshot = "";
+let pendingLogicSnapshot = "";
 let logicServerRevision = 0;
 let lastBlueprintSerializedVersion = -1;
 let lastBlueprintSyncData = [];
@@ -2113,15 +2114,23 @@ function setServerStatus(text){
   const el=document.getElementById("serverStatus");
   if(el) el.textContent="Server: "+text;
 }
+function setServerEqualStatus(){
+  setServerStatus("Server = Client · gleicher Stand (Version "+logicServerRevision+")");
+}
 function sendStateChange(payload){
-  setServerStatus("Änderung wird an den Server gesendet ...");
+  setServerStatus("Server ≠ Client · deine Änderung wird gespeichert ...");
   logicSocket.emit("stateChange", payload);
 }
 function sendLogicState(){
   if(!logicSyncReady || applyingRemoteLogicState) return;
   const snapshot = serializeLogicState();
-  if(snapshot === lastLogicSnapshot) return;
-  lastLogicSnapshot = snapshot;
+  if(snapshot === lastLogicSnapshot) {
+    setServerEqualStatus();
+    return;
+  }
+  if(snapshot === pendingLogicSnapshot) return;
+
+  pendingLogicSnapshot = snapshot;
   const payload = JSON.parse(snapshot);
   payload.baseRevision = logicServerRevision;
   sendStateChange(payload);
@@ -2167,8 +2176,13 @@ logicSocket.on("connect_error", () => {
 logicSocket.on("stateAck", ack => {
   if(Number.isInteger(ack?.serverRevision) && ack.serverRevision >= logicServerRevision){
     logicServerRevision = ack.serverRevision;
-    setServerStatus("Server hat die Änderung gespeichert (Version "+logicServerRevision+").");
+    setServerStatus("Server = Client · deine Änderung wurde gespeichert (Version "+logicServerRevision+").");
   }
+});
+logicSocket.on("stateRejected", info => {
+  if(Number.isInteger(info?.serverRevision)) logicServerRevision = info.serverRevision;
+  pendingLogicSnapshot = "";
+  setServerStatus("Server ≠ Client · dein Stand war veraltet, Serverstand wird übernommen ...");
 });
 
 logicSocket.on("blueprintLibrary", library => {
@@ -2181,7 +2195,15 @@ logicSocket.on("state", state => {
   const incomingRevision = Number.isInteger(state?.serverRevision) ? state.serverRevision : 0;
   if(incomingRevision < logicServerRevision) return;
   logicServerRevision = incomingRevision;
-  setServerStatus("Neuer Serverstand empfangen (Version "+incomingRevision+").");
+
+  const isOwnConfirmedChange = state?.sourceSocketId === logicSocket.id;
+  if(isOwnConfirmedChange){
+    setServerStatus("Server = Client · deine Änderung wurde vom Server bestätigt (Version "+incomingRevision+").");
+  }else if(state?.sourceSocketId && state.sourceSocketId !== "server-rejected"){
+    setServerStatus("Server ≠ Client · anderer Benutzer hat geändert, Client wird aktualisiert ...");
+  }else{
+    setServerStatus("Serverstand wird übernommen (Version "+incomingRevision+") ...");
+  }
 
   const legacyState = !state || Number(state.version || 1) < 3;
 
@@ -2190,9 +2212,12 @@ logicSocket.on("state", state => {
   if(state && Array.isArray(state.nodes) && Array.isArray(state.wires)){
     if(applyLogicState(state)){
       if(Number.isInteger(incomingRevision)) logicSocket.emit("stateApplied", incomingRevision);
-      // Alte gespeicherte Zustände werden nach dem Einlesen einmal
-      // in das neue Format mit Keys/Namen/Timer/Clocks umgewandelt.
-      if(!legacyState) lastLogicSnapshot = serializeLogicState();
+      // Dieser Snapshot ist jetzt der verbindlich bestätigte Serverstand.
+      lastLogicSnapshot = serializeLogicState();
+      pendingLogicSnapshot = "";
+      if(!legacyState) setServerEqualStatus();
+    }else{
+      setServerStatus("Server ≠ Client · Serverstand wartet, bis die aktuelle Aktion fertig ist.");
     }
   }
 
@@ -2209,9 +2234,11 @@ logicSocket.on("state", state => {
 
   if(legacyState){
     lastLogicSnapshot = "";
+    pendingLogicSnapshot = "";
     sendLogicState();
   }else if(!lastLogicSnapshot){
     lastLogicSnapshot = serializeLogicState();
+    setServerEqualStatus();
   }
 });
 
@@ -2234,11 +2261,10 @@ setInterval(() => {
   if(drag || groupDragging || chipDrag || libraryDrag || selecting) return;
 
   const snapshot = serializeLogicState();
-  if(snapshot !== lastLogicSnapshot){
-    lastLogicSnapshot = snapshot;
-    const payload = JSON.parse(snapshot);
-    payload.baseRevision = logicServerRevision;
-    logicSocket.emit("stateChange", payload);
+  if(snapshot !== lastLogicSnapshot && snapshot !== pendingLogicSnapshot){
+    sendLogicState();
+  }else if(snapshot === lastLogicSnapshot && !pendingLogicSnapshot){
+    setServerEqualStatus();
   }
   sendBlueprintLibrary();
 }, 50);
