@@ -290,8 +290,9 @@ io.on("connection", (socket) => {
       const broadcastState = { ...state, serverRevision: stateRevision };
       delete broadcastState.baseRevision;
 
-      // Die Änderung nur an die ANDEREN Besucher senden.
-      socket.broadcast.emit("state", broadcastState);
+      // Erst nachdem der Zustand gespeichert und die Revision erhöht wurde,
+      // bekommen ALLE Clients exakt den vom Server bestätigten Zustand.
+      io.emit("state", broadcastState);
       socket.emit("stateAck", { serverRevision: stateRevision });
 
     } catch (error) {
