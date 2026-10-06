@@ -81,7 +81,7 @@ try{const _d=Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx),"shadowB
 let tickMs=0,lastTick=0;
 const nodes=[],wires=[];
 let mouseScreen={x:0,y:0},mouseWorld={x:0,y:0};
-let drag=null,connectFrom=null,selecting=false,selectionStart={x:0,y:0},selectionEnd={x:0,y:0},selectionBox=null,selectedNodes=[],selectionActive=false,groupDragging=false,blueprint=null,blueprints=[],blueprintScroll=0,blueprintScrollDrag=false,blueprintScrollDragOffset=0,libraryDrag=null,pendingBlueprint=null,panning=false,copyPending=null,timerMenuNode=null,nameNode=null,rightRenameCandidate=null,chipDrag=null,timerMenuCandidate=null,keyMenuCandidate=null,clockMenuCandidate=null,keyMenuNode=null,clockMenuNode=null,pressedKeys=new Set(),mode="pc",touchMode="left",activeTouchId=null,activeTouchButton=0,lastTouchX=0,lastTouchY=0,pinchActive=false,pinchStartDist=0,pinchStartZoom=1,pinchWorldMidX=0,pinchWorldMidY=0,selectionWireMode=null,bpActionIndex=-1,batchConnect=null,hiddenInputPins=true;
+let drag=null,connectFrom=null,selecting=false,selectionStart={x:0,y:0},selectionEnd={x:0,y:0},selectionBox=null,selectedNodes=[],selectionActive=false,qSelectionActive=false,groupDragging=false,blueprint=null,blueprints=[],blueprintScroll=0,blueprintScrollDrag=false,blueprintScrollDragOffset=0,libraryDrag=null,pendingBlueprint=null,panning=false,copyPending=null,timerMenuNode=null,nameNode=null,rightRenameCandidate=null,chipDrag=null,timerMenuCandidate=null,keyMenuCandidate=null,clockMenuCandidate=null,keyMenuNode=null,clockMenuNode=null,pressedKeys=new Set(),mode="pc",touchMode="left",activeTouchId=null,activeTouchButton=0,lastTouchX=0,lastTouchY=0,pinchActive=false,pinchStartDist=0,pinchStartZoom=1,pinchWorldMidX=0,pinchWorldMidY=0,selectionWireMode=null,bpActionIndex=-1,batchConnect=null,hiddenInputPins=true;
 let hiddenNames=false;
 const PIN_HIT_RADIUS=22;
 const nodeVisibility={switch:true,lamp:true,not:true,or3:true,and:true,or:true,xor:true,output:true,timer:true,key:true,clock:true,memory:true,led:true};
@@ -604,7 +604,7 @@ function getSavedNodeState(n){return n.type==="switch"?(n.state||n.output):n.sta
 function getNodeSize(n){if(n.hidden)return{w:0,h:0};if(n.chipPin)return{w:22,h:22};if(n.type==="led")return{w:90,h:90};if(n.type==="switch")return{w:80,h:60};if(n.type==="lamp")return{w:90,h:90};if(n.type==="output")return{w:100,h:60};if(n.type==="timer")return{w:110,h:80};if(n.type==="key")return{w:100,h:80};if(n.type==="clock")return{w:100,h:80};if(n.type==="memory")return{w:110,h:100};return{w:120,h:100};}
 function getNodeRect(n){if(n.chipId&&n.chipShell)return{x:n.chipShell.x,y:n.chipShell.y,w:n.chipShell.w,h:n.chipShell.h};let s=getNodeSize(n);return{x:n.x,y:n.y,w:s.w,h:s.h};}
 function getSelectionBounds(list){if(!list.length)return null;let r=list.map(getNodeRect);let minX=Math.min(...r.map(v=>v.x));let minY=Math.min(...r.map(v=>v.y));let maxX=Math.max(...r.map(v=>v.x+v.w));let maxY=Math.max(...r.map(v=>v.y+v.h));return{x:minX,y:minY,w:maxX-minX,h:maxY-minY};}
-function clearSelection(){selectedNodes=[];selectionActive=false;selectionBox=null;selectionWireMode=null;}
+function clearSelection(){selectedNodes=[];selectionActive=false;qSelectionActive=false;selectionBox=null;selectionWireMode=null;}
 function cancelSelectionContext(){batchConnect=null;clearSelection();}
 function restoreTriggerSelection(list){let kept=expandActionNodes(list).filter(n=>!n.hidden&&nodes.includes(n));selectedNodes=kept;selectionActive=!!kept.length;selectionBox=selectionActive?getSelectionBounds(kept):null;}function arrangeSelection(){
  if(!selectionActive||!selectedNodes.length)return;
@@ -727,6 +727,22 @@ function placeBlueprint(bp,x,y){if(!bp)return;let map=new Map();if(bp.chip){let 
 function loadBlueprintString(str){try{let bp=JSON.parse(str);if(!bp||!bp.nodes)return;bp.name=bp.name||("Imported "+(blueprints.length+1));blueprints.push(bp);clampBlueprintScroll();}catch(e){}}
 function copyToClipboard(text){try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text);return;}const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);}catch(e){}}
 function copyBlueprint(bp){copyPending=bp;document.getElementById("copyPopup").style.display="flex";}
+function selectAllForQuickBlueprint(){
+ const all=nodes.filter(n=>n&&!n.hidden);
+ if(!all.length){clearSelection();return false;}
+ selectedNodes=all;
+ selectionActive=true;
+ qSelectionActive=true;
+ selectionBox=getSelectionBounds(all);
+ return true;
+}
+function copyQuickBlueprintSelection(){
+ if(!qSelectionActive||!selectionActive||!selectedNodes.length)return false;
+ const bp=buildBlueprintFromSelection();
+ if(!bp)return false;
+ copyToClipboard(JSON.stringify(bp));
+ return true;
+}
 function openNamePopup(node){nameNode=node;document.getElementById("nameInput").value="";document.getElementById("namePopup").style.display="flex";document.getElementById("nameInput").focus();}
 function openKeyPopup(node){keyMenuNode=node;document.getElementById("keyPopupText").textContent="Key: "+(node.assignedKey?prettyKey(node.assignedKey):"NONE");document.getElementById("keyPopup").style.display="flex";}
 function openClockPopup(node){clockMenuNode=node;document.getElementById("clockDelay").value=node.interval||1000;document.getElementById("clockMenu").style.display="flex";document.getElementById("clockDelay").focus();}
@@ -1280,6 +1296,21 @@ addEventListener("keydown",e=>{
   }
  }
 
+
+ if((e.code==="Digit1"||e.code==="Numpad1")&&pressedKeys.has("KeyQ")){
+  if(selectAllForQuickBlueprint()) e.preventDefault();
+  return;
+ }
+
+ if(e.code==="KeyQ"&&pressedKeys.has("Digit1")){
+  if(selectAllForQuickBlueprint()) e.preventDefault();
+  return;
+ }
+
+ if(e.key.toLowerCase()==="f"){
+  if(copyQuickBlueprintSelection()) e.preventDefault();
+  return;
+ }
 
  if(e.key.toLowerCase()==="a"){
   if(selectionActive&&selectedNodes.length){
