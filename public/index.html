@@ -867,6 +867,7 @@ function handleCanvasMouseDown(e){
     clockMenuCandidate={node:n,startX:e.clientX,startY:e.clientY,startTime:performance.now(),moved:false};
     return;
    }
+   if(n.chipPin==="in"){connectFrom=null;return;}
    connectFrom=n;
    if(!n.chipId&&(n.type==="switch"||n.type==="output")){
     rightRenameCandidate={ node:n, startX:e.clientX, startY:e.clientY, startTime:performance.now(), moved:false };
