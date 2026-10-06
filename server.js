@@ -45,6 +45,60 @@ function hasValidAuth(req){
 
 app.use(express.urlencoded({ extended: false }));
 
+// Gemini API bleibt ausschließlich serverseitig.
+// Der API-Key kommt aus Render: GEMINI_API_KEY.
+app.use(express.json({ limit: "256kb" }));
+
+app.post("/api/gemini", async (req, res) => {
+  if(!process.env.GEMINI_API_KEY){
+    res.status(503).json({ error: "GEMINI_API_KEY ist nicht gesetzt." });
+    return;
+  }
+
+  const prompt = typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
+  if(!prompt){
+    res.status(400).json({ error: "Kein Prompt angegeben." });
+    return;
+  }
+  if(prompt.length > 20000){
+    res.status(413).json({ error: "Der Prompt ist zu lang." });
+    return;
+  }
+
+  try{
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if(!response.ok){
+      console.error("Gemini API Fehler:", data);
+      res.status(502).json({ error: "Gemini API Fehler.", details: data?.error?.message || "Unbekannter Fehler" });
+      return;
+    }
+
+    const text = data?.candidates?.[0]?.content?.parts
+      ?.map(part => part.text || "")
+      .join("") || "";
+
+    res.json({ text });
+  }catch(error){
+    console.error("Gemini Anfrage fehlgeschlagen:", error);
+    res.status(502).json({ error: "Gemini konnte nicht erreicht werden." });
+  }
+});
+
 app.get("/login", (req, res) => {
   if(hasValidAuth(req)){
     res.redirect("/");
