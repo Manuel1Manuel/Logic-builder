@@ -252,6 +252,17 @@ io.on("connection", (socket) => {
     socket.emit("state", { serverRevision: stateRevision });
   }
 
+  // Der Client darf nur auf Basis des letzten von ihm bestätigten
+  // Server-Zustands schreiben. So kann ein alter Client niemals eine
+  // gerade gelöschte Schaltung wieder zurückschreiben.
+  socket.lastAppliedRevision = stateRevision;
+
+  socket.on("stateApplied", (revision) => {
+    if(Number.isInteger(revision) && revision === stateRevision){
+      socket.lastAppliedRevision = revision;
+    }
+  });
+
   // Änderung von einem Besucher empfangen
   socket.on("stateChange", (state) => {
 
@@ -261,7 +272,7 @@ io.on("connection", (socket) => {
       // Veraltete Vollzustände dürfen niemals einen neueren Zustand zurücksetzen.
       // Das verhindert, dass z.B. eine Löschung durch einen alten Poll-Zustand
       // von einem anderen Client wieder auftaucht.
-      if(baseRevision !== null && baseRevision !== stateRevision){
+      if(baseRevision !== null && (baseRevision !== stateRevision || socket.lastAppliedRevision !== stateRevision)){
         const current = getState.get();
         const currentState = JSON.parse(current.data || "{}");
         currentState.serverRevision = stateRevision;
