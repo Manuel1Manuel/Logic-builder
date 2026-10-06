@@ -2124,7 +2124,7 @@ function sendLogicState(){
   lastLogicSnapshot = snapshot;
   const payload = JSON.parse(snapshot);
   payload.baseRevision = logicServerRevision;
-  logicSocket.emit("stateChange", payload);
+  sendStateChange(payload);
 }
 
 function applyBlueprintLibraryState(list){
@@ -2151,6 +2151,7 @@ function sendBlueprintLibrary(){
   if(lastBlueprintSentVersion === blueprintLibraryVersion) return;
   const payload = {version:1,blueprints:getBlueprintSyncData()};
   lastBlueprintSentVersion = blueprintLibraryVersion;
+  setServerStatus("Blueprint-Änderung wird an den Server gesendet ...");
   logicSocket.emit("blueprintLibraryChange", payload);
 }
 
