@@ -81,7 +81,7 @@ try{const _d=Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx),"shadowB
 let tickMs=0,lastTick=0;
 const nodes=[],wires=[];
 let mouseScreen={x:0,y:0},mouseWorld={x:0,y:0};
-let drag=null,connectFrom=null,selecting=false,selectionStart={x:0,y:0},selectionEnd={x:0,y:0},selectionBox=null,selectedNodes=[],selectionActive=false,qSelectionActive=false,qSelectedNodes=[],groupDragging=false,blueprint=null,blueprints=[],blueprintScroll=0,blueprintScrollDrag=false,blueprintScrollDragOffset=0,libraryDrag=null,pendingBlueprint=null,panning=false,copyPending=null,timerMenuNode=null,nameNode=null,rightRenameCandidate=null,chipDrag=null,timerMenuCandidate=null,keyMenuCandidate=null,clockMenuCandidate=null,keyMenuNode=null,clockMenuNode=null,pressedKeys=new Set(),mode="pc",touchMode="left",activeTouchId=null,activeTouchButton=0,lastTouchX=0,lastTouchY=0,pinchActive=false,pinchStartDist=0,pinchStartZoom=1,pinchWorldMidX=0,pinchWorldMidY=0,selectionWireMode=null,bpActionIndex=-1,batchConnect=null,hiddenInputPins=true;
+let drag=null,connectFrom=null,selecting=false,selectionStart={x:0,y:0},selectionEnd={x:0,y:0},selectionBox=null,selectedNodes=[],selectionActive=false,qSelectionActive=false,qSelectedNodes=[],groupDragging=false,blueprint=null,blueprints=[],blueprintLibraryVersion=0,blueprintScroll=0,blueprintScrollDrag=false,blueprintScrollDragOffset=0,libraryDrag=null,pendingBlueprint=null,panning=false,copyPending=null,timerMenuNode=null,nameNode=null,rightRenameCandidate=null,chipDrag=null,timerMenuCandidate=null,keyMenuCandidate=null,clockMenuCandidate=null,keyMenuNode=null,clockMenuNode=null,pressedKeys=new Set(),mode="pc",touchMode="left",activeTouchId=null,activeTouchButton=0,lastTouchX=0,lastTouchY=0,pinchActive=false,pinchStartDist=0,pinchStartZoom=1,pinchWorldMidX=0,pinchWorldMidY=0,selectionWireMode=null,bpActionIndex=-1,batchConnect=null,hiddenInputPins=true;
 let hiddenNames=false;
 const PIN_HIT_RADIUS=22;
 const nodeVisibility={switch:true,lamp:true,not:true,or3:true,and:true,or:true,xor:true,output:true,timer:true,key:true,clock:true,memory:true,led:true};
@@ -676,7 +676,7 @@ function cloneBlueprint(bp){return JSON.parse(JSON.stringify(bp));}
 function sortByPosition(list){return [...list].sort((a,b)=>(a.relY||0)-(b.relY||0)||(a.relX||0)-(b.relX||0));}
 function blueprintHasEmbeddedChip(bp){return !!(bp&&bp.nodes&&bp.nodes.some(n=>n.chipId||n.chipPin||n.chipShell));}
 function expandBlueprint(bp){if(!bp)return bp;if(Array.isArray(bp.nodes))bp.nodes=bp.nodes.map(n=>Array.isArray(n)?Object.assign({id:n[0],type:n[1],relX:n[2],relY:n[3]},typeof n[4]==="string"?{name:n[4]}:(n[4]||{})):n);if(Array.isArray(bp.wires))bp.wires=bp.wires.map(x=>Array.isArray(x)?{from:x[0],to:x[1],inputIndex:x[2]}:x);return bp;}
-function loadPreblueprints(){for(let i=0;i<Math.min(15,preblueprints.length);i++){let bp=preblueprints[i];if(typeof bp==="string"){try{bp=JSON.parse(bp);}catch(e){continue;}}bp=expandBlueprint(bp);if(bp&&bp.nodes)blueprints.push(cloneBlueprint(bp));}clampBlueprintScroll();}
+function loadPreblueprints(){for(let i=0;i<Math.min(15,preblueprints.length);i++){let bp=preblueprints[i];if(typeof bp==="string"){try{bp=JSON.parse(bp);}catch(e){continue;}}bp=expandBlueprint(bp);if(bp&&bp.nodes)blueprints.push(cloneBlueprint(bp));}blueprintLibraryVersion++;clampBlueprintScroll();}
 function resetBlueprintNodeState(node){if(!node)return;node.state=false;node.memoryState=false;node.timerRunning=false;node.offTimerRunning=false;node.timerStart=0;node.offTimerStart=0;node.clockState=true;node.clockLastToggle=0;if(node.type==="switch"||node.type==="output")node.state=false;if(node.type==="timer")node.timerSweep=0;}
 function sanitizeBlueprintForStorage(bp){if(!bp||!bp.nodes)return bp;let out=cloneBlueprint(bp);for(let n of out.nodes)resetBlueprintNodeState(n);return out;}
 function flattenChipBlueprint(bp){if(!bp||!bp.nodes)return bp;if(!bp.chip)return cloneBlueprint(bp);let out=cloneBlueprint(bp);for(let n of out.nodes){if(n.chipId){if(n.type==="switch"||n.type==="output")n.type="or3";n.chipId=null;n.chipName="";n.chipPin=null;n.chipShell=null;n.hidden=false;}else if(n.chipPin){if(n.type==="switch"||n.type==="output")n.type="or3";n.chipPin=null;n.chipShell=null;n.hidden=false;}}out.mixedChipSelection=false;return out;}
@@ -694,7 +694,7 @@ function getLibraryItemIndexAt(sx,sy){for(let i=0;i<blueprints.length;i++){let r
 function getLibraryScrollTrackRect(){if(blueprints.length<=blueprintVisibleRows)return null;let p=getLibraryPanelRect();return{x:p.x+p.w-14,y:p.y+36,w:8,h:blueprintVisibleRows*34};}
 function getLibraryScrollThumbRect(){let track=getLibraryScrollTrackRect();if(!track)return null;let maxScroll=Math.max(0,blueprints.length-blueprintVisibleRows);let thumbH=Math.max(24,track.h*(blueprintVisibleRows/blueprints.length));let y=track.y+(track.h-thumbH)*(maxScroll===0?0:(blueprintScroll/maxScroll));return{x:track.x,y,w:track.w,h:thumbH};}
 function setBlueprintScrollFromY(clientY){let track=getLibraryScrollTrackRect();let thumb=getLibraryScrollThumbRect();if(!track||!thumb)return;let maxScroll=Math.max(0,blueprints.length-blueprintVisibleRows);if(maxScroll===0){blueprintScroll=0;return;}let pos=clientY-blueprintScrollDragOffset;let minY=track.y;let maxY=track.y+track.h-thumb.h;if(pos<minY)pos=minY;if(pos>maxY)pos=maxY;let ratio=(pos-minY)/(maxY-minY||1);blueprintScroll=Math.round(ratio*maxScroll);clampBlueprintScroll();}
-function deleteBlueprintAtIndex(index){if(index<0||index>=blueprints.length)return;blueprints.splice(index,1);clampBlueprintScroll();}
+function deleteBlueprintAtIndex(index){if(index<0||index>=blueprints.length)return;blueprints.splice(index,1);blueprintLibraryVersion++;clampBlueprintScroll();}
 function openBlueprintActionPopup(index){bpActionIndex=index;let bp=blueprints[index];document.getElementById("bpActionText").textContent=bp?(bp.name||"Blueprint"):"Blueprint";document.getElementById("bpActionPopup").style.display="flex";}
 function closeBlueprintActionPopup(){bpActionIndex=-1;document.getElementById("bpActionPopup").style.display="none";}
 function isChipInputNode(n){return !!n&&n.chipPin==="in";}
@@ -747,7 +747,7 @@ async function loadBlueprintString(str){
   bp.wires=Array.isArray(bp.wires)?bp.wires.filter(w=>w&&w.from!==undefined&&w.to!==undefined).map(w=>({from:w.from,to:w.to,inputIndex:Number.isFinite(w.inputIndex)?w.inputIndex:0})):[]; 
   bp.chip=!!bp.chip;bp.mixedChipSelection=!!bp.mixedChipSelection;
   setBlueprintImportStatus("Blueprint wird gespeichert …",80,true);await new Promise(r=>setTimeout(r,0));
-  bp=sanitizeBlueprintForStorage(bp);blueprints.push(bp);blueprintScroll=Math.max(0,blueprints.length-blueprintVisibleRows);clampBlueprintScroll();
+  bp=sanitizeBlueprintForStorage(bp);blueprints.push(bp);blueprintLibraryVersion++;blueprintScroll=Math.max(0,blueprints.length-blueprintVisibleRows);clampBlueprintScroll();
   setBlueprintImportStatus("✓ Blueprint erfolgreich importiert.",100,true);return true;
  }catch(e){setBlueprintImportStatus("Fehler beim Import: "+(e&&e.message?e.message:"unbekannter Fehler"),100,false);return false;}
 }
@@ -835,7 +835,7 @@ function tryConnectFrom(src,wx,wy){if(!src||src.chipPin==="in")return;let target
 document.getElementById("nameSave").onclick=()=>{if(nameNode){let v=document.getElementById("nameInput").value.trim();if(v)nameNode.name=v;}document.getElementById("namePopup").style.display="none";nameNode=null;};
 document.getElementById("copyYes").onclick=()=>{if(copyPending)copyToClipboard(JSON.stringify(copyPending));copyPending=null;document.getElementById("copyPopup").style.display="none";};
 document.getElementById("copyNo").onclick=()=>{copyPending=null;document.getElementById("copyPopup").style.display="none";};
-document.getElementById("bpOk").onclick=()=>{if(pendingBlueprint){let name=document.getElementById("bpName").value.trim();pendingBlueprint.name=name?name:("Blueprint "+(blueprints.length+1));pendingBlueprint.chip=document.getElementById("bpChip").checked;if(pendingBlueprint.chip){pendingBlueprint=flattenChipBlueprint(pendingBlueprint);}zeroBlueprintSwitches(pendingBlueprint);pendingBlueprint=sanitizeBlueprintForStorage(pendingBlueprint);blueprints.push(pendingBlueprint);clampBlueprintScroll();pendingBlueprint=null;document.getElementById("bpPopup").style.top="-220px";}};
+document.getElementById("bpOk").onclick=()=>{if(pendingBlueprint){let name=document.getElementById("bpName").value.trim();pendingBlueprint.name=name?name:("Blueprint "+(blueprints.length+1));pendingBlueprint.chip=document.getElementById("bpChip").checked;if(pendingBlueprint.chip){pendingBlueprint=flattenChipBlueprint(pendingBlueprint);}zeroBlueprintSwitches(pendingBlueprint);pendingBlueprint=sanitizeBlueprintForStorage(pendingBlueprint);blueprints.push(pendingBlueprint);blueprintLibraryVersion++;clampBlueprintScroll();pendingBlueprint=null;document.getElementById("bpPopup").style.top="-220px";}};
 document.getElementById("bpLoad").onclick=async()=>{let v=document.getElementById("bpData").value.trim();if(!v){setBlueprintImportStatus("Fehler: Bitte Blueprint einfügen.",100,false);return;}document.getElementById("bpLoad").disabled=true;try{await loadBlueprintString(v);}finally{document.getElementById("bpLoad").disabled=false;}document.getElementById("bpData").value="";};
 document.getElementById("timerSave").onclick=()=>{if(timerMenuNode){timerMenuNode.delay=parseInt(document.getElementById("timerDelay").value)||timerMenuNode.delay;timerMenuNode.stay=document.getElementById("timerStay").checked;}document.getElementById("timerMenu").style.display="none";timerMenuNode=null;};
 document.getElementById("keyPopupClose").onclick=()=>{document.getElementById("keyPopup").style.display="none";keyMenuNode=null;};
@@ -1943,6 +1943,18 @@ const logicSocket = io();
 let applyingRemoteLogicState = false;
 let logicSyncReady = false;
 let lastLogicSnapshot = "";
+let lastBlueprintSerializedVersion = -1;
+let lastBlueprintSyncData = [];
+
+function getBlueprintSyncData(){
+  if(lastBlueprintSerializedVersion !== blueprintLibraryVersion){
+    // Nur bei einer echten Änderung wird die komplette Bibliothek kopiert.
+    // Das verhindert, dass ein großer Blueprint alle 50 ms erneut dupliziert wird.
+    lastBlueprintSyncData = blueprints.map(bp => sanitizeBlueprintForStorage(bp));
+    lastBlueprintSerializedVersion = blueprintLibraryVersion;
+  }
+  return lastBlueprintSyncData;
+}
 
 function getLogicSyncId(n){
   if(!n.__logicSyncId){
@@ -1999,7 +2011,7 @@ function serializeLogicState(){
     // Die Blueprint-Bibliothek gehört zum gemeinsamen Projektzustand.
     // Dadurch werden erstellte/importierte Blueprints auf allen Tabs geteilt
     // und nach einem Reload aus der SQLite-Persistenz wiederhergestellt.
-    blueprints:blueprints.map(bp => sanitizeBlueprintForStorage(bp))
+    blueprints:getBlueprintSyncData()
   });
 }
 function applyLogicState(state){
@@ -2060,6 +2072,8 @@ function applyLogicState(state){
         const bp = expandBlueprint(cloneBlueprint(raw));
         if(bp && Array.isArray(bp.nodes)) blueprints.push(bp);
       }
+      blueprintLibraryVersion++;
+      lastBlueprintSerializedVersion = -1;
       clampBlueprintScroll();
     }
 
