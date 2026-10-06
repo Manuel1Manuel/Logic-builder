@@ -2200,6 +2200,10 @@ logicSocket.on("stateRejected", info => {
 });
 
 logicSocket.on("blueprintLibrary", library => {
+  if(library && Number.isFinite(Number(library.serverStorageBytes))){
+    serverStorageBytes=Number(library.serverStorageBytes);
+    updateServerStorageDisplay();
+  }
   if(library && Array.isArray(library.blueprints)){
     applyBlueprintLibraryState(library.blueprints);
   }
