@@ -437,7 +437,8 @@ io.on("connection", (socket) => {
       stored.blueprints = library.blueprints;
       saveState.run(JSON.stringify(stored));
 
-      socket.broadcast.emit("blueprintLibrary", library);
+      socket.broadcast.emit("blueprintLibrary", { ...library, serverStorageBytes: getServerStorageBytes() });
+      socket.emit("blueprintLibrary", { ...library, serverStorageBytes: getServerStorageBytes() });
     } catch (error) {
       console.error("Fehler beim Speichern der Blueprint-Bibliothek:", error);
     }
