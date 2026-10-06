@@ -2205,7 +2205,7 @@ logicSocket.on("state", state => {
   const isOwnConfirmedChange = state?.sourceSocketId === logicSocket.id;
   if(isOwnConfirmedChange){
     setServerStatus("Server = Client · deine Änderung bestätigt (Version "+incomingRevision+counts+").");
-  }else if(state?.sourceSocketId && state.sourceSocketId !== "server-rejected"){
+  }else if(state?.sourceSocketId && !String(state.sourceSocketId).startsWith("server-rejected")){
     setServerStatus("Server ≠ Client · anderer Benutzer hat geändert, Client wird aktualisiert"+counts+" ...");
   }else{
     setServerStatus("Serverstand wird übernommen (Version "+incomingRevision+counts+") ...");
