@@ -1128,11 +1128,11 @@ function getFreeSlot(node){
 }
 
 function collectConnectionSources(list){
- return sortByPosition(expandActionNodes(list).filter(n=>!n.hidden)).filter(n=>((n.outputs&&n.outputs.length)||n.chipPin==="out"));
+ return sortByPosition(expandActionNodes(list).filter(n=>!n.hidden&&n.chipPin!=="in")).filter(n=>((n.outputs&&n.outputs.length)||n.chipPin==="out"));
 }
 
 function collectConnectionTargets(list){
- return sortByPosition(expandActionNodes(list).filter(n=>!n.hidden)).filter(n=>((n.inputs&&n.inputs.length)||n.chipPin==="in"));
+ return sortByPosition(expandActionNodes(list).filter(n=>!n.hidden&&n.chipPin!=="out")).filter(n=>((n.inputs&&n.inputs.length)||n.chipPin==="in"));
 }
 
 function connectSelectionsPairwise(sourceNodes,targetNodes){
@@ -1883,7 +1883,7 @@ function applyLogicState(state){
     for(const w of state.wires){
       const from = nodes[w.from];
       const to = nodes[w.to];
-      if(from && to){
+      if(from && to && from.chipPin!=="in" && to.chipPin!=="out"){
         wires.push({
           from,
           to,
