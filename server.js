@@ -390,7 +390,9 @@ io.on("connection", (socket) => {
 
       // Erst speichern, dann die neue Revision dauerhaft sichern.
       // Dadurch geht die Versionsnummer bei einem Render-Neustart nicht zurück.
-      saveState.run(JSON.stringify(stored));
+      const storedJson = JSON.stringify(stored);
+      saveState.run(storedJson);
+      const serverStorageBytes = Buffer.byteLength(storedJson, "utf8");
       stateRevision++;
       saveRevision.run(stateRevision);
       socket.lastAppliedRevision = stateRevision;
@@ -400,7 +402,7 @@ io.on("connection", (socket) => {
       const broadcastState = {
         ...stored,
         serverRevision: stateRevision,
-        serverStorageBytes: getServerStorageBytes(),
+        serverStorageBytes,
         sourceSocketId: socket.id
       };
 
@@ -413,7 +415,7 @@ io.on("connection", (socket) => {
         confirmed: true,
         nodeCount,
         wireCount,
-        serverStorageBytes: getServerStorageBytes()
+        serverStorageBytes
       });
 
     } catch (error) {
