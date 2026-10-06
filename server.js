@@ -153,24 +153,18 @@ io.on("connection", (socket) => {
       // Der normale Realtime-Zustand enthält absichtlich keine komplette
       // Blueprint-Bibliothek mehr. Dadurch bleiben große Blueprints aus dem
       // schnellen Block-/Positionskanal heraus.
-      const data = JSON.stringify(state);
-
-      // Zustand speichern
       const current = getState.get();
-      let merged = {};
+      let stored = {};
       try {
-        merged = JSON.parse(current.data);
+        stored = JSON.parse(current.data);
       } catch {}
 
-      if(state && Array.isArray(state.blueprints)){
-        merged.blueprints = state.blueprints;
+      // Alte gespeicherte Blueprint-Daten bleiben erhalten.
+      // Neue Block-/Wire-Daten werden nur darübergelegt.
+      Object.assign(stored, state);
+      if(current && Array.isArray(JSON.parse(current.data || "{}").blueprints)){
+        stored.blueprints = JSON.parse(current.data).blueprints;
       }
-      Object.assign(merged, state);
-      delete merged.blueprints;
-
-      const existing = current && current.data ? JSON.parse(current.data) : {};
-      const stored = Object.assign({}, existing, state);
-      if(existing && Array.isArray(existing.blueprints)) stored.blueprints = existing.blueprints;
 
       saveState.run(JSON.stringify(stored));
 
