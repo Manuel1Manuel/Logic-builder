@@ -974,7 +974,7 @@ function handleCanvasMouseUp(e){
   return;
  }
 
- if(chipDrag&&e.button===0){chipDrag=null;drag=null;connectFrom=null;return;}
+ if(chipDrag&&e.button===0){chipDrag=null;drag=null;connectFrom=null;if(typeof sendLogicState==="function")sendLogicState();return;}
 
  if(libraryDrag){
   if(!isInLibraryPanel(e.clientX,e.clientY)&&e.clientY<h-90){let px=mouseWorld.x,py=mouseWorld.y;placeBlueprint(libraryDrag.bp,px,py);focusOnBlueprint(libraryDrag.bp,px,py);}
@@ -1017,6 +1017,7 @@ function handleCanvasMouseUp(e){
  }
 
  groupDragging=false;
+ if(typeof sendLogicState==="function")sendLogicState();
 
  if(e.button===2){
   if(rightRenameCandidate){
