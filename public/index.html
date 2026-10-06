@@ -1961,6 +1961,13 @@ function formatStorageSize(bytes){
   return Math.round(bytes)+" B";
 }
 
+function updateServerStorageDisplay(){
+  const el=document.getElementById("serverStorage");
+  if(!el) return;
+  const bytes=Math.max(0,Number(lastServerStorageBytes)||0);
+  el.textContent="Server: "+(bytes/1024).toFixed(2)+" KB · "+(bytes*8).toLocaleString("de-DE")+" bit";
+}
+
 function updateStorageDisplay(){
   const el=document.getElementById("memoryUsage");
   if(!el) return;
@@ -2174,6 +2181,10 @@ logicSocket.on("connect_error", () => {
   setServerStatus("Verbindung fehlgeschlagen.");
 });
 logicSocket.on("stateAck", ack => {
+  if(Number.isFinite(Number(ack?.serverStorageBytes))){
+    lastServerStorageBytes=Math.max(0,Number(ack.serverStorageBytes));
+    updateServerStorageDisplay();
+  }
   if(Number.isInteger(ack?.serverRevision) && ack.serverRevision >= logicServerRevision){
     logicServerRevision = ack.serverRevision;
     const counts = Number.isInteger(ack?.nodeCount)
@@ -2195,6 +2206,10 @@ logicSocket.on("blueprintLibrary", library => {
 });
 
 logicSocket.on("state", state => {
+  if(Number.isFinite(Number(state?.serverStorageBytes))){
+    lastServerStorageBytes=Math.max(0,Number(state.serverStorageBytes));
+    updateServerStorageDisplay();
+  }
   const incomingRevision = Number.isInteger(state?.serverRevision) ? state.serverRevision : 0;
   if(incomingRevision < logicServerRevision) return;
   logicServerRevision = incomingRevision;
@@ -2276,6 +2291,7 @@ setInterval(() => {
 }, 50);
 
 setInterval(updateStorageDisplay, 500);
+updateServerStorageDisplay();
 
 const aiBtn = document.getElementById("aiBtn");
 const aiPopup = document.getElementById("aiPopup");
