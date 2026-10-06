@@ -150,18 +150,57 @@ io.on("connection", (socket) => {
   socket.on("stateChange", (state) => {
 
     try {
+      // Der normale Realtime-Zustand enthält absichtlich keine komplette
+      // Blueprint-Bibliothek mehr. Dadurch bleiben große Blueprints aus dem
+      // schnellen Block-/Positionskanal heraus.
       const data = JSON.stringify(state);
 
       // Zustand speichern
-      saveState.run(data);
+      const current = getState.get();
+      let merged = {};
+      try {
+        merged = JSON.parse(current.data);
+      } catch {}
+
+      if(state && Array.isArray(state.blueprints)){
+        merged.blueprints = state.blueprints;
+      }
+      Object.assign(merged, state);
+      delete merged.blueprints;
+
+      const existing = current && current.data ? JSON.parse(current.data) : {};
+      const stored = Object.assign({}, existing, state);
+      if(existing && Array.isArray(existing.blueprints)) stored.blueprints = existing.blueprints;
+
+      saveState.run(JSON.stringify(stored));
 
       // Die Änderung nur an die ANDEREN Besucher senden.
-      // Der Absender behält seine lokale Maus-/Drag-Bewegung und bekommt
-      // nicht sofort seinen eigenen Stand vom Server zurück.
       socket.broadcast.emit("state", state);
 
     } catch (error) {
       console.error("Fehler beim Speichern des Zustands:", error);
+    }
+  });
+
+  socket.on("blueprintLibraryChange", (library) => {
+    try {
+      if(!library || !Array.isArray(library.blueprints)) return;
+
+      // Die große Bibliothek wird separat gespeichert und übertragen.
+      // Dadurch blockiert ein großer Blueprint nicht mehr den normalen
+      // Realtime-Kanal für Blockbewegungen und Verdrahtung.
+      const current = getState.get();
+      let stored = {};
+      try {
+        stored = JSON.parse(current.data);
+      } catch {}
+
+      stored.blueprints = library.blueprints;
+      saveState.run(JSON.stringify(stored));
+
+      socket.broadcast.emit("blueprintLibrary", library);
+    } catch (error) {
+      console.error("Fehler beim Speichern der Blueprint-Bibliothek:", error);
     }
   });
 });
