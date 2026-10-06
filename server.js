@@ -211,6 +211,18 @@ db.prepare(`
   VALUES (1, '{}')
 `).run();
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS app_meta (
+    id INTEGER PRIMARY KEY,
+    revision INTEGER NOT NULL
+  )
+`);
+
+db.prepare(`
+  INSERT OR IGNORE INTO app_meta (id, revision)
+  VALUES (1, 0)
+`).run();
+
 const getState = db.prepare(`
   SELECT data FROM app_state WHERE id = 1
 `);
@@ -221,7 +233,17 @@ const saveState = db.prepare(`
   WHERE id = 1
 `);
 
-let stateRevision = 0;
+const getRevision = db.prepare(`
+  SELECT revision FROM app_meta WHERE id = 1
+`);
+
+const saveRevision = db.prepare(`
+  UPDATE app_meta
+  SET revision = ?
+  WHERE id = 1
+`);
+
+let stateRevision = Number(getRevision.get()?.revision) || 0;
 
 // Website-Dateien
 app.use(express.static(path.join(__dirname, "public")));
@@ -288,22 +310,31 @@ io.on("connection", (socket) => {
         stored = JSON.parse(current.data);
       } catch {}
 
+      // Der Transportwert baseRevision gehört niemals in den gespeicherten
+      // Zustand. Er dient nur dazu, veraltete Clients zu erkennen.
+      const cleanState = { ...state };
+      delete cleanState.baseRevision;
+      delete cleanState.serverRevision;
+
       // Alte gespeicherte Blueprint-Daten bleiben erhalten.
       // Neue Block-/Wire-Daten werden nur darübergelegt.
-      Object.assign(stored, state);
+      Object.assign(stored, cleanState);
       if(current && Array.isArray(JSON.parse(current.data || "{}").blueprints)){
         stored.blueprints = JSON.parse(current.data).blueprints;
       }
 
+      // Erst speichern, dann die neue Revision dauerhaft sichern.
+      // Dadurch geht die Versionsnummer bei einem Render-Neustart nicht zurück.
       saveState.run(JSON.stringify(stored));
       stateRevision++;
+      saveRevision.run(stateRevision);
 
-      const broadcastState = { ...state, serverRevision: stateRevision };
-      delete broadcastState.baseRevision;
+      const broadcastState = { ...cleanState, serverRevision: stateRevision };
 
-      // Erst nachdem der Zustand gespeichert und die Revision erhöht wurde,
-      // bekommen ALLE Clients exakt den vom Server bestätigten Zustand.
-      io.emit("state", broadcastState);
+      // Der Absender hat den neuen Zustand bereits lokal. Er bekommt deshalb
+      // nicht noch einmal denselben Snapshot zurück. Andere Clients bekommen
+      // ihn erst NACH dem erfolgreichen Speichern.
+      socket.broadcast.emit("state", broadcastState);
       socket.emit("stateAck", { serverRevision: stateRevision });
 
     } catch (error) {
