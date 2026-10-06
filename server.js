@@ -67,7 +67,7 @@ app.post("/api/gemini", async (req, res) => {
 
   try{
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -173,6 +173,8 @@ const saveState = db.prepare(`
   WHERE id = 1
 `);
 
+let stateRevision = 0;
+
 // Website-Dateien
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -195,15 +197,29 @@ io.on("connection", (socket) => {
   const row = getState.get();
 
   try {
-    socket.emit("state", JSON.parse(row.data));
+    const initialState = JSON.parse(row.data);
+    initialState.serverRevision = stateRevision;
+    socket.emit("state", initialState);
   } catch {
-    socket.emit("state", {});
+    socket.emit("state", { serverRevision: stateRevision });
   }
 
   // Änderung von einem Besucher empfangen
   socket.on("stateChange", (state) => {
 
     try {
+      const baseRevision = Number.isInteger(state?.baseRevision) ? state.baseRevision : null;
+
+      // Veraltete Vollzustände dürfen niemals einen neueren Zustand zurücksetzen.
+      // Das verhindert, dass z.B. eine Löschung durch einen alten Poll-Zustand
+      // von einem anderen Client wieder auftaucht.
+      if(baseRevision !== null && baseRevision !== stateRevision){
+        const current = getState.get();
+        const currentState = JSON.parse(current.data || "{}");
+        currentState.serverRevision = stateRevision;
+        socket.emit("state", currentState);
+        return;
+      }
       // Der normale Realtime-Zustand enthält absichtlich keine komplette
       // Blueprint-Bibliothek mehr. Dadurch bleiben große Blueprints aus dem
       // schnellen Block-/Positionskanal heraus.
@@ -221,9 +237,14 @@ io.on("connection", (socket) => {
       }
 
       saveState.run(JSON.stringify(stored));
+      stateRevision++;
+
+      const broadcastState = { ...state, serverRevision: stateRevision };
+      delete broadcastState.baseRevision;
 
       // Die Änderung nur an die ANDEREN Besucher senden.
-      socket.broadcast.emit("state", state);
+      socket.broadcast.emit("state", broadcastState);
+      socket.emit("stateAck", { serverRevision: stateRevision });
 
     } catch (error) {
       console.error("Fehler beim Speichern des Zustands:", error);
