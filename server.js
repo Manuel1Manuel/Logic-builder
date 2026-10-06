@@ -75,7 +75,19 @@ memory = Speicherbaustein, led = LED.
 Jeder Block hat eine Position x/y auf der Arbeitsfläche. wires verbinden from zu to; inputIndex ist der Eingang des Zielblocks.
 Die aktuelle Schaltung und die Blueprint-Bibliothek werden dir als Kontext übergeben.
 Wenn der Nutzer nur etwas wissen will, gib eine normale Antwort und keine Aktionen.
-Wenn der Nutzer ausdrücklich darum bittet, Gatter/Blöcke zu erstellen oder zu verändern, kannst du passende Aktionen zurückgeben.
+Wenn der Nutzer ausdrücklich darum bittet, darfst du die Arbeitsfläche direkt verändern.
+Verwende dafür ausschließlich die bereitgestellten Aktionen:
+- add_gate: neues Gatter mit type, x, y, optional name
+- delete_gate: Gatter anhand seines aktuellen index löschen
+- move_gate: Gatter anhand index nach x/y verschieben
+- connect: Wire von from zu to mit inputIndex verbinden
+- disconnect: passenden Wire von from zu to entfernen
+- rename_gate: Gatter anhand index umbenennen
+- set_switch: Schalterzustand setzen
+- set_timer: Timer delay/stay setzen
+- set_clock: Clock interval setzen
+Die Indizes sind die aktuellen Node-Indizes aus dem Kontext. Neue Gatter erhalten fortlaufend die Indizes ab nodeCount; plane neue Gatter zuerst und verdrahte sie danach.
+Führe niemals eine Aktion nur deshalb aus, weil du behauptest, etwas getan zu haben: Gib die Aktion als strukturierte Ausgabe zurück, damit der Editor sie tatsächlich ausführt.
 Erfinde keine vorhandenen Blöcke und ändere nichts ohne ausdrücklichen Auftrag.
 ${context ? "\nAKTUELLER APP-KONTEXT:\n" + context : ""}
 
@@ -104,13 +116,22 @@ ${prompt}`;
                   items: {
                     type: "OBJECT",
                     properties: {
-                      action: { type: "STRING", enum: ["add_gate"] },
+                      action: { type: "STRING", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock"] },
                       type: { type: "STRING", enum: ["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"] },
+                      index: { type: "INTEGER" },
+                      index2: { type: "INTEGER" },
+                      from: { type: "INTEGER" },
+                      to: { type: "INTEGER" },
+                      inputIndex: { type: "INTEGER" },
                       x: { type: "NUMBER" },
                       y: { type: "NUMBER" },
-                      name: { type: "STRING" }
+                      name: { type: "STRING" },
+                      state: { type: "BOOLEAN" },
+                      delay: { type: "NUMBER" },
+                      stay: { type: "BOOLEAN" },
+                      interval: { type: "NUMBER" }
                     },
-                    required: ["action","type","x","y"]
+                    required: ["action"]
                   }
                 }
               },
