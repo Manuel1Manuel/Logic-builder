@@ -85,8 +85,13 @@ app.use((req, res, next) => {
   res.redirect("/login");
 });
 
-// Datenbank
-const db = new Database("logic-builder.db");
+// Dauerhafte Datenbank.
+// Auf Render wird dafür LOGIC_DB_PATH=/var/data/logic-builder.db gesetzt.
+// /var/data liegt dann auf dem persistenten Render-Datenträger.
+const DB_PATH = process.env.LOGIC_DB_PATH || path.join(__dirname, "logic-builder.db");
+const db = new Database(DB_PATH);
+db.pragma("journal_mode = WAL");
+db.pragma("synchronous = FULL");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS app_state (
