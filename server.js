@@ -243,7 +243,25 @@ db.prepare(`
   INSERT OR IGNORE INTO app_meta (id, revision)
   VALUES (1, 0)
 `).run();
+const getState = db.prepare(`
+  SELECT data FROM app_state WHERE id = 1
+`);
 
+const saveState = db.prepare(`
+  UPDATE app_state
+  SET data = ?
+  WHERE id = 1
+`);
+
+const getRevision = db.prepare(`
+  SELECT revision FROM app_meta WHERE id = 1
+`);
+
+const saveRevision = db.prepare(`
+  UPDATE app_meta
+  SET revision = ?
+  WHERE id = 1
+`);
 // Einmalige Bereinigung des alten gespeicherten Arbeitsflächenstands.
 // Code/Blueprint-Definitionen bleiben im Repository unverändert; nur der
 // bisher persistierte Zustand (Gatter/Wires/gespeicherte Bibliothek) wird
@@ -264,25 +282,6 @@ if(resetMigration.changes === 1){
   console.log("Gespeicherten Logic-Builder-Zustand einmalig geleert.");
 }
 
-const getState = db.prepare(`
-  SELECT data FROM app_state WHERE id = 1
-`);
-
-const saveState = db.prepare(`
-  UPDATE app_state
-  SET data = ?
-  WHERE id = 1
-`);
-
-const getRevision = db.prepare(`
-  SELECT revision FROM app_meta WHERE id = 1
-`);
-
-const saveRevision = db.prepare(`
-  UPDATE app_meta
-  SET revision = ?
-  WHERE id = 1
-`);
 
 let stateRevision = Number(getRevision.get()?.revision) || 0;
 
@@ -332,10 +331,22 @@ io.on("connection", (socket) => {
     try {
       const baseRevision = Number.isInteger(state?.baseRevision) ? state.baseRevision : null;
 
+      // Alte/offene Browser-Tabs aus einer früheren Client-Version haben keine
+      // baseRevision. Sie dürfen niemals einen aktuellen Serverstand überschreiben.
+      if(baseRevision === null){
+        const current = getState.get();
+        const currentState = JSON.parse(current.data || "{}");
+        currentState.serverRevision = stateRevision;
+        currentState.sourceSocketId = "server-rejected-legacy";
+        socket.emit("state", currentState);
+        socket.emit("stateRejected", { serverRevision: stateRevision, reason: "missing-base-revision" });
+        return;
+      }
+
       // Veraltete Vollzustände dürfen niemals einen neueren Zustand zurücksetzen.
       // Das verhindert, dass z.B. eine Löschung durch einen alten Poll-Zustand
       // von einem anderen Client wieder auftaucht.
-      if(baseRevision !== null && (baseRevision !== stateRevision || socket.lastAppliedRevision !== stateRevision)){
+      if(baseRevision !== stateRevision || socket.lastAppliedRevision !== stateRevision){
         const current = getState.get();
         const currentState = JSON.parse(current.data || "{}");
         currentState.serverRevision = stateRevision;
