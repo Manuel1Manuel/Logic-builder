@@ -2,7 +2,6 @@ import express from "express";
 import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
-import crypto from "crypto";
 import Database from "better-sqlite3";
 import { Server } from "socket.io";
 
@@ -12,78 +11,6 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-
-const ACCESS_CODE = String(process.env.LOGIC_ACCESS_CODE || "").trim();
-const ACCESS_SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
-
-function signAuth(ts){
-  return crypto.createHmac("sha256", ACCESS_CODE).update(String(ts)).digest("hex");
-}
-
-function hasValidAuth(req){
-  if(!ACCESS_CODE) return true;
-
-  const raw = req.headers.cookie || "";
-  const match = raw.match(/(?:^|;\s*)logic_auth=([^;]+)/);
-  if(!match) return false;
-
-  const value = decodeURIComponent(match[1]);
-  const [ts, sig] = value.split(".");
-  if(!ts || !sig || !/^\d+$/.test(ts)) return false;
-
-  const age = Date.now() - Number(ts);
-  if(age < 0 || age > ACCESS_SESSION_TTL) return false;
-
-  const expected = signAuth(ts);
-  return sig.length === expected.length &&
-    crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
-}
-
-app.use(express.urlencoded({ extended: false }));
-
-app.get("/login", (req, res) => {
-  if(hasValidAuth(req)){
-    res.redirect("/");
-    return;
-  }
-  res.sendFile(path.join(__dirname, "public", "login.html"));
-});
-
-app.post("/login", (req, res) => {
-  if(!ACCESS_CODE){
-    res.redirect("/");
-    return;
-  }
-
-  const code = String(req.body.code || "");
-  if(code !== ACCESS_CODE){
-    res.redirect("/login?error=1");
-    return;
-  }
-
-  const ts = Date.now();
-  const token = encodeURIComponent(ts + "." + signAuth(ts));
-
-  res.setHeader(
-    "Set-Cookie",
-    "logic_auth=" + token +
-    "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" +
-    Math.floor(ACCESS_SESSION_TTL / 1000)
-  );
-  res.redirect("/");
-});
-
-app.use((req, res, next) => {
-  if(!ACCESS_CODE){
-    res.status(503).send("LOGIC_ACCESS_CODE ist in Render nicht gesetzt. Bitte die Environment Variable setzen und den Service neu deployen.");
-    return;
-  }
-  if(req.path === "/login" || hasValidAuth(req)){
-    next();
-    return;
-  }
-  res.redirect("/login");
-});
 
 // Dauerhafte Datenbank.
 // Auf Render wird dafür LOGIC_DB_PATH=/var/data/logic-builder.db gesetzt.
@@ -118,21 +45,7 @@ const saveState = db.prepare(`
 // Website-Dateien
 app.use(express.static(path.join(__dirname, "public")));
 
-io.use((socket, next) => {
-  if(!ACCESS_CODE){
-    next(new Error("LOGIC_ACCESS_CODE fehlt"));
-    return;
-  }
-
-  const cookie = socket.handshake.headers.cookie || "";
-  const fakeReq = { headers: { cookie } };
-
-  if(hasValidAuth(fakeReq)) next();
-  else next(new Error("unauthorized"));
-});
-
 io.on("connection", (socket) => {
-
   // Aktuellen Logic-Builder-Zustand an neuen Besucher senden
   const row = getState.get();
 
@@ -142,20 +55,13 @@ io.on("connection", (socket) => {
     socket.emit("state", {});
   }
 
-  // Änderung von einem Besucher empfangen
+  // Änderung von einem Besucher empfangen, dauerhaft speichern
+  // und sofort an die anderen verbundenen Besucher verteilen.
   socket.on("stateChange", (state) => {
-
     try {
       const data = JSON.stringify(state);
-
-      // Zustand speichern
       saveState.run(data);
-
-      // Die Änderung nur an die ANDEREN Besucher senden.
-      // Der Absender behält seine lokale Maus-/Drag-Bewegung und bekommt
-      // nicht sofort seinen eigenen Stand vom Server zurück.
       socket.broadcast.emit("state", state);
-
     } catch (error) {
       console.error("Fehler beim Speichern des Zustands:", error);
     }
@@ -167,5 +73,4 @@ const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
   console.log(`Server läuft auf Port ${PORT}`);
-  console.log(`LOGIC_ACCESS_CODE gesetzt: ${ACCESS_CODE ? "JA" : "NEIN"}`);
 });
