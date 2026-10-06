@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Logic Builder Ultra</title>
 <style>
-body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none;}canvas{display:block;background:radial-gradient(circle at center,#1a1a1a,#050505);touch-action:none;}#modeToggle{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:8px 14px;z-index:120;cursor:pointer;}#touchModeToggle{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:70;display:none;cursor:pointer;}#menuBtn{position:fixed;left:10px;top:50%;transform:translateY(80px);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:80;cursor:pointer;}#menuPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:90;display:none;flex-direction:column;gap:10px;color:white;min-width:250px;max-width:min(92vw,420px);max-height:80vh;overflow:auto;}#menuPopup input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#menuPopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#bpPopup{position:fixed;top:-220px;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:10;transition:top 0.3s;display:flex;flex-direction:column;gap:10px;}#bpPopup input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;}#bpPopup button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImport{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:8px;z-index:20;display:flex;gap:6px;align-items:center;}#bpImport input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;width:220px;}#bpImport button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImportStatus{position:absolute;top:100%;left:0;margin-top:6px;width:100%;background:#111;border:1px solid #00ffff;padding:7px;box-sizing:border-box;color:white;font-size:12px;display:none;}#bpImportBar{height:6px;background:#222;border:1px solid #555;margin-top:5px;overflow:hidden;}#bpImportBarFill{height:100%;width:0%;background:#00ffff;transition:width .12s;}#copyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:50;display:none;flex-direction:column;gap:10px;align-items:center;}#copyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#timerMenu{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:10px;z-index:60;display:none;flex-direction:column;gap:8px;color:white;min-width:340px;max-height:80vh;overflow:auto;}#timerMenu input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#timerMenu button{background:#00ffff;border:none;padding:5px;cursor:pointer;}#menuList{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;padding-right:4px;}#menuList label{display:flex;align-items:center;gap:8px;white-space:nowrap;}#namePopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;}#namePopup input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#namePopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#keyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#keyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#clockMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#clockMenu input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#clockMenu button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#bpActionPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:14px;z-index:110;display:none;flex-direction:column;gap:10px;align-items:center;}#bpActionPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;width:140px;}@media (pointer:coarse){#touchModeToggle{display:block;}}
+body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none;}canvas{display:block;background:radial-gradient(circle at center,#1a1a1a,#050505);touch-action:none;}#modeToggle{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:8px 14px;z-index:120;cursor:pointer;}#touchModeToggle{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:70;display:none;cursor:pointer;}#menuBtn{position:fixed;left:10px;top:50%;transform:translateY(80px);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:80;cursor:pointer;}#menuPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:90;display:none;flex-direction:column;gap:10px;color:white;min-width:250px;max-width:min(92vw,420px);max-height:80vh;overflow:auto;}#menuPopup input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#menuPopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#bpPopup{position:fixed;top:-220px;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:10;transition:top 0.3s;display:flex;flex-direction:column;gap:10px;}#bpPopup input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;}#bpPopup button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImport{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:8px;z-index:20;display:flex;gap:6px;align-items:center;}#bpImport input,#bpImport textarea{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;width:420px;box-sizing:border-box;}#bpImport textarea{height:70px;resize:vertical;font-family:monospace;font-size:11px;}#bpImport button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImportStatus{position:absolute;top:100%;left:0;margin-top:6px;width:100%;background:#111;border:1px solid #00ffff;padding:7px;box-sizing:border-box;color:white;font-size:12px;display:none;}#bpImportBar{height:6px;background:#222;border:1px solid #555;margin-top:5px;overflow:hidden;}#bpImportBarFill{height:100%;width:0%;background:#00ffff;transition:width .12s;}#copyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:50;display:none;flex-direction:column;gap:10px;align-items:center;}#copyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#timerMenu{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:10px;z-index:60;display:none;flex-direction:column;gap:8px;color:white;min-width:340px;max-height:80vh;overflow:auto;}#timerMenu input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#timerMenu button{background:#00ffff;border:none;padding:5px;cursor:pointer;}#menuList{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;padding-right:4px;}#menuList label{display:flex;align-items:center;gap:8px;white-space:nowrap;}#namePopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;}#namePopup input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#namePopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#keyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#keyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#clockMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#clockMenu input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#clockMenu button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#bpActionPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:14px;z-index:110;display:none;flex-direction:column;gap:10px;align-items:center;}#bpActionPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;width:140px;}@media (pointer:coarse){#touchModeToggle{display:block;}}
 </style>
 </head>
 <body>
@@ -35,7 +35,7 @@ Chip? <input id="bpChip" type="checkbox">
 <button id="bpOk">OK</button>
 </div>
 <div id="bpImport">
-<input id="bpData" type="text" placeholder="Paste Blueprint">
+<textarea id="bpData" placeholder="Paste Blueprint JSON"></textarea>
 <button id="bpLoad">Load</button><div id="bpImportStatus"><div id="bpImportStatusText"></div><div id="bpImportBar"><div id="bpImportBarFill"></div></div></div>
 </div>
 <div id="copyPopup">
@@ -770,13 +770,32 @@ function selectAllForQuickBlueprint(){
 }
 async function copyQuickBlueprintSelection(){
  const savedSelectedNodes=selectedNodes,savedSelectionActive=selectionActive,savedSelectionBox=selectionBox;
- const sourceNodes=(qSelectedNodes.length?qSelectedNodes:selectedNodes).filter(n=>nodes.includes(n)&&n&&!n.hidden);
- if(!sourceNodes.length)return false;
- selectedNodes=sourceNodes.slice();selectionActive=true;selectionBox=getSelectionBounds(selectedNodes);
+ let sourceNodes=(selectedNodes.length?selectedNodes:qSelectedNodes).filter(n=>nodes.includes(n)&&n&&!n.hidden);
+ if(!sourceNodes.length){
+  sourceNodes=nodes.filter(n=>n&&!n.hidden);
+ }
+ if(!sourceNodes.length){
+  setBlueprintImportStatus("F: Keine Blöcke zum Speichern vorhanden.",100,false);
+  return false;
+ }
+ selectedNodes=sourceNodes.slice();
+ selectionActive=true;
+ selectionBox=getSelectionBounds(selectedNodes);
  const bp=buildBlueprintFromSelection();
- selectedNodes=savedSelectedNodes;selectionActive=savedSelectionActive;selectionBox=savedSelectionBox;
- if(!bp)return false;
- return await copyToClipboard(JSON.stringify(bp));
+ selectedNodes=savedSelectedNodes;
+ selectionActive=savedSelectionActive;
+ selectionBox=savedSelectionBox;
+ if(!bp){
+  setBlueprintImportStatus("F: Blueprint konnte nicht erstellt werden.",100,false);
+  return false;
+ }
+ const ok=await copyToClipboard(JSON.stringify(bp));
+ setBlueprintImportStatus(
+  ok?"✓ Blueprint mit F kopiert.":"Fehler: Kopieren in die Zwischenablage fehlgeschlagen.",
+  100,
+  ok
+ );
+ return ok;
 }
 function openNamePopup(node){nameNode=node;document.getElementById("nameInput").value="";document.getElementById("namePopup").style.display="flex";document.getElementById("nameInput").focus();}
 function openKeyPopup(node){keyMenuNode=node;document.getElementById("keyPopupText").textContent="Key: "+(node.assignedKey?prettyKey(node.assignedKey):"NONE");document.getElementById("keyPopup").style.display="flex";}
@@ -1061,6 +1080,7 @@ function handleCanvasMouseUp(e){
   if(selectedNodes.length){
    selectionBox=getSelectionBounds(selectedNodes);
    selectionActive=true;
+   qSelectedNodes=selectedNodes.slice();
   }else{
    clearSelection();
   }
