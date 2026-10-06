@@ -257,14 +257,6 @@ io.on("connection", (socket) => {
 
     try {
       const baseRevision = Number.isInteger(state?.baseRevision) ? state.baseRevision : null;
-      if(baseRevision !== null && baseRevision !== stateRevision){
-        const current = getState.get();
-        const currentState = JSON.parse(current.data || "{}");
-        currentState.serverRevision = stateRevision;
-        socket.emit("state", currentState);
-        return;
-      }
-      const baseRevision = Number.isInteger(state?.baseRevision) ? state.baseRevision : null;
 
       // Veraltete Vollzustände dürfen niemals einen neueren Zustand zurücksetzen.
       // Das verhindert, dass z.B. eine Löschung durch einen alten Poll-Zustand
