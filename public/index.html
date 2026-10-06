@@ -1280,11 +1280,6 @@ addEventListener("keydown",e=>{
   }
  }
 
- if(e.key.toLowerCase()==="z"){
-  copyLogicStateToClipboard();
-  e.preventDefault();
-  return;
- }
 
  if(e.key.toLowerCase()==="a"){
   if(selectionActive&&selectedNodes.length){
@@ -1986,27 +1981,6 @@ function applyLogicState(state){
   }
 }
 
-async function copyLogicStateToClipboard(){
-  try{
-    const snapshot=serializeLogicState();
-    if(navigator.clipboard&&navigator.clipboard.writeText){
-      await navigator.clipboard.writeText(snapshot);
-    }else{
-      const ta=document.createElement("textarea");
-      ta.value=snapshot;
-      ta.style.position="fixed";
-      ta.style.opacity="0";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      document.execCommand("copy");
-      ta.remove();
-    }
-    lastLogicSnapshot=snapshot;
-  }catch(err){
-    console.error("Zwischenablage konnte nicht geschrieben werden:",err);
-  }
-}
 
 function sendLogicState(){
   if(!logicSyncReady || applyingRemoteLogicState) return;
