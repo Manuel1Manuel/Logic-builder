@@ -2290,22 +2290,125 @@ function getAiContext(){
   const nodeIndex = new Map(nodes.map((n,i)=>[n,i]));
   const wireData = wires.map(w=>({from:nodeIndex.get(w.from),to:nodeIndex.get(w.to),inputIndex:Number.isFinite(w.inputIndex)?w.inputIndex:0}));
   const blueprintInfo = blueprints.map((bp,i)=>({index:i,name:bp.name||("Blueprint "+(i+1)),nodes:Array.isArray(bp.nodes)?bp.nodes.length:0,wires:Array.isArray(bp.wires)?bp.wires.length:0}));
-  return JSON.stringify({editor:"Logic Builder Ultra",gateTypes:["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"],nodes:visibleNodes,wires:wireData,blueprints:blueprintInfo});
+  return JSON.stringify({
+    editor:"Logic Builder Ultra",
+    nodeCount:nodes.length,
+    gateTypes:["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"],
+    nodes:visibleNodes,
+    wires:wireData,
+    blueprints:blueprintInfo
+  });
 }
 
 function applyAiActions(actions){
-  if(!Array.isArray(actions)||!actions.length)return 0;
-  let added=0;
+  if(!Array.isArray(actions)||!actions.length)return {changed:0,details:[]};
+  const allowed=["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"];
+  let changed=0;
+  const details=[];
+
   for(const a of actions){
-    if(a?.action!=="add_gate")continue;
-    const allowed=["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"];
-    if(!allowed.includes(a.type))continue;
-    const n=new Node(Number(a.x)||0,Number(a.y)||0,a.type);
-    if(typeof a.name==="string"&&a.name.trim())n.name=a.name.trim();
-    nodes.push(n); added++;
+    if(!a || typeof a.action!=="string") continue;
+
+    if(a.action==="add_gate"){
+      if(!allowed.includes(a.type)) continue;
+      const n=new Node(Number(a.x)||0,Number(a.y)||0,a.type);
+      if(typeof a.name==="string"&&a.name.trim()) n.name=a.name.trim();
+      nodes.push(n);
+      changed++;
+      details.push("Gatter hinzugefügt");
+      continue;
+    }
+
+    if(a.action==="delete_gate"){
+      const i=Number(a.index);
+      if(Number.isInteger(i)&&i>=0&&i<nodes.length){
+        const target=nodes[i];
+        for(let w=wires.length-1;w>=0;w--){
+          if(wires[w].from===target||wires[w].to===target) wires.splice(w,1);
+        }
+        nodes.splice(i,1);
+        changed++;
+        details.push("Gatter gelöscht");
+      }
+      continue;
+    }
+
+    if(a.action==="move_gate"){
+      const i=Number(a.index);
+      if(Number.isInteger(i)&&i>=0&&i<nodes.length){
+        nodes[i].x=Number(a.x)||0;
+        nodes[i].y=Number(a.y)||0;
+        changed++;
+        details.push("Gatter verschoben");
+      }
+      continue;
+    }
+
+    if(a.action==="connect"){
+      const from=Number(a.from), to=Number(a.to), inputIndex=Number.isInteger(Number(a.inputIndex))?Number(a.inputIndex):0;
+      if(Number.isInteger(from)&&Number.isInteger(to)&&nodes[from]&&nodes[to]&&nodes[from].chipPin!=="in"&&nodes[to].chipPin!=="out"){
+        const exists=wires.some(w=>w.from===nodes[from]&&w.to===nodes[to]&&w.inputIndex===inputIndex);
+        if(!exists){wires.push({from:nodes[from],to:nodes[to],inputIndex});changed++;details.push("Wire verbunden");}
+      }
+      continue;
+    }
+
+    if(a.action==="disconnect"){
+      const from=Number(a.from), to=Number(a.to);
+      if(Number.isInteger(from)&&Number.isInteger(to)&&nodes[from]&&nodes[to]){
+        for(let i=wires.length-1;i>=0;i--){
+          if(wires[i].from===nodes[from]&&wires[i].to===nodes[to] &&
+             (!Number.isInteger(Number(a.inputIndex)) || wires[i].inputIndex===Number(a.inputIndex))){
+            wires.splice(i,1); changed++; details.push("Wire getrennt");
+          }
+        }
+      }
+      continue;
+    }
+
+    if(a.action==="rename_gate"){
+      const i=Number(a.index);
+      if(Number.isInteger(i)&&i>=0&&i<nodes.length&&typeof a.name==="string"){
+        nodes[i].name=a.name;
+        changed++; details.push("Gatter umbenannt");
+      }
+      continue;
+    }
+
+    if(a.action==="set_switch"){
+      const i=Number(a.index);
+      if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="switch"){
+        nodes[i].state=!!a.state;
+        changed++; details.push("Schalter gesetzt");
+      }
+      continue;
+    }
+
+    if(a.action==="set_timer"){
+      const i=Number(a.index);
+      if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="timer"){
+        if(Number.isFinite(Number(a.delay))) nodes[i].delay=Number(a.delay);
+        if(typeof a.stay==="boolean") nodes[i].stay=a.stay;
+        changed++; details.push("Timer geändert");
+      }
+      continue;
+    }
+
+    if(a.action==="set_clock"){
+      const i=Number(a.index);
+      if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="clock"){
+        if(Number.isFinite(Number(a.interval))) nodes[i].interval=Number(a.interval);
+        changed++; details.push("Clock geändert");
+      }
+      continue;
+    }
   }
-  if(added){ clearSelection(); sendLogicState(); }
-  return added;
+
+  if(changed){
+    clearSelection();
+    sendLogicState();
+  }
+  return {changed,details};
 }
 
 aiBtn.addEventListener("click", () => {
@@ -2332,8 +2435,9 @@ aiAsk.addEventListener("click", async () => {
       throw new Error((data?.error || "Unbekannter Fehler") + (data?.details ? " — " + data.details : ""));
     }
 
-    const added = applyAiActions(data.actions);
-    aiStatus.textContent = (data.text || "Gemini hat keine Antwort geliefert.") + (added ? "\n\n"+added+" Gatter hinzugefügt." : "");
+    const result = applyAiActions(data.actions);
+    aiStatus.textContent = (data.text || "Gemini hat keine Antwort geliefert.") +
+      (result.changed ? "\n\nEditor geändert: "+result.details.join(", ")+".\nDie Änderung wurde an den Server gesendet." : "\n\nKeine Editor-Aktion ausgeführt.");
   }catch(error){
     aiStatus.textContent = "Fehler: " + error.message;
   }finally{
