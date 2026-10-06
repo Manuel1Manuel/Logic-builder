@@ -11,7 +11,11 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  // Große Blueprints können deutlich größer als das Socket.IO-Standardlimit
+  // sein. Der Zustand wird trotzdem nur als ein kompakter JSON-Snapshot gesendet.
+  maxHttpBufferSize: 16 * 1024 * 1024
+});
 
 const ACCESS_CODE = String(process.env.LOGIC_ACCESS_CODE || "").trim();
 const ACCESS_SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
