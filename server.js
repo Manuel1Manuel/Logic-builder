@@ -247,6 +247,14 @@ const getState = db.prepare(`
   SELECT data FROM app_state WHERE id = 1
 `);
 
+function getServerStorageBytes(){
+  try{
+    return Buffer.byteLength(String(getState.get()?.data || ""), "utf8");
+  }catch{
+    return 0;
+  }
+}
+
 const saveState = db.prepare(`
   UPDATE app_state
   SET data = ?
@@ -309,6 +317,7 @@ io.on("connection", (socket) => {
   try {
     const initialState = JSON.parse(row.data);
     initialState.serverRevision = stateRevision;
+    initialState.serverStorageBytes = getServerStorageBytes();
     socket.emit("state", initialState);
   } catch {
     socket.emit("state", { serverRevision: stateRevision });
@@ -337,6 +346,7 @@ io.on("connection", (socket) => {
         const current = getState.get();
         const currentState = JSON.parse(current.data || "{}");
         currentState.serverRevision = stateRevision;
+        currentState.serverStorageBytes = getServerStorageBytes();
         currentState.sourceSocketId = "server-rejected-legacy";
         socket.emit("state", currentState);
         socket.emit("stateRejected", { serverRevision: stateRevision, reason: "missing-base-revision" });
@@ -350,6 +360,7 @@ io.on("connection", (socket) => {
         const current = getState.get();
         const currentState = JSON.parse(current.data || "{}");
         currentState.serverRevision = stateRevision;
+        currentState.serverStorageBytes = getServerStorageBytes();
         currentState.sourceSocketId = "server-rejected";
         socket.emit("state", currentState);
         socket.emit("stateRejected", { serverRevision: stateRevision });
@@ -389,6 +400,7 @@ io.on("connection", (socket) => {
       const broadcastState = {
         ...stored,
         serverRevision: stateRevision,
+        serverStorageBytes: getServerStorageBytes(),
         sourceSocketId: socket.id
       };
 
@@ -400,7 +412,8 @@ io.on("connection", (socket) => {
         serverRevision: stateRevision,
         confirmed: true,
         nodeCount,
-        wireCount
+        wireCount,
+        serverStorageBytes: getServerStorageBytes()
       });
 
     } catch (error) {
