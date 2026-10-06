@@ -1871,6 +1871,8 @@ function getLogicSyncId(n){
 }
 
 function serializeLogicState(){
+  const nodeIds = new Map();
+  for(const n of nodes) nodeIds.set(n,getLogicSyncId(n));
   const snapshotNodes = nodes.map(n => {
     const d = {
       id:getLogicSyncId(n),
@@ -1909,10 +1911,10 @@ function serializeLogicState(){
     mixedChipSelection:false,
     nodes:snapshotNodes,
     wires:wires.map(w => ({
-      from:nodes.indexOf(w.from),
-      to:nodes.indexOf(w.to),
+      from:nodeIds.get(w.from),
+      to:nodeIds.get(w.to),
       inputIndex:Number.isFinite(w.inputIndex) ? w.inputIndex : 0
-    })).filter(w => w.from >= 0 && w.to >= 0)
+    })).filter(w => w.from && w.to)
   });
 }
 function applyLogicState(state){
@@ -1965,9 +1967,10 @@ function applyLogicState(state){
     nodes.push(...newNodes);
 
     wires.length = 0;
+    const nodesBySyncId = new Map(nodes.map(n => [n.__logicSyncId, n]));
     for(const w of state.wires){
-      const from = nodes[w.from];
-      const to = nodes[w.to];
+      const from = nodesBySyncId.get(w.from) || (Number.isInteger(w.from) ? nodes[w.from] : null);
+      const to = nodesBySyncId.get(w.to) || (Number.isInteger(w.to) ? nodes[w.to] : null);
       if(from && to && from.chipPin!=="in" && to.chipPin!=="out"){
         wires.push({
           from,
