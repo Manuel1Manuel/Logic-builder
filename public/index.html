@@ -1454,6 +1454,9 @@ addEventListener("keydown",e=>{
  if(e.key==="Delete"||e.key==="Backspace"){
   if(selectionActive){
    deleteSelection();
+   // Löschung sofort an den Server schicken. Der Server speichert zuerst
+   // und verteilt danach den bestätigten Zustand an alle Clients.
+   if(typeof sendLogicState==="function") sendLogicState();
    e.preventDefault();
   }
  }
