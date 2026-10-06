@@ -331,10 +331,11 @@ io.on("connection", (socket) => {
 
       const broadcastState = { ...cleanState, serverRevision: stateRevision };
 
-      // Der Absender hat den neuen Zustand bereits lokal. Er bekommt deshalb
-      // nicht noch einmal denselben Snapshot zurück. Andere Clients bekommen
-      // ihn erst NACH dem erfolgreichen Speichern.
-      socket.broadcast.emit("state", broadcastState);
+      // Der Server ist die Quelle der Wahrheit: Erst speichern, dann bekommen
+      // ALLE Clients (einschließlich des Absenders) den exakt gespeicherten
+      // Zustand zurück. So kann der Absender sehen, dass sein Update bestätigt
+      // wurde, und es wird kein alter lokaler Stand als "neue" Version behandelt.
+      io.emit("state", broadcastState);
       socket.emit("stateAck", { serverRevision: stateRevision });
 
     } catch (error) {
