@@ -1945,6 +1945,7 @@ let logicSyncReady = false;
 let lastLogicSnapshot = "";
 let lastBlueprintSerializedVersion = -1;
 let lastBlueprintSyncData = [];
+let lastBlueprintSentVersion = -1;
 
 function getBlueprintSyncData(){
   if(lastBlueprintSerializedVersion !== blueprintLibraryVersion){
@@ -2008,10 +2009,6 @@ function serializeLogicState(){
       to:nodeIds.get(w.to),
       inputIndex:Number.isFinite(w.inputIndex) ? w.inputIndex : 0
     })).filter(w => w.from && w.to),
-    // Die Blueprint-Bibliothek gehört zum gemeinsamen Projektzustand.
-    // Dadurch werden erstellte/importierte Blueprints auf allen Tabs geteilt
-    // und nach einem Reload aus der SQLite-Persistenz wiederhergestellt.
-    blueprints:getBlueprintSyncData()
   });
 }
 function applyLogicState(state){
@@ -2063,20 +2060,6 @@ function applyLogicState(state){
     nodes.length = 0;
     nodes.push(...newNodes);
 
-    // Gemeinsame Blueprint-Bibliothek ebenfalls vom Server übernehmen.
-    // Pre-Blueprints bleiben erhalten, falls ein älterer Serverzustand noch
-    // keine Blueprint-Liste enthält.
-    if(Array.isArray(state.blueprints)){
-      blueprints.length = 0;
-      for(const raw of state.blueprints){
-        const bp = expandBlueprint(cloneBlueprint(raw));
-        if(bp && Array.isArray(bp.nodes)) blueprints.push(bp);
-      }
-      blueprintLibraryVersion++;
-      lastBlueprintSerializedVersion = -1;
-      clampBlueprintScroll();
-    }
-
     wires.length = 0;
     const nodesBySyncId = new Map(nodes.map(n => [n.__logicSyncId, n]));
     for(const w of state.wires){
@@ -2106,8 +2089,43 @@ function sendLogicState(){
   logicSocket.emit("stateChange", JSON.parse(snapshot));
 }
 
+function applyBlueprintLibraryState(list){
+  if(!Array.isArray(list)) return false;
+  applyingRemoteLogicState = true;
+  try{
+    blueprints.length = 0;
+    for(const raw of list){
+      const bp = expandBlueprint(cloneBlueprint(raw));
+      if(bp && Array.isArray(bp.nodes)) blueprints.push(bp);
+    }
+    blueprintLibraryVersion++;
+    lastBlueprintSerializedVersion = -1;
+    lastBlueprintSentVersion = blueprintLibraryVersion;
+    clampBlueprintScroll();
+    return true;
+  }finally{
+    applyingRemoteLogicState = false;
+  }
+}
+
+function sendBlueprintLibrary(){
+  if(!logicSyncReady || applyingRemoteLogicState) return;
+  if(lastBlueprintSentVersion === blueprintLibraryVersion) return;
+  const payload = {version:1,blueprints:getBlueprintSyncData()};
+  lastBlueprintSentVersion = blueprintLibraryVersion;
+  logicSocket.emit("blueprintLibraryChange", payload);
+}
+
+logicSocket.on("blueprintLibrary", library => {
+  if(library && Array.isArray(library.blueprints)){
+    applyBlueprintLibraryState(library.blueprints);
+  }
+});
+
 logicSocket.on("state", state => {
   const legacyState = !state || Number(state.version || 1) < 3;
+
+  const hasBlueprintLibrary = state && Array.isArray(state.blueprints);
 
   if(state && Array.isArray(state.nodes) && Array.isArray(state.wires)){
     if(applyLogicState(state)){
@@ -2117,7 +2135,16 @@ logicSocket.on("state", state => {
     }
   }
 
+  if(hasBlueprintLibrary) applyBlueprintLibraryState(state.blueprints);
+
   logicSyncReady = true;
+
+  if(hasBlueprintLibrary){
+    lastBlueprintSentVersion = blueprintLibraryVersion;
+  }else{
+    lastBlueprintSentVersion = -1;
+    sendBlueprintLibrary();
+  }
 
   if(legacyState){
     lastLogicSnapshot = "";
@@ -2150,6 +2177,7 @@ setInterval(() => {
     lastLogicSnapshot = snapshot;
     logicSocket.emit("stateChange", JSON.parse(snapshot));
   }
+  sendBlueprintLibrary();
 }, 50);
 </script>
 </body>
