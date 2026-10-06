@@ -244,6 +244,26 @@ db.prepare(`
   VALUES (1, 0)
 `).run();
 
+// Einmalige Bereinigung des alten gespeicherten Arbeitsflächenstands.
+// Code/Blueprint-Definitionen bleiben im Repository unverändert; nur der
+// bisher persistierte Zustand (Gatter/Wires/gespeicherte Bibliothek) wird
+// einmalig geleert, damit alte Testdaten nicht wieder als Serverstand
+// auftauchen können.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS app_migrations (
+    id TEXT PRIMARY KEY
+  )
+`);
+const resetMigrationId = "clear_saved_logic_state_2026_10_06_v1";
+const resetMigration = db.prepare(`
+  INSERT OR IGNORE INTO app_migrations (id) VALUES (?)
+`).run(resetMigrationId);
+if(resetMigration.changes === 1){
+  saveState.run(JSON.stringify({}));
+  saveRevision.run(0);
+  console.log("Gespeicherten Logic-Builder-Zustand einmalig geleert.");
+}
+
 const getState = db.prepare(`
   SELECT data FROM app_state WHERE id = 1
 `);
