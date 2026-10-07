@@ -45,13 +45,23 @@ function hasValidAuth(req){
 
 app.use(express.urlencoded({ extended: false }));
 
-// AI-API bleibt ausschließlich serverseitig.
-// Der API-Key kommt aus Render: GROQ_API_KEY.
+// AI-APIs bleiben ausschließlich serverseitig.
+// Die API-Keys kommen aus Render Environment Variables.
 app.use(express.json({ limit: "256kb" }));
 
 app.post("/api/gemini", async (req, res) => {
-  if(!process.env.GROQ_API_KEY){
-    res.status(503).json({ error: "GROQ_API_KEY ist nicht gesetzt." });
+  const provider = String(req.body?.provider || "gemini").toLowerCase() === "grok" ? "Grok" : "Gemini";
+  const apiKey = provider === "Grok"
+    ? String(process.env.XAI_API_KEY || process.env.GROK_API_KEY || "").trim()
+    : String(process.env.GEMINI_API_KEY || "").trim();
+
+  if(!apiKey){
+    res.status(503).json({
+      error: provider + " API-Key ist nicht gesetzt.",
+      details: provider === "Grok"
+        ? "Bitte XAI_API_KEY oder GROK_API_KEY in Render Environment setzen."
+        : "Bitte GEMINI_API_KEY in Render Environment setzen."
+    });
     return;
   }
 
@@ -82,16 +92,19 @@ Tu nicht so, als hättest du dein Grundmodell dauerhaft trainiert. Formuliere st
 Antworte nur als JSON mit dem Feld "understanding".`;
 
     try{
+      const learnUrl = provider === "Grok"
+        ? "https://api.x.ai/v1/chat/completions"
+        : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
       const response = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
+        learnUrl,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer " + process.env.GROQ_API_KEY
+            "Authorization": "Bearer " + apiKey
           },
           body: JSON.stringify({
-            model: "openai/gpt-oss-120b",
+            model: provider === "Grok" ? "grok-4.7" : "gemini-3.8-flash",
             messages: [{
               role: "system",
               content: "Du bist Manuel KI. Du analysierst ausschließlich Logic-Builder-Schaltungen als Referenzwissen. Keine Editor-Aktionen."
@@ -101,20 +114,19 @@ Antworte nur als JSON mit dem Feld "understanding".`;
             }],
             temperature: 0,
             max_completion_tokens: 4096,
-            reasoning_format: "hidden",
             response_format: { type: "json_object" }
           })
         }
       );
       const data = await response.json();
       if(!response.ok){
-        res.status(502).json({error:"Groq API Fehler.",details:data?.error?.message||"Unbekannter Fehler"});
+        res.status(502).json({error:provider+" API Fehler.",details:data?.error?.message||"Unbekannter Fehler"});
         return;
       }
       const raw = data?.choices?.[0]?.message?.content || "{}";
       let parsed={};
       try{parsed=JSON.parse(raw);}catch{}
-      res.json({text:typeof parsed.understanding==="string"?parsed.understanding.trim():"",actions:[],provider:"Groq"});
+      res.json({text:typeof parsed.understanding==="string"?parsed.understanding.trim():"",actions:[],provider});
       return;
     }catch(error){
       console.error("Fehler beim Analysieren des KI-Wissens:",error);
@@ -249,29 +261,32 @@ ${context ? "\nAKTUELLER APP-KONTEXT:\n" + context : ""}
 NUTZERANFRAGE:
 ${prompt}`
 
+  const aiUrl = provider === "Grok"
+    ? "https://api.x.ai/v1/chat/completions"
+    : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
   const response = await fetch(
-    "https://api.groq.com/openai/v1/chat/completions",
+    aiUrl,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + process.env.GROQ_API_KEY
+        "Authorization": "Bearer " + apiKey
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-120b",
+        model: provider === "Grok" ? "grok-4.7" : "gemini-3.8-flash",
         messages: [{
           role: "system",
           content: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema."
         }],
         temperature: 0,
-        max_completion_tokens: 65536,
-        reasoning_format: "hidden",
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "logic_builder_response",
-            strict: true,
-            schema: {
+        max_completion_tokens: provider === "Grok" ? 65536 : 32768,
+        response_format: provider === "Grok"
+          ? {
+              type: "json_schema",
+              json_schema: {
+                name: "logic_builder_response",
+                strict: true,
+                schema: {
               type: "object",
               properties: {
                 answer: { type: "string" },
@@ -306,16 +321,18 @@ ${prompt}`
             }
           }
         }
+      : {
+          type: "json_object"
+        }
       })
     }
   );
-  const provider = "Groq";
   const data = await response.json();
 
   if(!response.ok){
-    console.error("Groq API Fehler:", data);
+    console.error(provider+" API Fehler:", data);
     res.status(502).json({
-      error: "Groq API Fehler.",
+      error: provider+" API Fehler.",
       details: data?.error?.message || "Unbekannter Fehler"
     });
     return;
