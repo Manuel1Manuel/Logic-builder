@@ -50,16 +50,16 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: "256kb" }));
 
 app.post("/api/gemini", async (req, res) => {
-  const provider = String(req.body?.provider || "gemini").toLowerCase() === "grok" ? "Grok" : "Gemini";
-  const apiKey = provider === "Grok"
-    ? String(process.env.XAI_API_KEY || process.env.GROK_API_KEY || "").trim()
+  const provider = String(req.body?.provider || "gemini").toLowerCase() === "groq" ? "Groq" : "Gemini";
+  const apiKey = provider === "Groq"
+    ? String(process.env.GROQ_API_KEY || "").trim()
     : String(process.env.GEMINI_API_KEY || "").trim();
 
   if(!apiKey){
     res.status(503).json({
       error: provider + " API-Key ist nicht gesetzt.",
-      details: provider === "Grok"
-        ? "Bitte XAI_API_KEY oder GROK_API_KEY in Render Environment setzen."
+      details: provider === "Groq"
+        ? "Bitte GROQ_API_KEY in Render Environment setzen."
         : "Bitte GEMINI_API_KEY in Render Environment setzen."
     });
     return;
@@ -92,8 +92,8 @@ Tu nicht so, als hättest du dein Grundmodell dauerhaft trainiert. Formuliere st
 Antworte nur als JSON mit dem Feld "understanding".`;
 
     try{
-      const learnUrl = provider === "Grok"
-        ? "https://api.x.ai/v1/chat/completions"
+      const learnUrl = provider === "Groq"
+        ? "https://api.groq.com/openai/v1/chat/completions"
         : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
       const response = await fetch(
         learnUrl,
@@ -104,7 +104,7 @@ Antworte nur als JSON mit dem Feld "understanding".`;
             "Authorization": "Bearer " + apiKey
           },
           body: JSON.stringify({
-            model: provider === "Grok" ? "grok-4.7" : "gemini-3.8-flash",
+            model: provider === "Groq" ? "openai/gpt-oss-120b" : "gemini-3.8-flash",
             messages: [{
               role: "system",
               content: "Du bist Manuel KI. Du analysierst ausschließlich Logic-Builder-Schaltungen als Referenzwissen. Keine Editor-Aktionen."
@@ -261,8 +261,8 @@ ${context ? "\nAKTUELLER APP-KONTEXT:\n" + context : ""}
 NUTZERANFRAGE:
 ${prompt}`
 
-  const aiUrl = provider === "Grok"
-    ? "https://api.x.ai/v1/chat/completions"
+  const aiUrl = provider === "Groq"
+    ? "https://api.groq.com/openai/v1/chat/completions"
     : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
   const response = await fetch(
     aiUrl,
@@ -273,14 +273,14 @@ ${prompt}`
         "Authorization": "Bearer " + apiKey
       },
       body: JSON.stringify({
-        model: provider === "Grok" ? "grok-4.7" : "gemini-3.8-flash",
+        model: provider === "Groq" ? "openai/gpt-oss-120b" : "gemini-3.8-flash",
         messages: [{
           role: "system",
           content: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema."
         }],
         temperature: 0,
-        max_completion_tokens: provider === "Grok" ? 65536 : 32768,
-        response_format: provider === "Grok"
+        max_completion_tokens: provider === "Groq" ? 65536 : 32768,
+        response_format: provider === "Groq"
           ? {
               type: "json_schema",
               json_schema: {
