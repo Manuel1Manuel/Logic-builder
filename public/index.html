@@ -129,6 +129,10 @@ function updateUiTheme(){
  const radius=simpleGraphics?"0px":"14px";
  const buttonRadius=simpleGraphics?"0px":"9px";
  const inputRadius=simpleGraphics?"0px":"7px";
+ const aiLibraryBtn=document.getElementById("aiLibraryBtn");
+ const aiLibraryPopup=document.getElementById("aiLibraryPopup");
+ if(aiLibraryBtn){aiLibraryBtn.classList.toggle("simple",simpleGraphics);aiLibraryBtn.classList.toggle("complex",!simpleGraphics);}
+ if(aiLibraryPopup){aiLibraryPopup.classList.toggle("simple",simpleGraphics);aiLibraryPopup.classList.toggle("complex",!simpleGraphics);}
  const ids=["modeToggle","touchModeToggle","menuBtn","aiLibraryBtn","aiLibraryPopup","menuPopup","bpPopup","copyPopup","bpActionPopup","timerMenu","keyPopup","clockMenu","namePopup","bpImport"];
  for(const id of ids){const el=document.getElementById(id);if(!el)continue;el.style.borderColor=blue;el.style.borderRadius=radius;}
  for(const el of document.querySelectorAll("#menuPopup button,#bpPopup button,#copyPopup button,#timerMenu button,#namePopup button,#keyPopup button,#clockMenu button,#bpActionPopup button,#bpImport button,#aiLibraryClose,#aiLibraryActions button")){el.style.background=blue;el.style.borderColor=blue;el.style.borderRadius=buttonRadius;}
@@ -692,7 +696,7 @@ function renderAiLibrary(){
  const listEl=document.getElementById("aiLibraryList"),summaryEl=document.getElementById("aiLibrarySummary"),metaEl=document.getElementById("aiLibraryMeta"),retry=document.getElementById("aiLibraryRetry");if(!listEl)return;const items=getAiLibraryDisplayList();listEl.textContent="";if(!items.length){listEl.textContent="Noch kein KI-Wissen gespeichert.";summaryEl.textContent="";metaEl.textContent="";drawAiLibraryPreview(null);retry.style.display="none";return;}if(!aiLibrarySelectedId||!items.some(x=>x.entry.id===aiLibrarySelectedId))aiLibrarySelectedId=items[0].entry.id;for(const item of items){const b=document.createElement("button");b.type="button";b.textContent=item.entry.name||"Unbenannt";b.classList.toggle("selected",item.entry.id===aiLibrarySelectedId);b.onclick=()=>{aiLibrarySelectedId=item.entry.id;renderAiLibrary();};listEl.appendChild(b);}const selected=items.find(x=>x.entry.id===aiLibrarySelectedId)?.entry;if(!selected)return;drawAiLibraryPreview(selected.blueprint);metaEl.textContent=(selected.name||"Unbenannt")+" · "+(selected.createdAt?new Date(selected.createdAt).toLocaleString("de-DE"):"");if(selected.understanding){summaryEl.textContent=selected.understanding;retry.style.display="none";}else{summaryEl.textContent=selected.summaryError==="no_tokens"?"Die KI hat momentan keine Token, um diesen Eintrag zusammenzufassen. Sobald wieder Kapazität vorhanden ist, kann die Zusammenfassung erstellt werden.":"Die KI-Zusammenfassung ist für diesen Eintrag noch nicht verfügbar.";retry.style.display="inline-block";}}
 function openAiLibrary(){document.getElementById("aiLibraryPopup").style.display="block";renderAiLibrary();}
 function closeAiLibrary(){document.getElementById("aiLibraryPopup").style.display="none";}
-function saveAiKnowledgeEntry(bp,name){
+async async function saveAiKnowledgeEntry(bp,name){
   const list=getAiKnowledgeLibrary();
   const entry={
     id:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():("ai_"+Date.now()+"_"+Math.random().toString(36).slice(2)),
