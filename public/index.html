@@ -1296,14 +1296,12 @@ function connectSelectionsChunked(sourceNodes,targetNodes){
 }
 function connectSelectionsFirstFree(sourceNodes,targetNodes){
  let outs=collectSelectionPins(sourceNodes,"outputs");
- let targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden));
+ let ins=collectSelectionPins(targetNodes,"inputs");
  let o=0;
- for(let target of targets){
-  let slots=getOrderedInputSlots(target);
-  if(!slots.length)continue;
-  while(o<outs.length&&!canConnectNodes(outs[o].node,target))o++;
+ for(let i=0;i<ins.length&&o<outs.length;i++){
+  while(o<outs.length&&!canConnectNodes(outs[o].node,ins[i].node))o++;
   if(o>=outs.length)break;
-  wires.push({from:outs[o].node,to:target,inputIndex:slots[0]});
+  wires.push({from:outs[o].node,to:ins[i].node,inputIndex:ins[i].index});
   o++;
  }
 }
