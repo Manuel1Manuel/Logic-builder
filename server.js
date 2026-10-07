@@ -116,8 +116,7 @@ Antworte nur als JSON mit dem Feld "understanding".`;
               content: learningPrompt
             }],
             temperature: 0,
-            max_completion_tokens: 4096,
-            response_format: { type: "json_object" }
+            max_completion_tokens: 4096
           })
         }
       );
@@ -298,50 +297,48 @@ ${prompt}`
         }],
         temperature: 0,
         max_completion_tokens: provider === "Groq" ? 65536 : 32768,
-        response_format: provider === "Groq"
-          ? {
-              type: "json_schema",
-              json_schema: {
-                name: "logic_builder_response",
-                strict: true,
-                schema: {
-              type: "object",
-              properties: {
-                answer: { type: "string" },
-                actions: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      action: { type: "string", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock","save_chip","copy_chip","place_blueprint","select_nodes","open_chip_popup","confirm_chip_save"] },
-                      type: { type: ["string","null"] },
-                      index: { type: ["integer","null"] },
-                      from: { type: ["integer","null"] },
-                      to: { type: ["integer","null"] },
-                      blueprintIndex: { type: ["integer","null"] },
-                      indices: { type: ["array","null"], items: { type: "integer" } },
-                      inputIndex: { type: ["integer","null"] },
-                      x: { type: ["number","null"] },
-                      y: { type: ["number","null"] },
-                      name: { type: ["string","null"] },
-                      value: { type: ["boolean","null"] },
-                      delay: { type: ["number","null"] },
-                      stay: { type: ["number","null"] },
-                      interval: { type: ["number","null"] }
-                    },
-                    required: ["action","type","index","from","to","inputIndex","blueprintIndex","indices","x","y","name","value","delay","stay","interval"],
-                    additionalProperties: false
+        ...(provider === "Groq" ? {
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "logic_builder_response",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  answer: { type: "string" },
+                  actions: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        action: { type: "string", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock","save_chip","copy_chip","place_blueprint","select_nodes","open_chip_popup","confirm_chip_save"] },
+                        type: { type: ["string","null"] },
+                        index: { type: ["integer","null"] },
+                        from: { type: ["integer","null"] },
+                        to: { type: ["integer","null"] },
+                        blueprintIndex: { type: ["integer","null"] },
+                        indices: { type: ["array","null"], items: { type: "integer" } },
+                        inputIndex: { type: ["integer","null"] },
+                        x: { type: ["number","null"] },
+                        y: { type: ["number","null"] },
+                        name: { type: ["string","null"] },
+                        value: { type: ["boolean","null"] },
+                        delay: { type: ["number","null"] },
+                        stay: { type: ["number","null"] },
+                        interval: { type: ["number","null"] }
+                      },
+                      required: ["action","type","index","from","to","inputIndex","blueprintIndex","indices","x","y","name","value","delay","stay","interval"],
+                      additionalProperties: false
+                    }
                   }
-                }
-              },
-              required: ["answer","actions"],
-              additionalProperties: false
+                },
+                required: ["answer","actions"],
+                additionalProperties: false
+              }
             }
           }
-        }
-      : {
-          type: "json_object"
-        }
+        } : {})
         })
       }
     );
