@@ -1772,7 +1772,9 @@ loadPreblueprints();
 const logicSocket = io();
 let applyingRemoteLogicState = false;
 let logicSyncReady = false;
+let serverRevision = 0;
 let lastLogicSnapshot = "";
+let lastBlueprintSnapshot = "";
 
 function getLogicSyncId(n){
   if(!n.__logicSyncId){
@@ -1891,11 +1893,35 @@ function sendLogicState(){
   const snapshot = serializeLogicState();
   if(snapshot === lastLogicSnapshot) return;
   lastLogicSnapshot = snapshot;
-  logicSocket.emit("stateChange", JSON.parse(snapshot));
+
+  // Der Zustand wird immer gegen die zuletzt vom Server bestätigte
+  // Revision geschrieben. Dadurch können alte Tabs keinen neueren Stand
+  // mehr überschreiben.
+  const payload = JSON.parse(snapshot);
+  payload.baseRevision = serverRevision;
+  logicSocket.emit("stateChange", payload);
+}
+
+function serializeBlueprintLibrary(){
+  return JSON.stringify(blueprints.map(bp => sanitizeBlueprintForStorage(bp)));
+}
+
+function applyBlueprintLibrary(list){
+  if(!Array.isArray(list)) return false;
+  blueprints.length = 0;
+  for(const raw of list){
+    try{
+      const bp = expandBlueprint(cloneBlueprint(raw));
+      if(bp && Array.isArray(bp.nodes)) blueprints.push(sanitizeBlueprintForStorage(bp));
+    }catch{}
+  }
+  clampBlueprintScroll();
+  return true;
 }
 
 logicSocket.on("state", state => {
   const legacyState = !state || Number(state.version || 1) < 3;
+  serverRevision = Number.isInteger(state?.serverRevision) ? state.serverRevision : serverRevision;
 
   if(state && Array.isArray(state.nodes) && Array.isArray(state.wires)){
     if(applyLogicState(state)){
@@ -1905,7 +1931,19 @@ logicSocket.on("state", state => {
     }
   }
 
+  // Die Blueprint-Bibliothek kommt beim Start zusammen mit dem Serverstand.
+  // Fehlt sie bei einem alten/noch leeren Serverstand, bleibt die lokale
+  // Vorlagenbibliothek erhalten und wird anschließend hochgeladen.
+  if(state && Array.isArray(state.blueprints)){
+    if(applyBlueprintLibrary(state.blueprints)){
+      lastBlueprintSnapshot = serializeBlueprintLibrary();
+    }
+  }else{
+    lastBlueprintSnapshot = "";
+  }
+
   logicSyncReady = true;
+  logicSocket.emit("stateApplied", serverRevision);
 
   if(legacyState){
     lastLogicSnapshot = "";
@@ -1913,6 +1951,25 @@ logicSocket.on("state", state => {
   }else if(!lastLogicSnapshot){
     lastLogicSnapshot = serializeLogicState();
   }
+});
+
+logicSocket.on("stateAck", ack => {
+  if(!ack) return;
+  if(Number.isInteger(ack.serverRevision)) serverRevision = ack.serverRevision;
+  logicSocket.emit("stateApplied", serverRevision);
+});
+
+logicSocket.on("stateRejected", info => {
+  if(info && Number.isInteger(info.serverRevision)) serverRevision = info.serverRevision;
+});
+
+logicSocket.on("blueprintLibrary", library => {
+  if(!library || !Array.isArray(library.blueprints)) return;
+  if(applyBlueprintLibrary(library.blueprints)){
+    lastBlueprintSnapshot = serializeBlueprintLibrary();
+  }
+  if(Number.isInteger(library.serverRevision)) serverRevision = library.serverRevision;
+  logicSocket.emit("stateApplied", serverRevision);
 });
 
 // Synchronisiert nur:
@@ -1935,7 +1992,18 @@ setInterval(() => {
   const snapshot = serializeLogicState();
   if(snapshot !== lastLogicSnapshot){
     lastLogicSnapshot = snapshot;
-    logicSocket.emit("stateChange", JSON.parse(snapshot));
+    const payload = JSON.parse(snapshot);
+    payload.baseRevision = serverRevision;
+    logicSocket.emit("stateChange", payload);
+  }
+
+  const blueprintSnapshot = serializeBlueprintLibrary();
+  if(blueprintSnapshot !== lastBlueprintSnapshot){
+    lastBlueprintSnapshot = blueprintSnapshot;
+    logicSocket.emit("blueprintLibraryChange", {
+      blueprints: JSON.parse(blueprintSnapshot),
+      baseRevision: serverRevision
+    });
   }
 }, 50);
 </script>
