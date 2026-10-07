@@ -1905,9 +1905,10 @@ async function applyAiActions(actions){
         changed++;
         clearSelection();
         const before=lastLogicSnapshot;
+        const ackPromise=waitForAiStateAck();
         sendLogicState();
         if(lastLogicSnapshot!==before){
-          const acked=await waitForAiStateAck();
+          const acked=await ackPromise;
           if(!acked) break;
           await new Promise(r=>setTimeout(r,70));
         }
@@ -2201,7 +2202,7 @@ logicSocket.on("blueprintLibrary", library => {
 // Laufende Zustände wie Memory-Zustände, Clock-/Timer-Laufzustände
 // und gedrückte Tasten bleiben lokal. Der Switch-AN/AUS-Zustand wird bewusst synchronisiert.
 setInterval(() => {
-  if(!logicSyncReady || applyingRemoteLogicState) return;
+  if(!logicSyncReady || applyingRemoteLogicState || aiActionInProgress) return;
 
   // Während man einen Block bewegt, darf der Server die Mausbewegung
   // nicht zurücksetzen. Danach wird der aktuelle Stand übertragen.
