@@ -738,7 +738,7 @@ function getChipNodesById(id){return nodes.filter(n=>n.chipId===id);}
 function getChipShellRect(id){let chipNodes=getChipNodesById(id);let shellNode=chipNodes.find(n=>n.chipShell&&Number.isFinite(n.chipShell.x)&&Number.isFinite(n.chipShell.y)&&Number.isFinite(n.chipShell.w)&&Number.isFinite(n.chipShell.h));if(shellNode)return shellNode.chipShell;let rects=chipNodes.map(n=>getNodeRect(n)).filter(r=>Number.isFinite(r.x)&&Number.isFinite(r.y)&&Number.isFinite(r.w)&&Number.isFinite(r.h));if(!rects.length)return null;let minX=Math.min(...rects.map(r=>r.x));let minY=Math.min(...rects.map(r=>r.y));let maxX=Math.max(...rects.map(r=>r.x+r.w));let maxY=Math.max(...rects.map(r=>r.y+r.h));return{x:minX-14,y:minY-14,w:(maxX-minX)+28,h:(maxY-minY)+28};}
 function isChipSelected(id){return selectedNodes.some(n=>n.chipId===id);}
 function getChipIdAtPoint(x,y){for(let i=nodes.length-1;i>=0;i--){let n=nodes[i];if(!n.chipId)continue;let shell=getChipShellRect(n.chipId);if(shell&&x>=shell.x&&x<=shell.x+shell.w&&y>=shell.y&&y<=shell.y+shell.h)return n.chipId;}return null;}
-function moveChip(id,dx,dy){if(!Number.isFinite(dx)||!Number.isFinite(dy)||!id)return;let chipNodes=getChipNodesById(id);if(!chipNodes.length)return;let shellNode=chipNodes.find(n=>n.chipShell&&Number.isFinite(n.chipShell.x)&&Number.isFinite(n.chipShell.y));if(shellNode&&shellNode.chipShell){shellNode.chipShell.x+=dx;shellNode.chipShell.y+=dy;}for(let n of chipNodes){if(Number.isFinite(n.x)&&Number.isFinite(n.y)){n.x+=dx;n.y+=dy;}}}function removeNodes(list){let targets=expandActionNodes(list);let set=new Set(targets);for(let i=wires.length-1;i>=0;i--){if(set.has(wires[i].from)||set.has(wires[i].to))wires.splice(i,1);}for(let i=nodes.length-1;i>=0;i--){if(set.has(nodes[i]))nodes.splice(i,1);}pruneSelectionState();}
+function moveChip(id,dx,dy){if(!Number.isFinite(dx)||!Number.isFinite(dy)||!id)return;let chipNodes=getChipNodesById(id);if(!chipNodes.length)return;let shell=getChipShellRect(id);if(shell){shell={x:shell.x+dx,y:shell.y+dy,w:shell.w,h:shell.h};}for(let n of chipNodes){if(Number.isFinite(n.x)&&Number.isFinite(n.y)){n.x+=dx;n.y+=dy;}if(shell)n.chipShell={x:shell.x,y:shell.y,w:shell.w,h:shell.h};}}function removeNodes(list){let targets=expandActionNodes(list);let set=new Set(targets);for(let i=wires.length-1;i>=0;i--){if(set.has(wires[i].from)||set.has(wires[i].to))wires.splice(i,1);}for(let i=nodes.length-1;i>=0;i--){if(set.has(nodes[i]))nodes.splice(i,1);}pruneSelectionState();}
 function renderVisibilityMenu(){menuList.innerHTML="";const items=[{key:"switch",label:"SWITCH"},{key:"lamp",label:"LAMP"},{key:"not",label:"NOT"},{key:"or3",label:"OR3"},{key:"and",label:"AND"},{key:"or",label:"OR"},{key:"xor",label:"XOR"},{key:"output",label:"OUTPUT"},{key:"timer",label:"TIMER"},{key:"key",label:"KEY"},{key:"clock",label:"CLOCK"},{key:"memory",label:"MEM"},{key:"led",label:"LED"}];for(let item of items){let label=document.createElement("label");let cb=document.createElement("input");cb.type="checkbox";cb.checked=nodeVisibility[item.key]!==false;cb.onchange=()=>{nodeVisibility[item.key]=cb.checked;};let span=document.createElement("span");span.textContent=item.label;label.appendChild(cb);label.appendChild(span);menuList.appendChild(label);}let wireLabel=document.createElement("label");let wireCb=document.createElement("input");wireCb.type="checkbox";wireCb.checked=wiresVisible;wireCb.onchange=()=>{wiresVisible=wireCb.checked;};let wireSpan=document.createElement("span");wireSpan.textContent="WIREN";wireLabel.appendChild(wireCb);wireLabel.appendChild(wireSpan);menuList.appendChild(wireLabel);let simpleLabel=document.createElement("label");let simpleCb=document.createElement("input");simpleCb.type="checkbox";simpleCb.checked=simpleGraphics;simpleCb.onchange=()=>{simpleGraphics=simpleCb.checked;updateUiTheme();};let simpleSpan=document.createElement("span");simpleSpan.textContent="SIMPLE GRAFIK";simpleLabel.appendChild(simpleCb);simpleLabel.appendChild(simpleSpan);menuList.appendChild(simpleLabel);}
 
 function handleCanvasMouseMove(e){
@@ -1963,6 +1963,7 @@ if(aiVoice){
 }
 aiAsk.addEventListener("click",async()=>{
   const prompt=aiPrompt.value.trim(); if(!prompt)return;
+  aiPrompt.value="";
   aiAsk.disabled=true; aiThinking.style.display="flex"; aiStatus.textContent=""; updateAiGraphic();
   try{
     const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,context:getAiContext()})});
@@ -2102,6 +2103,10 @@ function applyLogicState(state){
       n.chipId = d.chipId || null;
       n.chipPin = d.chipPin || null;
       n.chipShell = d.chipShell || null;
+      if(n.chipPin){
+        n.inputs=[{x:9,y:9,value:false}];
+        n.outputs=[{x:11,y:11}];
+      }
 
       if(type === "key"){
         n.assignedKey = d.assignedKey || "";
