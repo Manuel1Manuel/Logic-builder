@@ -811,7 +811,7 @@ function tryConnectFrom(src,wx,wy){
   let idx=target.chipPin?0:getInputIndexAtPoint(target,wx,wy);
   if(idx===-1)idx=target.type==="switch"?0:getFreeSlot(target);
   if(idx!==-1||target.type==="switch"){
-   if(target.type==="switch"){wires.push({from:src,to:target,inputIndex:0);}
+   if(target.type==="switch"){wires.push({from:src,to:target,inputIndex:0});}
    else{wires.push({from:src,to:target,inputIndex:idx});}
   }
  }
@@ -2088,6 +2088,7 @@ async function applyAiActions(actions){
         if(selectionActive&&selectedNodes.length&&!pendingBlueprint)saveBlueprintToLibrary();
         if(pendingBlueprint){
           document.getElementById("bpChip").checked=true;
+          await new Promise(resolve=>setTimeout(resolve,450));
           document.getElementById("bpOk").click();
           didChange=true;
           details.push("Chip gespeichert");
