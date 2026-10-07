@@ -1862,7 +1862,17 @@ async function applyAiActions(actions){
   let changed=0; const details=[];
   aiActionInProgress=true;
   try{
-    for(const a of actions){
+    // Alle normalen Änderungen werden zuerst lokal vollständig aufgebaut.
+    // Löschungen kommen danach in absteigender Index-Reihenfolge, damit
+    // das Verschieben der Array-Indizes keine weiteren Löschziele verfälscht.
+    const normalActions=actions.filter(a=>a&&a.action!=="delete_gate");
+    const deleteActions=actions
+      .filter(a=>a&&a.action==="delete_gate")
+      .sort((a,b)=>Number(b.index)-Number(a.index));
+
+    const orderedActions=[...normalActions,...deleteActions];
+
+    for(const a of orderedActions){
       if(!a||typeof a.action!=="string")continue;
       let didChange=false;
       if(a.action==="add_gate"&&allowed.includes(a.type)){
@@ -1902,17 +1912,19 @@ async function applyAiActions(actions){
         const i=Number(a.index);
         if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="clock"&&Number.isFinite(Number(a.interval))){nodes[i].interval=Number(a.interval);didChange=true;details.push("Clock geändert");}
       }
-      if(didChange){
-        changed++;
-        clearSelection();
-        const before=lastLogicSnapshot;
-        const ackPromise=waitForAiStateAck();
-        sendLogicState();
-        if(lastLogicSnapshot!==before){
-          const acked=await ackPromise;
-          if(!acked) break;
-          await new Promise(r=>setTimeout(r,70/3));
-        }
+      if(didChange)changed++;
+    }
+
+    // Erst jetzt wird der komplette neue Zustand übertragen. Dadurch werden
+    // große KI-Aufgaben wie ein Byte-Adder nicht mehr sichtbar Block für Block
+    // über das Netzwerk abgespielt, sondern als eine sofortige Gesamtänderung.
+    if(changed){
+      clearSelection();
+      const before=lastLogicSnapshot;
+      const ackPromise=waitForAiStateAck();
+      sendLogicState();
+      if(lastLogicSnapshot!==before){
+        await ackPromise;
       }
     }
   }finally{
@@ -1920,7 +1932,6 @@ async function applyAiActions(actions){
   }
   return {changed,details};
 }
-
 aiBtn.addEventListener("click",()=>{updateAiGraphic();aiPopup.style.display="block";aiPrompt.focus();});
 aiClose.addEventListener("click",()=>{aiPopup.style.display="none";if(aiRecognition)aiRecognition.stop();});
 let aiRecognition=null;
