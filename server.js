@@ -116,7 +116,6 @@ ${prompt}`;
   const data = await response.json();
 
   if(!response.ok){
-    const data = await response.json().catch(() => ({}));
     console.error("Groq API Fehler:", data);
     res.status(502).json({
       error: "Groq API Fehler.",
@@ -125,12 +124,13 @@ ${prompt}`;
     return;
   }
 
-  const data = await response.json();
-  let raw = data?.choices?.[0]?.message?.content || "{}";
-  raw = raw.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "");
-
+  const raw = data?.choices?.[0]?.message?.content || "{}";
   let result;
-
+  try{
+    result = JSON.parse(raw);
+  }catch{
+    result = { answer: raw, actions: [] };
+  }
   res.json({
     text: result.answer || "",
     actions: Array.isArray(result.actions) ? result.actions : [],
