@@ -680,6 +680,23 @@ function collectSelectionPins(list,kind){
  }
  return pins;
 }
+function buildBlueprintFromChipId(chipId){
+ if(!chipId)return null;
+ const chipNodes=nodes.filter(n=>n.chipId===chipId);
+ if(!chipNodes.length)return null;
+ const oldSelected=selectedNodes;
+ const oldActive=selectionActive;
+ const oldBox=selectionBox;
+ selectedNodes=chipNodes.slice();
+ selectionActive=true;
+ selectionBox=getSelectionBounds(chipNodes.filter(n=>!n.hidden))||null;
+ let bp=null;
+ try{bp=buildBlueprintFromSelection();}catch{}
+ selectedNodes=oldSelected;
+ selectionActive=oldActive;
+ selectionBox=oldBox;
+ return bp;
+}
 function placeBlueprint(bp,x,y){if(!bp)return;let map=new Map();if(bp.chip){let inputs=sortByPosition(bp.nodes.filter(n=>n.type==="switch"&&!(bp.mixedChipSelection&&n.chipPin)));let outputs=sortByPosition(bp.nodes.filter(n=>n.type==="output"&&!(bp.mixedChipSelection&&n.chipPin)));let internals=bp.nodes.filter(n=>n.type!=="switch"&&n.type!=="output");let layout=getChipLayout(inputs.length,outputs.length,x,y);let chipId="chip_"+Math.random().toString(36).slice(2);let shell=layout.shell;inputs.forEach((b,i)=>{let n=new Node(layout.inputX-11,layout.inputStart+i*layout.pinGap-11,"switch");n.state=false;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=chipId;n.chipName=bp.name||"CHIP";n.chipPin="in";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});internals.forEach((b,i)=>{let n=new Node(x+shell.w/2-60,y+shell.h/2-50+(i*2),b.type);n.state=false;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;if(b.type==="memory")n.memoryState=false;if(b.type==="clock"){n.clockState=true;n.clockLastToggle=performance.now();}if(b.type==="timer"){n.timerRunning=false;n.offTimerRunning=false;n.timerStart=0;n.offTimerStart=0;}n.chipId=chipId;n.chipName=bp.name||"CHIP";n.chipShell=shell;n.hidden=true;nodes.push(n);map.set(b.id,n);});outputs.forEach((b,i)=>{let n=new Node(layout.outputX-11,layout.outputStart+i*layout.pinGap-11,"output");n.state=false;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=chipId;n.chipName=bp.name||"CHIP";n.chipPin="out";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});for(let bw of bp.wires){let from=map.get(bw.from);let to=map.get(bw.to);if(from&&to)wires.push({from,to,inputIndex:bw.inputIndex});}return;}let chipGroups=new Map();let normalNodes=[];for(let b of bp.nodes){if(b.chipId){if(!chipGroups.has(b.chipId))chipGroups.set(b.chipId,[]);chipGroups.get(b.chipId).push(b);}else normalNodes.push(b);}for(let b of normalNodes){let n=new Node(x+(b.relX||0),y+(b.relY||0),b.type);n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;if(b.type==="memory"&&b.memoryState)n.memoryState=!!b.memoryState;if(b.type==="clock"){n.clockState=b.clockState!==undefined?!!b.clockState:true;n.clockLastToggle=b.clockLastToggle||performance.now();}if(b.type==="timer"){n.timerRunning=!!b.timerRunning;n.offTimerRunning=!!b.offTimerRunning;n.timerStart=b.timerStart||0;n.offTimerStart=b.offTimerStart||0;}nodes.push(n);map.set(b.id,n);}for(let [chipId,group] of chipGroups){let inputs=sortByPosition(group.filter(n=>n.chipPin==="in"));let outputs=sortByPosition(group.filter(n=>n.chipPin==="out"));let internals=group.filter(n=>!n.chipPin&&n.hidden);let minX=Math.min(...group.map(n=>n.relX));let minY=Math.min(...group.map(n=>n.relY));let baseX=x+minX;let baseY=y+minY;let layout=getChipLayout(inputs.length,outputs.length,baseX,baseY);let newChipId="chip_"+Math.random().toString(36).slice(2);let shell=layout.shell;let chipName=group[0].chipName||group[0].name||"CHIP";inputs.forEach((b,i)=>{let n=new Node(layout.inputX-11,layout.inputStart+i*layout.pinGap-11,"switch");n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=newChipId;n.chipName=chipName;n.chipPin="in";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});internals.forEach((b,i)=>{let n=new Node(baseX+shell.w/2-60,baseY+shell.h/2-50+(i*2),b.type);n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;if(b.type==="memory"&&b.memoryState)n.memoryState=!!b.memoryState;if(b.type==="clock"){n.clockState=b.clockState!==undefined?!!b.clockState:true;n.clockLastToggle=b.clockLastToggle||performance.now();}if(b.type==="timer"){n.timerRunning=!!b.timerRunning;n.offTimerRunning=!!b.offTimerRunning;n.timerStart=b.timerStart||0;n.offTimerStart=b.offTimerStart||0;}n.chipId=newChipId;n.chipName=chipName;n.chipShell=shell;n.hidden=true;nodes.push(n);map.set(b.id,n);});outputs.forEach((b,i)=>{let n=new Node(layout.outputX-11,layout.outputStart+i*layout.pinGap-11,"output");n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=newChipId;n.chipName=chipName;n.chipPin="out";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});}for(let bw of bp.wires){let from=map.get(bw.from);let to=map.get(bw.to);if(from&&to)wires.push({from,to,inputIndex:bw.inputIndex});}}
 function loadBlueprintString(str){try{let bp=JSON.parse(str);if(!bp||!bp.nodes)return;bp.name=bp.name||("Imported "+(blueprints.length+1));blueprints.push(bp);clampBlueprintScroll();}catch(e){}}
 function copyToClipboard(text){try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text);return;}const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);}catch(e){}}
@@ -1825,6 +1842,7 @@ updateAiGraphic();
 function getAiContext(){
   const visibleNodes=nodes.map((n,index)=>({
     index,type:n.type,name:n.name||"",x:Math.round(n.x||0),y:Math.round(n.y||0),
+    chipId:n.chipId||undefined,chipPin:n.chipPin||undefined,chipName:n.chipName||undefined,
     state:n.type==="switch"?!!n.state:undefined,
     delay:n.type==="timer"?Number(n.delay)||0:undefined,
     interval:n.type==="clock"?Number(n.interval)||1000:undefined,
@@ -1918,6 +1936,43 @@ async function applyAiActions(actions){
       }else if(a.action==="set_clock"){
         const i=Number(a.index);
         if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="clock"&&Number.isFinite(Number(a.interval))){nodes[i].interval=Number(a.interval);didChange=true;details.push("Clock geändert");}
+      }else if(a.action==="save_chip"){
+        const i=Number(a.index);
+        const source=Number.isInteger(i)&&i>=0&&i<nodes.length?nodes[i]:null;
+        const chipId=source?.chipId||null;
+        if(chipId){
+          const bp=buildBlueprintFromChipId(chipId);
+          if(bp){
+            bp.name=(typeof a.name==="string"&&a.name.trim())?a.name.trim():(bp.name||"CHIP");
+            bp.chip=true;
+            zeroBlueprintSwitches(bp);
+            bp=sanitizeBlueprintForStorage(bp);
+            blueprints.push(bp);
+            clampBlueprintScroll();
+            didChange=true;
+            details.push("Chip in Blueprint-Bibliothek gespeichert");
+          }
+        }
+      }else if(a.action==="copy_chip"){
+        const i=Number(a.index);
+        const source=Number.isInteger(i)&&i>=0&&i<nodes.length?nodes[i]:null;
+        const chipId=source?.chipId||null;
+        if(chipId&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))){
+          const bp=buildBlueprintFromChipId(chipId);
+          if(bp){
+            placeBlueprint(bp,Number(a.x),Number(a.y));
+            didChange=true;
+            details.push("Chip vervielfältigt");
+          }
+        }
+      }else if(a.action==="place_blueprint"){
+        const bi=Number(a.blueprintIndex);
+        const bp=Number.isInteger(bi)&&bi>=0&&bi<blueprints.length?blueprints[bi]:null;
+        if(bp&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))){
+          placeBlueprint(cloneBlueprint(bp),Number(a.x),Number(a.y));
+          didChange=true;
+          details.push("Blueprint platziert");
+        }
       }
       if(didChange)changed++;
     }
