@@ -667,10 +667,12 @@ function collectSelectionPins(list,kind){
  let pins=[];
  for(let n of ordered){
   if(kind==="outputs"){
+   if(n.chipId&&n.chipPin!=="out")continue;
    if(n.outputs&&n.outputs.length){
     for(let i=0;i<n.outputs.length;i++)pins.push({node:n,index:i});
    }
   }else{
+   if(n.chipId&&n.chipPin!=="in")continue;
    if(n.inputs&&n.inputs.length){
     for(let i=0;i<n.inputs.length;i++){
      if(!wires.some(w=>w.to===n&&w.inputIndex===i))pins.push({node:n,index:i});
@@ -776,9 +778,44 @@ function getConnectTargetAtPoint(wx,wy){
  return null;
 }
 function getPinHitAtPoint(wx,wy,target){if(target){if(target.chipPin){let p=target.inputs?.[0]||target.outputs?.[0]||{x:11,y:11};let px=target.x+p.x,py=target.y+p.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:target,kind:target.chipPin==="in"?"input":"output",index:0};return null;}for(let i=0;i<(target.inputs||[]).length;i++){let inp=target.inputs[i];let px=target.x+inp.x,py=target.y+inp.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:target,kind:"input",index:i};}for(let i=0;i<(target.outputs||[]).length;i++){let out=target.outputs[i];let px=target.x+out.x,py=target.y+out.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:target,kind:"output",index:i};}return null;}for(let i=nodes.length-1;i>=0;i--){let n=nodes[i];if(n.hidden)continue;if(n.chipPin){let p=n.inputs?.[0]||n.outputs?.[0]||{x:11,y:11};let px=n.x+p.x,py=n.y+p.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:n,kind:n.chipPin==="in"?"input":"output",index:0};continue;}for(let j=0;j<(n.inputs||[]).length;j++){let inp=n.inputs[j];let px=n.x+inp.x,py=n.y+inp.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:n,kind:"input",index:j};}for(let j=0;j<(n.outputs||[]).length;j++){let out=n.outputs[j];let px=n.x+out.x,py=n.y+out.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:n,kind:"output",index:j};}}return null;}
-function connectSelectionToTarget(target,pinHit){let sources=collectConnectionSources(selectedNodes).filter(n=>n!==target);for(let src of sources){let idx=pinHit&&pinHit.node===target&&pinHit.kind==="input"?pinHit.index:(target.chipPin?0:(target.type==="switch"||target.type==="output"||target.type==="not"?0:getFreeSlot(target)));if(idx===-1)continue;wires.push({from:src,to:target,inputIndex:idx});}}
-function connectSourceToSelection(source){if(source&&source.chipId&&source.chipPin!=="out")return;let targets=collectConnectionTargets(selectedNodes).filter(n=>n!==source);for(let target of targets){let idx=target.chipPin?0:(target.type==="switch"||target.type==="output"||target.type==="not"?0:getFreeSlot(target));if(idx===-1)continue;wires.push({from:source,to:target,inputIndex:idx});}}
-function tryConnectFrom(src,wx,wy){if(src&&src.chipId&&src.chipPin!=="out")return;let target=getConnectTargetAtPoint(wx,wy);if(!target||target===src)return;if(target.chipId&&target.chipPin!=="in")return;if(src.outputs&&target.inputs){if(target.type==="output"){wires.push({from:src,to:target,inputIndex:0});return;}if(target.type==="not"){wires.push({from:src,to:target,inputIndex:0});return;}let idx=target.chipPin?0:getInputIndexAtPoint(target,wx,wy);if(idx===-1)idx=target.type==="switch"?0:getFreeSlot(target);if(idx!==-1||target.type==="switch"){if(target.type==="switch"){wires.push({from:src,to:target,inputIndex:0});}else{wires.push({from:src,to:target,inputIndex:idx});}}}}
+function connectSelectionToTarget(target,pinHit){
+ if(!target)return;
+ if(target.chipPin&&target.chipPin!=="in")return;
+ let sources=collectConnectionSources(selectedNodes).filter(n=>n!==target);
+ for(let src of sources){
+  if(src.chipId&&target.chipId&&src.chipId===target.chipId)continue;
+  let idx=pinHit&&pinHit.node===target&&pinHit.kind==="input"?pinHit.index:(target.chipPin?0:(target.type==="switch"||target.type==="output"||target.type==="not"?0:getFreeSlot(target)));
+  if(idx===-1)continue;
+  wires.push({from:src,to:target,inputIndex:idx});
+ }
+}
+function connectSourceToSelection(source){
+ if(source&&source.chipId&&source.chipPin!=="out")return;
+ let targets=collectConnectionTargets(selectedNodes).filter(n=>n!==source);
+ for(let target of targets){
+  if(source.chipId&&target.chipId&&source.chipId===target.chipId)continue;
+  let idx=target.chipPin?0:(target.type==="switch"||target.type==="output"||target.type==="not"?0:getFreeSlot(target));
+  if(idx===-1)continue;
+  wires.push({from:source,to:target,inputIndex:idx});
+ }
+}
+function tryConnectFrom(src,wx,wy){
+ if(src&&src.chipId&&src.chipPin!=="out")return;
+ let target=getConnectTargetAtPoint(wx,wy);
+ if(!target||target===src)return;
+ if(target.chipId&&target.chipPin!=="in")return;
+ if(src.chipId&&target.chipId&&src.chipId===target.chipId)return;
+ if(src.outputs&&target.inputs){
+  if(target.type==="output"){wires.push({from:src,to:target,inputIndex:0});return;}
+  if(target.type==="not"){wires.push({from:src,to:target,inputIndex:0});return;}
+  let idx=target.chipPin?0:getInputIndexAtPoint(target,wx,wy);
+  if(idx===-1)idx=target.type==="switch"?0:getFreeSlot(target);
+  if(idx!==-1||target.type==="switch"){
+   if(target.type==="switch"){wires.push({from:src,to:target,inputIndex:0);}
+   else{wires.push({from:src,to:target,inputIndex:idx});}
+  }
+ }
+}
 
 document.getElementById("nameSave").onclick=()=>{if(nameNode){let v=document.getElementById("nameInput").value.trim();if(v)nameNode.name=v;}document.getElementById("namePopup").style.display="none";nameNode=null;};
 document.getElementById("copyYes").onclick=()=>{if(copyPending)copyToClipboard(JSON.stringify(copyPending));copyPending=null;document.getElementById("copyPopup").style.display="none";};
@@ -826,8 +863,8 @@ function handleCanvasMouseDown(e){
   let target=getConnectTargetAtPoint(mouseWorld.x,mouseWorld.y);
   if(target){
    let pinHit=getPinHitAtPoint(mouseWorld.x,mouseWorld.y,target);
-   if(selectionWireMode==="from")connectSelectionToTarget(target,pinHit);
-   else if(selectionWireMode==="to")connectSourceToSelection(target);
+   if(selectionWireMode==="from"&&pinHit&&pinHit.kind==="input")connectSelectionToTarget(target,pinHit);
+   else if(selectionWireMode==="to"&&pinHit&&pinHit.kind==="output")connectSourceToSelection(target);
   }
   selectionWireMode=null;
   return;
@@ -868,6 +905,14 @@ function handleCanvasMouseDown(e){
   return;
  }
  if(e.button===0){
+  let pinHit=getPinHitAtPoint(mouseWorld.x,mouseWorld.y);
+  if(pinHit&&pinHit.node&&pinHit.node.chipPin){
+   if(pinHit.kind==="output"){
+    connectFrom=pinHit.node;
+    return;
+   }
+   return;
+  }
   let cid=getChipIdAtPoint(mouseWorld.x,mouseWorld.y);
   if(cid){
    drag=null;
@@ -911,6 +956,15 @@ function handleCanvasMouseDown(e){
   return;
  }
  if(e.button===2){
+  let pinHit=getPinHitAtPoint(mouseWorld.x,mouseWorld.y);
+  if(pinHit&&pinHit.node&&pinHit.node.chipPin){
+   if(pinHit.kind==="output"){
+    connectFrom=pinHit.node;
+   }else{
+    connectFrom=null;
+   }
+   return;
+  }
   for(let i=nodes.length-1;i>=0;i--){
    let n=nodes[i];
    if(!n.contains(mouseWorld.x,mouseWorld.y))continue;
@@ -2008,6 +2062,35 @@ async function applyAiActions(actions){
             didChange=true;
             details.push("Chip vervielfältigt");
           }
+        }
+      }else if(a.action==="select_nodes"){
+        const indices=Array.isArray(a.indices)?a.indices:[];
+        const picked=[];
+        for(const rawIndex of indices){
+          const i=Number(rawIndex);
+          if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i]&&!nodes[i].hidden)picked.push(nodes[i]);
+        }
+        const expanded=expandActionNodes(picked).filter(n=>!n.hidden&&nodes.includes(n));
+        selectedNodes=[...new Set(expanded)];
+        selectionActive=!!selectedNodes.length;
+        selectionBox=selectionActive?getSelectionBounds(selectedNodes):null;
+        selectionWireMode=null;
+        didChange=true;
+        details.push("Auswahl gesetzt");
+      }else if(a.action==="open_chip_popup"){
+        if(selectionActive&&selectedNodes.length){
+          saveBlueprintToLibrary();
+          document.getElementById("bpChip").checked=true;
+          didChange=true;
+          details.push("Chip-Speicherfenster geöffnet");
+        }
+      }else if(a.action==="confirm_chip_save"){
+        if(selectionActive&&selectedNodes.length&&!pendingBlueprint)saveBlueprintToLibrary();
+        if(pendingBlueprint){
+          document.getElementById("bpChip").checked=true;
+          document.getElementById("bpOk").click();
+          didChange=true;
+          details.push("Chip gespeichert");
         }
       }else if(a.action==="place_blueprint"){
         const bi=Number(a.blueprintIndex);
