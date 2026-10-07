@@ -669,8 +669,7 @@ function getAiKnowledgeContext(){
     index,
     createdAt:entry.createdAt||"",
     name:entry.name||("KI-Wissen "+(index+1)),
-    understanding:entry.understanding||"",
-    blueprint:entry.blueprint||null
+    understanding:entry.understanding||""
   }));
 }
 async function saveAiKnowledgeEntry(bp,name){
