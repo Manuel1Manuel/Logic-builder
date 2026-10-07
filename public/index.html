@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Logic Builder Ultra</title>
 <style>
-body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none;}canvas{display:block;background:radial-gradient(circle at center,#1a1a1a,#050505);touch-action:none;}#modeToggle{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:8px 14px;z-index:120;cursor:pointer;}#touchModeToggle{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:70;display:none;cursor:pointer;}#menuBtn{position:fixed;left:10px;top:50%;transform:translateY(80px);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:80;cursor:pointer;}#memoryUsage{position:fixed;left:10px;top:calc(50% + 38px);transform:translateY(-100%);background:#111;border:1px solid #00ffff;color:white;padding:5px 8px;z-index:79;font:12px Arial;white-space:nowrap;pointer-events:none;}#serverStorage{position:fixed;left:10px;top:calc(50% + 66px);transform:none;background:#111;border:1px solid #00ffff;color:white;padding:5px 8px;z-index:79;font:12px Arial;white-space:nowrap;pointer-events:none;}#serverStatus{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);width:min(760px,calc(100vw - 30px));box-sizing:border-box;background:#111;border:1px solid #00ffff;color:white;padding:5px 8px;z-index:85;font:12px Arial;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;text-align:center;}#aiBtn{position:fixed;left:10px;top:96px;width:42px;height:26px;box-sizing:border-box;background:#111;border:1px solid #00ffff;color:white;padding:2px 6px;z-index:81;cursor:pointer;}#aiPopup{position:fixed;left:10px;top:132px;transform:none;width:min(380px,calc(100vw - 30px));max-height:calc(100vh - 150px);overflow:auto;background:#111;border:1px solid #00ffff;color:white;padding:10px;z-index:100;display:block;box-sizing:border-box;}#aiClose{float:right;background:none;border:1px solid #00ffff;color:white;padding:1px 7px;cursor:pointer;font-size:16px;}#aiPrompt{width:100%;height:90px;box-sizing:border-box;background:#222;color:white;border:1px solid #00ffff;resize:vertical;padding:7px;}#aiAsk{margin-top:7px;background:#00ffff;border:0;padding:7px 12px;cursor:pointer;}#aiStatus{margin-top:7px;font-size:12px;color:#ccc;white-space:pre-wrap;max-height:180px;overflow:auto;}#menuPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:90;display:none;flex-direction:column;gap:10px;color:white;min-width:250px;max-width:min(92vw,420px);max-height:80vh;overflow:auto;}#menuPopup input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#menuPopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#bpPopup{position:fixed;top:-220px;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:10;transition:top 0.3s;display:flex;flex-direction:column;gap:10px;}#bpPopup input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;}#bpPopup button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImport{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:8px;z-index:20;display:flex;gap:6px;align-items:center;}#bpImport input,#bpImport textarea{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;width:420px;box-sizing:border-box;}#bpImport textarea{height:70px;resize:vertical;font-family:monospace;font-size:11px;}#bpImport button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImportStatus{position:absolute;top:100%;left:0;margin-top:6px;width:100%;background:#111;border:1px solid #00ffff;padding:7px;box-sizing:border-box;color:white;font-size:12px;display:none;}#bpImportBar{height:6px;background:#222;border:1px solid #555;margin-top:5px;overflow:hidden;}#bpImportBarFill{height:100%;width:0%;background:#00ffff;transition:width .12s;}#copyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:50;display:none;flex-direction:column;gap:10px;align-items:center;}#copyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#timerMenu{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:10px;z-index:60;display:none;flex-direction:column;gap:8px;color:white;min-width:340px;max-height:80vh;overflow:auto;}#timerMenu input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#timerMenu button{background:#00ffff;border:none;padding:5px;cursor:pointer;}#menuList{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;padding-right:4px;}#menuList label{display:flex;align-items:center;gap:8px;white-space:nowrap;}#namePopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;}#namePopup input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#namePopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#keyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#keyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#clockMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#clockMenu input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#clockMenu button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#bpActionPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:14px;z-index:110;display:none;flex-direction:column;gap:10px;align-items:center;}#bpActionPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;width:140px;}@media (pointer:coarse){#touchModeToggle{display:block;}}
+body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none;}canvas{display:block;background:radial-gradient(circle at center,#1a1a1a,#050505);touch-action:none;}#modeToggle{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:8px 14px;z-index:120;cursor:pointer;}#touchModeToggle{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:70;display:none;cursor:pointer;}#menuBtn{position:fixed;left:10px;top:50%;transform:translateY(80px);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:80;cursor:pointer;}#menuPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:90;display:none;flex-direction:column;gap:10px;color:white;min-width:250px;max-width:min(92vw,420px);max-height:80vh;overflow:auto;}#menuPopup input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#menuPopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#bpPopup{position:fixed;top:-220px;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:10;transition:top 0.3s;display:flex;flex-direction:column;gap:10px;}#bpPopup input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;}#bpPopup button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImport{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:8px;z-index:20;display:flex;gap:6px;align-items:center;}#bpImport input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;width:220px;}#bpImport button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#copyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:50;display:none;flex-direction:column;gap:10px;align-items:center;}#copyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#timerMenu{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:10px;z-index:60;display:none;flex-direction:column;gap:8px;color:white;min-width:340px;max-height:80vh;overflow:auto;}#timerMenu input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#timerMenu button{background:#00ffff;border:none;padding:5px;cursor:pointer;}#menuList{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;padding-right:4px;}#menuList label{display:flex;align-items:center;gap:8px;white-space:nowrap;}#namePopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;}#namePopup input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#namePopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#keyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#keyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#clockMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#clockMenu input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#clockMenu button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#bpActionPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:14px;z-index:110;display:none;flex-direction:column;gap:10px;align-items:center;}#bpActionPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;width:140px;}@media (pointer:coarse){#touchModeToggle{display:block;}}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="modeToggle">PC</div>
 <div id="touchModeToggle">Links</div>
-<div id="memoryUsage">Speicher: 0 B · 0 bit</div><div id="serverStorage">Server: 0 KB · 0 bit</div><div id="serverStatus">Server: Verbinde ...</div><button id="aiBtn">AI</button><div id="aiPopup"><button id="aiClose" title="Chat schließen">×</button><div style="font-size:16px;margin-bottom:7px;">Logic Builder AI</div><textarea id="aiPrompt" placeholder="Beschreibe, was du wissen oder mit der Schaltung machen möchtest ..."></textarea><button id="aiAsk">Fragen</button><div id="aiStatus"></div></div><div id="menuBtn">Menü</div>
+<div id="menuBtn">Menü</div>
 <div id="menuPopup">
 <label style="color:white;display:flex;gap:8px;align-items:center;">
 <input id="tickOff" type="checkbox"> Aus
@@ -35,8 +35,8 @@ Chip? <input id="bpChip" type="checkbox">
 <button id="bpOk">OK</button>
 </div>
 <div id="bpImport">
-<textarea id="bpData" placeholder="Paste Blueprint JSON"></textarea>
-<button id="bpLoad">Load</button><div id="bpImportStatus"><div id="bpImportStatusText"></div><div id="bpImportBar"><div id="bpImportBarFill"></div></div></div>
+<input id="bpData" type="text" placeholder="Paste Blueprint">
+<button id="bpLoad">Load</button>
 </div>
 <div id="copyPopup">
 <div style="color:white">Blueprint kopieren?</div>
@@ -81,7 +81,7 @@ try{const _d=Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx),"shadowB
 let tickMs=0,lastTick=0;
 const nodes=[],wires=[];
 let mouseScreen={x:0,y:0},mouseWorld={x:0,y:0};
-let drag=null,connectFrom=null,selecting=false,selectionStart={x:0,y:0},selectionEnd={x:0,y:0},selectionBox=null,selectedNodes=[],selectionActive=false,qSelectionActive=false,qSelectedNodes=[],groupDragging=false,blueprint=null,blueprints=[],blueprintLibraryVersion=0,blueprintScroll=0,blueprintScrollDrag=false,blueprintScrollDragOffset=0,libraryDrag=null,pendingBlueprint=null,panning=false,copyPending=null,timerMenuNode=null,nameNode=null,rightRenameCandidate=null,chipDrag=null,timerMenuCandidate=null,keyMenuCandidate=null,clockMenuCandidate=null,keyMenuNode=null,clockMenuNode=null,pressedKeys=new Set(),mode="pc",touchMode="left",activeTouchId=null,activeTouchButton=0,lastTouchX=0,lastTouchY=0,pinchActive=false,pinchStartDist=0,pinchStartZoom=1,pinchWorldMidX=0,pinchWorldMidY=0,selectionWireMode=null,bpActionIndex=-1,batchConnect=null,hiddenInputPins=true;
+let drag=null,connectFrom=null,selecting=false,selectionStart={x:0,y:0},selectionEnd={x:0,y:0},selectionBox=null,selectedNodes=[],selectionActive=false,groupDragging=false,blueprint=null,blueprints=[],blueprintScroll=0,blueprintScrollDrag=false,blueprintScrollDragOffset=0,libraryDrag=null,pendingBlueprint=null,panning=false,copyPending=null,timerMenuNode=null,nameNode=null,rightRenameCandidate=null,chipDrag=null,timerMenuCandidate=null,keyMenuCandidate=null,clockMenuCandidate=null,keyMenuNode=null,clockMenuNode=null,pressedKeys=new Set(),mode="pc",touchMode="left",activeTouchId=null,activeTouchButton=0,lastTouchX=0,lastTouchY=0,pinchActive=false,pinchStartDist=0,pinchStartZoom=1,pinchWorldMidX=0,pinchWorldMidY=0,selectionWireMode=null,bpActionIndex=-1,batchConnect=null,hiddenInputPins=true;
 let hiddenNames=false;
 const PIN_HIT_RADIUS=22;
 const nodeVisibility={switch:true,lamp:true,not:true,or3:true,and:true,or:true,xor:true,output:true,timer:true,key:true,clock:true,memory:true,led:true};
@@ -604,45 +604,9 @@ function getSavedNodeState(n){return n.type==="switch"?(n.state||n.output):n.sta
 function getNodeSize(n){if(n.hidden)return{w:0,h:0};if(n.chipPin)return{w:22,h:22};if(n.type==="led")return{w:90,h:90};if(n.type==="switch")return{w:80,h:60};if(n.type==="lamp")return{w:90,h:90};if(n.type==="output")return{w:100,h:60};if(n.type==="timer")return{w:110,h:80};if(n.type==="key")return{w:100,h:80};if(n.type==="clock")return{w:100,h:80};if(n.type==="memory")return{w:110,h:100};return{w:120,h:100};}
 function getNodeRect(n){if(n.chipId&&n.chipShell)return{x:n.chipShell.x,y:n.chipShell.y,w:n.chipShell.w,h:n.chipShell.h};let s=getNodeSize(n);return{x:n.x,y:n.y,w:s.w,h:s.h};}
 function getSelectionBounds(list){if(!list.length)return null;let r=list.map(getNodeRect);let minX=Math.min(...r.map(v=>v.x));let minY=Math.min(...r.map(v=>v.y));let maxX=Math.max(...r.map(v=>v.x+v.w));let maxY=Math.max(...r.map(v=>v.y+v.h));return{x:minX,y:minY,w:maxX-minX,h:maxY-minY};}
-function clearSelection(){selectedNodes=[];selectionActive=false;qSelectionActive=false;selectionBox=null;selectionWireMode=null;}
+function clearSelection(){selectedNodes=[];selectionActive=false;selectionBox=null;selectionWireMode=null;}
 function cancelSelectionContext(){batchConnect=null;clearSelection();}
-function restoreTriggerSelection(list){let kept=expandActionNodes(list).filter(n=>!n.hidden&&nodes.includes(n));selectedNodes=kept;selectionActive=!!kept.length;selectionBox=selectionActive?getSelectionBounds(kept):null;}function arrangeSelection(){
- if(!selectionActive||!selectedNodes.length)return;
- let base=selectedNodes.filter(n=>!n.hidden&&nodes.includes(n));
- if(!base.length)return;
- let groups=[],seenChips=new Set();
- for(let n of sortByPosition(base)){
-  if(n.chipId){
-   if(seenChips.has(n.chipId))continue;
-   seenChips.add(n.chipId);
-   let members=nodes.filter(x=>x.chipId===n.chipId);
-   let visible=members.filter(x=>!x.hidden);
-   let rects=(visible.length?visible:members).map(getNodeRect);
-   let minX=Math.min(...rects.map(r=>r.x)),minY=Math.min(...rects.map(r=>r.y));
-   let maxX=Math.max(...rects.map(r=>r.x+r.w)),maxY=Math.max(...rects.map(r=>r.y+r.h));
-   groups.push({members,x:minX,y:minY,w:maxX-minX,h:maxY-minY});
-  }else{
-   let r=getNodeRect(n);
-   groups.push({members:[n],x:r.x,y:r.y,w:r.w,h:r.h});
-  }
- }
- if(groups.length<2)return;
- let cols=Math.max(1,Math.ceil(Math.sqrt(groups.length)));
- let rows=Math.ceil(groups.length/cols);
- let gapX=28,gapY=28;
- let cellW=Math.max(...groups.map(g=>g.w))+gapX;
- let cellH=Math.max(...groups.map(g=>g.h))+gapY;
- let minX=Math.min(...groups.map(g=>g.x));
- let minY=Math.min(...groups.map(g=>g.y));
- groups.forEach((g,i)=>{
-  let col=i%cols,row=Math.floor(i/cols);
-  let nx=minX+col*cellW+(cellW-g.w)/2;
-  let ny=minY+row*cellH+(cellH-g.h)/2;
-  let dx=nx-g.x,dy=ny-g.y;
-  for(let n of g.members){n.x+=dx;n.y+=dy;}
- });
- selectionBox=getSelectionBounds(base);
-}
+function restoreTriggerSelection(list){let kept=expandActionNodes(list).filter(n=>!n.hidden&&nodes.includes(n));selectedNodes=kept;selectionActive=!!kept.length;selectionBox=selectionActive?getSelectionBounds(kept):null;}
 function expandActionNodes(list){let out=[],seen=new Set(),chipIds=new Set();for(let n of list){if(n.chipId)chipIds.add(n.chipId);else if(!seen.has(n)){seen.add(n);out.push(n);}}if(chipIds.size){for(let n of nodes){if(n.chipId&&chipIds.has(n.chipId)&&!seen.has(n)){seen.add(n);out.push(n);}}}return out;}
 function resetAllClocks(){let now=performance.now();for(let n of nodes){if(n.type==="clock"){n.clockState=true;n.clockLastToggle=now;n.clockProgress=0;n.output=true;}if(n.type==="timer"){n.timerRunning=false;n.offTimerRunning=false;n.timerStart=0;n.offTimerStart=0;n.timerSweep=0;n.output=false;}}}
 function pruneSelectionState(){
@@ -676,7 +640,7 @@ function cloneBlueprint(bp){return JSON.parse(JSON.stringify(bp));}
 function sortByPosition(list){return [...list].sort((a,b)=>(a.relY||0)-(b.relY||0)||(a.relX||0)-(b.relX||0));}
 function blueprintHasEmbeddedChip(bp){return !!(bp&&bp.nodes&&bp.nodes.some(n=>n.chipId||n.chipPin||n.chipShell));}
 function expandBlueprint(bp){if(!bp)return bp;if(Array.isArray(bp.nodes))bp.nodes=bp.nodes.map(n=>Array.isArray(n)?Object.assign({id:n[0],type:n[1],relX:n[2],relY:n[3]},typeof n[4]==="string"?{name:n[4]}:(n[4]||{})):n);if(Array.isArray(bp.wires))bp.wires=bp.wires.map(x=>Array.isArray(x)?{from:x[0],to:x[1],inputIndex:x[2]}:x);return bp;}
-function loadPreblueprints(){for(let i=0;i<Math.min(15,preblueprints.length);i++){let bp=preblueprints[i];if(typeof bp==="string"){try{bp=JSON.parse(bp);}catch(e){continue;}}bp=expandBlueprint(bp);if(bp&&bp.nodes)blueprints.push(cloneBlueprint(bp));}blueprintLibraryVersion++;clampBlueprintScroll();}
+function loadPreblueprints(){for(let i=0;i<Math.min(15,preblueprints.length);i++){let bp=preblueprints[i];if(typeof bp==="string"){try{bp=JSON.parse(bp);}catch(e){continue;}}bp=expandBlueprint(bp);if(bp&&bp.nodes)blueprints.push(cloneBlueprint(bp));}clampBlueprintScroll();}
 function resetBlueprintNodeState(node){if(!node)return;node.state=false;node.memoryState=false;node.timerRunning=false;node.offTimerRunning=false;node.timerStart=0;node.offTimerStart=0;node.clockState=true;node.clockLastToggle=0;if(node.type==="switch"||node.type==="output")node.state=false;if(node.type==="timer")node.timerSweep=0;}
 function sanitizeBlueprintForStorage(bp){if(!bp||!bp.nodes)return bp;let out=cloneBlueprint(bp);for(let n of out.nodes)resetBlueprintNodeState(n);return out;}
 function flattenChipBlueprint(bp){if(!bp||!bp.nodes)return bp;if(!bp.chip)return cloneBlueprint(bp);let out=cloneBlueprint(bp);for(let n of out.nodes){if(n.chipId){if(n.type==="switch"||n.type==="output")n.type="or3";n.chipId=null;n.chipName="";n.chipPin=null;n.chipShell=null;n.hidden=false;}else if(n.chipPin){if(n.type==="switch"||n.type==="output")n.type="or3";n.chipPin=null;n.chipShell=null;n.hidden=false;}}out.mixedChipSelection=false;return out;}
@@ -694,26 +658,18 @@ function getLibraryItemIndexAt(sx,sy){for(let i=0;i<blueprints.length;i++){let r
 function getLibraryScrollTrackRect(){if(blueprints.length<=blueprintVisibleRows)return null;let p=getLibraryPanelRect();return{x:p.x+p.w-14,y:p.y+36,w:8,h:blueprintVisibleRows*34};}
 function getLibraryScrollThumbRect(){let track=getLibraryScrollTrackRect();if(!track)return null;let maxScroll=Math.max(0,blueprints.length-blueprintVisibleRows);let thumbH=Math.max(24,track.h*(blueprintVisibleRows/blueprints.length));let y=track.y+(track.h-thumbH)*(maxScroll===0?0:(blueprintScroll/maxScroll));return{x:track.x,y,w:track.w,h:thumbH};}
 function setBlueprintScrollFromY(clientY){let track=getLibraryScrollTrackRect();let thumb=getLibraryScrollThumbRect();if(!track||!thumb)return;let maxScroll=Math.max(0,blueprints.length-blueprintVisibleRows);if(maxScroll===0){blueprintScroll=0;return;}let pos=clientY-blueprintScrollDragOffset;let minY=track.y;let maxY=track.y+track.h-thumb.h;if(pos<minY)pos=minY;if(pos>maxY)pos=maxY;let ratio=(pos-minY)/(maxY-minY||1);blueprintScroll=Math.round(ratio*maxScroll);clampBlueprintScroll();}
-function deleteBlueprintAtIndex(index){if(index<0||index>=blueprints.length)return;blueprints.splice(index,1);blueprintLibraryVersion++;clampBlueprintScroll();}
+function deleteBlueprintAtIndex(index){if(index<0||index>=blueprints.length)return;blueprints.splice(index,1);clampBlueprintScroll();}
 function openBlueprintActionPopup(index){bpActionIndex=index;let bp=blueprints[index];document.getElementById("bpActionText").textContent=bp?(bp.name||"Blueprint"):"Blueprint";document.getElementById("bpActionPopup").style.display="flex";}
 function closeBlueprintActionPopup(){bpActionIndex=-1;document.getElementById("bpActionPopup").style.display="none";}
-function isChipInputNode(n){return !!n&&n.chipPin==="in";}
-function isChipOutputNode(n){return !!n&&n.chipPin==="out";}
-function isValidWireEndpoints(from,to){return !!from&&!!to&&!isChipInputNode(from)&&!isChipOutputNode(to);}
-
 function collectSelectionPins(list,kind){
  let ordered=sortByPosition(expandActionNodes(list).filter(n=>!n.hidden));
  let pins=[];
  for(let n of ordered){
   if(kind==="outputs"){
-   // Chip-Eingänge sind ausschließlich Ziele und niemals Quellen.
-   if(isChipInputNode(n))continue;
    if(n.outputs&&n.outputs.length){
     for(let i=0;i<n.outputs.length;i++)pins.push({node:n,index:i});
    }
   }else{
-   // Chip-Ausgänge sind ausschließlich Quellen und niemals Ziele.
-   if(isChipOutputNode(n))continue;
    if(n.inputs&&n.inputs.length){
     for(let i=0;i<n.inputs.length;i++){
      if(!wires.some(w=>w.to===n&&w.inputIndex===i))pins.push({node:n,index:i});
@@ -724,79 +680,9 @@ function collectSelectionPins(list,kind){
  return pins;
 }
 function placeBlueprint(bp,x,y){if(!bp)return;let map=new Map();if(bp.chip){let inputs=sortByPosition(bp.nodes.filter(n=>n.type==="switch"&&!(bp.mixedChipSelection&&n.chipPin)));let outputs=sortByPosition(bp.nodes.filter(n=>n.type==="output"&&!(bp.mixedChipSelection&&n.chipPin)));let internals=bp.nodes.filter(n=>n.type!=="switch"&&n.type!=="output");let layout=getChipLayout(inputs.length,outputs.length,x,y);let chipId="chip_"+Math.random().toString(36).slice(2);let shell=layout.shell;inputs.forEach((b,i)=>{let n=new Node(layout.inputX-11,layout.inputStart+i*layout.pinGap-11,"switch");n.state=false;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=chipId;n.chipName=bp.name||"CHIP";n.chipPin="in";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});internals.forEach((b,i)=>{let n=new Node(x+shell.w/2-60,y+shell.h/2-50+(i*2),b.type);n.state=false;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;if(b.type==="memory")n.memoryState=false;if(b.type==="clock"){n.clockState=true;n.clockLastToggle=performance.now();}if(b.type==="timer"){n.timerRunning=false;n.offTimerRunning=false;n.timerStart=0;n.offTimerStart=0;}n.chipId=chipId;n.chipName=bp.name||"CHIP";n.chipShell=shell;n.hidden=true;nodes.push(n);map.set(b.id,n);});outputs.forEach((b,i)=>{let n=new Node(layout.outputX-11,layout.outputStart+i*layout.pinGap-11,"output");n.state=false;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=chipId;n.chipName=bp.name||"CHIP";n.chipPin="out";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});for(let bw of bp.wires){let from=map.get(bw.from);let to=map.get(bw.to);if(from&&to)wires.push({from,to,inputIndex:bw.inputIndex});}return;}let chipGroups=new Map();let normalNodes=[];for(let b of bp.nodes){if(b.chipId){if(!chipGroups.has(b.chipId))chipGroups.set(b.chipId,[]);chipGroups.get(b.chipId).push(b);}else normalNodes.push(b);}for(let b of normalNodes){let n=new Node(x+(b.relX||0),y+(b.relY||0),b.type);n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;if(b.type==="memory"&&b.memoryState)n.memoryState=!!b.memoryState;if(b.type==="clock"){n.clockState=b.clockState!==undefined?!!b.clockState:true;n.clockLastToggle=b.clockLastToggle||performance.now();}if(b.type==="timer"){n.timerRunning=!!b.timerRunning;n.offTimerRunning=!!b.offTimerRunning;n.timerStart=b.timerStart||0;n.offTimerStart=b.offTimerStart||0;}nodes.push(n);map.set(b.id,n);}for(let [chipId,group] of chipGroups){let inputs=sortByPosition(group.filter(n=>n.chipPin==="in"));let outputs=sortByPosition(group.filter(n=>n.chipPin==="out"));let internals=group.filter(n=>!n.chipPin&&n.hidden);let minX=Math.min(...group.map(n=>n.relX));let minY=Math.min(...group.map(n=>n.relY));let baseX=x+minX;let baseY=y+minY;let layout=getChipLayout(inputs.length,outputs.length,baseX,baseY);let newChipId="chip_"+Math.random().toString(36).slice(2);let shell=layout.shell;let chipName=group[0].chipName||group[0].name||"CHIP";inputs.forEach((b,i)=>{let n=new Node(layout.inputX-11,layout.inputStart+i*layout.pinGap-11,"switch");n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=newChipId;n.chipName=chipName;n.chipPin="in";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});internals.forEach((b,i)=>{let n=new Node(baseX+shell.w/2-60,baseY+shell.h/2-50+(i*2),b.type);n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;if(b.type==="memory"&&b.memoryState)n.memoryState=!!b.memoryState;if(b.type==="clock"){n.clockState=b.clockState!==undefined?!!b.clockState:true;n.clockLastToggle=b.clockLastToggle||performance.now();}if(b.type==="timer"){n.timerRunning=!!b.timerRunning;n.offTimerRunning=!!b.offTimerRunning;n.timerStart=b.timerStart||0;n.offTimerStart=b.offTimerStart||0;}n.chipId=newChipId;n.chipName=chipName;n.chipShell=shell;n.hidden=true;nodes.push(n);map.set(b.id,n);});outputs.forEach((b,i)=>{let n=new Node(layout.outputX-11,layout.outputStart+i*layout.pinGap-11,"output");n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=newChipId;n.chipName=chipName;n.chipPin="out";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});}for(let bw of bp.wires){let from=map.get(bw.from);let to=map.get(bw.to);if(from&&to)wires.push({from,to,inputIndex:bw.inputIndex});}}
-function setBlueprintImportStatus(text,percent,ok){
- const box=document.getElementById("bpImportStatus"),label=document.getElementById("bpImportStatusText"),fill=document.getElementById("bpImportBarFill");
- if(!box||!label||!fill)return;
- box.style.display="block";label.textContent=text;fill.style.width=Math.max(0,Math.min(100,percent||0))+"%";fill.style.background=ok===false?"#ff5555":"#00ffff";
-}
-async function loadBlueprintString(str){
- const raw=String(str||"").trim();
- if(!raw){setBlueprintImportStatus("Fehler: Kein Blueprint eingefügt.",100,false);return false;}
- setBlueprintImportStatus(raw.length>250000?"Großer Blueprint wird geladen …":"Blueprint wird geprüft …",10,true);
- await new Promise(r=>setTimeout(r,0));
- let bp;
- try{bp=JSON.parse(raw);}catch(e){setBlueprintImportStatus("Fehler: Ungültiges JSON.",100,false);return false;}
- setBlueprintImportStatus("JSON gelesen …",25,true);await new Promise(r=>setTimeout(r,0));
- if(!bp||!Array.isArray(bp.nodes)||!bp.nodes.length){setBlueprintImportStatus("Fehler: Blueprint enthält keine Nodes.",100,false);return false;}
- try{
-  bp=expandBlueprint(bp);bp.name=String(bp.name||"").trim()||("Imported "+(blueprints.length+1));
-  const validNodes=[];const total=bp.nodes.length;
-  for(let i=0;i<total;i++){const n=bp.nodes[i];if(n&&n.type)validNodes.push(n);if(i%Math.max(1,Math.floor(total/20))===0){setBlueprintImportStatus("Nodes werden geprüft … "+Math.round(25+(i/total)*35)+"%",true);await new Promise(r=>setTimeout(r,0));}}
-  if(!validNodes.length){setBlueprintImportStatus("Fehler: Keine gültigen Nodes gefunden.",100,false);return false;}
-  bp.nodes=validNodes;setBlueprintImportStatus("Verbindungen werden geprüft …",65,true);await new Promise(r=>setTimeout(r,0));
-  bp.wires=Array.isArray(bp.wires)?bp.wires.filter(w=>w&&w.from!==undefined&&w.to!==undefined).map(w=>({from:w.from,to:w.to,inputIndex:Number.isFinite(w.inputIndex)?w.inputIndex:0})):[]; 
-  bp.chip=!!bp.chip;bp.mixedChipSelection=!!bp.mixedChipSelection;
-  setBlueprintImportStatus("Blueprint wird gespeichert …",80,true);await new Promise(r=>setTimeout(r,0));
-  bp=sanitizeBlueprintForStorage(bp);blueprints.push(bp);blueprintLibraryVersion++;blueprintScroll=Math.max(0,blueprints.length-blueprintVisibleRows);clampBlueprintScroll();
-  setBlueprintImportStatus("✓ Blueprint erfolgreich importiert.",100,true);return true;
- }catch(e){setBlueprintImportStatus("Fehler beim Import: "+(e&&e.message?e.message:"unbekannter Fehler"),100,false);return false;}
-}
-async function copyToClipboard(text){
- try{
-  if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(text);return true;}
-  const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();const ok=document.execCommand("copy");document.body.removeChild(ta);return !!ok;
- }catch(e){return false;}
-}
+function loadBlueprintString(str){try{let bp=JSON.parse(str);if(!bp||!bp.nodes)return;bp.name=bp.name||("Imported "+(blueprints.length+1));blueprints.push(bp);clampBlueprintScroll();}catch(e){}}
+function copyToClipboard(text){try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text);return;}const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);}catch(e){}}
 function copyBlueprint(bp){copyPending=bp;document.getElementById("copyPopup").style.display="flex";}
-function selectAllForQuickBlueprint(){
- const all=nodes.filter(n=>n&&!n.hidden);
- if(!all.length){clearSelection();return false;}
- qSelectedNodes=all.slice();
- selectedNodes=qSelectedNodes.slice();
- selectionActive=true;
- qSelectionActive=true;
- selectionBox=getSelectionBounds(selectedNodes);
- return true;
-}
-async function copyQuickBlueprintSelection(){
- const savedSelectedNodes=selectedNodes,savedSelectionActive=selectionActive,savedSelectionBox=selectionBox;
- let sourceNodes=(selectedNodes.length?selectedNodes:qSelectedNodes).filter(n=>nodes.includes(n)&&n&&!n.hidden);
- if(!sourceNodes.length){
-  sourceNodes=nodes.filter(n=>n&&!n.hidden);
- }
- if(!sourceNodes.length){
-  setBlueprintImportStatus("F: Keine Blöcke zum Speichern vorhanden.",100,false);
-  return false;
- }
- selectedNodes=sourceNodes.slice();
- selectionActive=true;
- selectionBox=getSelectionBounds(selectedNodes);
- const bp=buildBlueprintFromSelection();
- selectedNodes=savedSelectedNodes;
- selectionActive=savedSelectionActive;
- selectionBox=savedSelectionBox;
- if(!bp){
-  setBlueprintImportStatus("F: Blueprint konnte nicht erstellt werden.",100,false);
-  return false;
- }
- const ok=await copyToClipboard(JSON.stringify(bp));
- setBlueprintImportStatus(
-  ok?"✓ Blueprint mit F kopiert.":"Fehler: Kopieren in die Zwischenablage fehlgeschlagen.",
-  100,
-  ok
- );
- return ok;
-}
 function openNamePopup(node){nameNode=node;document.getElementById("nameInput").value="";document.getElementById("namePopup").style.display="flex";document.getElementById("nameInput").focus();}
 function openKeyPopup(node){keyMenuNode=node;document.getElementById("keyPopupText").textContent="Key: "+(node.assignedKey?prettyKey(node.assignedKey):"NONE");document.getElementById("keyPopup").style.display="flex";}
 function openClockPopup(node){clockMenuNode=node;document.getElementById("clockDelay").value=node.interval||1000;document.getElementById("clockMenu").style.display="flex";document.getElementById("clockDelay").focus();}
@@ -830,13 +716,13 @@ function getConnectTargetAtPoint(wx,wy){
 function getPinHitAtPoint(wx,wy,target){if(target){if(target.chipPin){let p=target.inputs?.[0]||target.outputs?.[0]||{x:11,y:11};let px=target.x+p.x,py=target.y+p.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:target,kind:target.chipPin==="in"?"input":"output",index:0};return null;}for(let i=0;i<(target.inputs||[]).length;i++){let inp=target.inputs[i];let px=target.x+inp.x,py=target.y+inp.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:target,kind:"input",index:i};}for(let i=0;i<(target.outputs||[]).length;i++){let out=target.outputs[i];let px=target.x+out.x,py=target.y+out.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:target,kind:"output",index:i};}return null;}for(let i=nodes.length-1;i>=0;i--){let n=nodes[i];if(n.hidden)continue;if(n.chipPin){let p=n.inputs?.[0]||n.outputs?.[0]||{x:11,y:11};let px=n.x+p.x,py=n.y+p.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:n,kind:n.chipPin==="in"?"input":"output",index:0};continue;}for(let j=0;j<(n.inputs||[]).length;j++){let inp=n.inputs[j];let px=n.x+inp.x,py=n.y+inp.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:n,kind:"input",index:j};}for(let j=0;j<(n.outputs||[]).length;j++){let out=n.outputs[j];let px=n.x+out.x,py=n.y+out.y;if(Math.hypot(wx-px,wy-py)<=PIN_HIT_RADIUS)return{node:n,kind:"output",index:j};}}return null;}
 function connectSelectionToTarget(target,pinHit){let sources=expandActionNodes(selectedNodes).filter(n=>n!==target&&!n.hidden);for(let src of sources){let idx=pinHit&&pinHit.node===target&&pinHit.kind==="input"?pinHit.index:(target.chipPin?0:(target.type==="switch"||target.type==="output"||target.type==="not"?0:getFreeSlot(target)));if(idx===-1)continue;wires.push({from:src,to:target,inputIndex:idx});}}
 function connectSourceToSelection(source){let targets=expandActionNodes(selectedNodes).filter(n=>n!==source&&!n.hidden);for(let target of targets){let idx=target.chipPin?0:(target.type==="switch"||target.type==="output"||target.type==="not"?0:getFreeSlot(target));if(idx===-1)continue;wires.push({from:source,to:target,inputIndex:idx});}}
-function tryConnectFrom(src,wx,wy){if(!src||src.chipPin==="in")return;let target=getConnectTargetAtPoint(wx,wy);if(!target||target===src)return;if(target.chipPin==="out")return;if(src.outputs&&target.inputs){if(target.type==="output"){wires.push({from:src,to:target,inputIndex:0});return;}if(target.type==="not"){wires.push({from:src,to:target,inputIndex:0});return;}let idx=target.chipPin?0:getInputIndexAtPoint(target,wx,wy);if(idx===-1)idx=target.type==="switch"?0:getFreeSlot(target);if(idx!==-1||target.type==="switch"){if(target.type==="switch"){wires.push({from:src,to:target,inputIndex:0});}else{wires.push({from:src,to:target,inputIndex:idx});}}}}
+function tryConnectFrom(src,wx,wy){let target=getConnectTargetAtPoint(wx,wy);if(!target||target===src)return;if(src.outputs&&target.inputs){if(target.type==="output"){wires.push({from:src,to:target,inputIndex:0});return;}if(target.type==="not"){wires.push({from:src,to:target,inputIndex:0});return;}let idx=target.chipPin?0:getInputIndexAtPoint(target,wx,wy);if(idx===-1)idx=target.type==="switch"?0:getFreeSlot(target);if(idx!==-1||target.type==="switch"){if(target.type==="switch"){wires.push({from:src,to:target,inputIndex:0});}else{wires.push({from:src,to:target,inputIndex:idx});}}}}
 
 document.getElementById("nameSave").onclick=()=>{if(nameNode){let v=document.getElementById("nameInput").value.trim();if(v)nameNode.name=v;}document.getElementById("namePopup").style.display="none";nameNode=null;};
 document.getElementById("copyYes").onclick=()=>{if(copyPending)copyToClipboard(JSON.stringify(copyPending));copyPending=null;document.getElementById("copyPopup").style.display="none";};
 document.getElementById("copyNo").onclick=()=>{copyPending=null;document.getElementById("copyPopup").style.display="none";};
-document.getElementById("bpOk").onclick=()=>{if(pendingBlueprint){let name=document.getElementById("bpName").value.trim();pendingBlueprint.name=name?name:("Blueprint "+(blueprints.length+1));pendingBlueprint.chip=document.getElementById("bpChip").checked;if(pendingBlueprint.chip){pendingBlueprint=flattenChipBlueprint(pendingBlueprint);}zeroBlueprintSwitches(pendingBlueprint);pendingBlueprint=sanitizeBlueprintForStorage(pendingBlueprint);blueprints.push(pendingBlueprint);blueprintLibraryVersion++;clampBlueprintScroll();pendingBlueprint=null;document.getElementById("bpPopup").style.top="-220px";}};
-document.getElementById("bpLoad").onclick=async()=>{let v=document.getElementById("bpData").value.trim();if(!v){setBlueprintImportStatus("Fehler: Bitte Blueprint einfügen.",100,false);return;}document.getElementById("bpLoad").disabled=true;try{await loadBlueprintString(v);}finally{document.getElementById("bpLoad").disabled=false;}document.getElementById("bpData").value="";};
+document.getElementById("bpOk").onclick=()=>{if(pendingBlueprint){let name=document.getElementById("bpName").value.trim();pendingBlueprint.name=name?name:("Blueprint "+(blueprints.length+1));pendingBlueprint.chip=document.getElementById("bpChip").checked;if(pendingBlueprint.chip){pendingBlueprint=flattenChipBlueprint(pendingBlueprint);}zeroBlueprintSwitches(pendingBlueprint);pendingBlueprint=sanitizeBlueprintForStorage(pendingBlueprint);blueprints.push(pendingBlueprint);clampBlueprintScroll();pendingBlueprint=null;document.getElementById("bpPopup").style.top="-220px";}};
+document.getElementById("bpLoad").onclick=()=>{let v=document.getElementById("bpData").value.trim();if(v)loadBlueprintString(v);document.getElementById("bpData").value="";};
 document.getElementById("timerSave").onclick=()=>{if(timerMenuNode){timerMenuNode.delay=parseInt(document.getElementById("timerDelay").value)||timerMenuNode.delay;timerMenuNode.stay=document.getElementById("timerStay").checked;}document.getElementById("timerMenu").style.display="none";timerMenuNode=null;};
 document.getElementById("keyPopupClose").onclick=()=>{document.getElementById("keyPopup").style.display="none";keyMenuNode=null;};
 document.getElementById("clockSave").onclick=()=>{if(clockMenuNode){clockMenuNode.interval=parseInt(document.getElementById("clockDelay").value)||clockMenuNode.interval||1000;}document.getElementById("clockMenu").style.display="none";clockMenuNode=null;};
@@ -981,7 +867,6 @@ function handleCanvasMouseDown(e){
     clockMenuCandidate={node:n,startX:e.clientX,startY:e.clientY,startTime:performance.now(),moved:false};
     return;
    }
-   if(n.chipPin==="in"){connectFrom=null;return;}
    connectFrom=n;
    if(!n.chipId&&(n.type==="switch"||n.type==="output")){
     rightRenameCandidate={ node:n, startX:e.clientX, startY:e.clientY, startTime:performance.now(), moved:false };
@@ -1044,7 +929,7 @@ function handleCanvasMouseUp(e){
   return;
  }
 
- if(chipDrag&&e.button===0){chipDrag=null;drag=null;connectFrom=null;if(typeof sendLogicState==="function")sendLogicState();return;}
+ if(chipDrag&&e.button===0){chipDrag=null;drag=null;connectFrom=null;return;}
 
  if(libraryDrag){
   if(!isInLibraryPanel(e.clientX,e.clientY)&&e.clientY<h-90){let px=mouseWorld.x,py=mouseWorld.y;placeBlueprint(libraryDrag.bp,px,py);focusOnBlueprint(libraryDrag.bp,px,py);}
@@ -1080,7 +965,6 @@ function handleCanvasMouseUp(e){
   if(selectedNodes.length){
    selectionBox=getSelectionBounds(selectedNodes);
    selectionActive=true;
-   qSelectedNodes=selectedNodes.slice();
   }else{
    clearSelection();
   }
@@ -1088,7 +972,6 @@ function handleCanvasMouseUp(e){
  }
 
  groupDragging=false;
- if(typeof sendLogicState==="function")sendLogicState();
 
  if(e.button===2){
   if(rightRenameCandidate){
@@ -1244,11 +1127,11 @@ function getFreeSlot(node){
 }
 
 function collectConnectionSources(list){
- return sortByPosition(expandActionNodes(list).filter(n=>!n.hidden&&n.chipPin!=="in")).filter(n=>((n.outputs&&n.outputs.length)||n.chipPin==="out"));
+ return sortByPosition(expandActionNodes(list).filter(n=>!n.hidden)).filter(n=>((n.outputs&&n.outputs.length)||n.chipPin==="out"));
 }
 
 function collectConnectionTargets(list){
- return sortByPosition(expandActionNodes(list).filter(n=>!n.hidden&&n.chipPin!=="out")).filter(n=>((n.inputs&&n.inputs.length)||n.chipPin==="in"));
+ return sortByPosition(expandActionNodes(list).filter(n=>!n.hidden)).filter(n=>((n.inputs&&n.inputs.length)||n.chipPin==="in"));
 }
 
 function connectSelectionsPairwise(sourceNodes,targetNodes){
@@ -1256,15 +1139,12 @@ function connectSelectionsPairwise(sourceNodes,targetNodes){
  let ins=collectSelectionPins(targetNodes,"inputs");
  let count=Math.min(outs.length,ins.length);
  for(let i=0;i<count;i++){
-  let from=outs[i].node,to=ins[i].node;
-  if(!isValidWireEndpoints(from,to))continue;
-  wires.push({from,to,inputIndex:ins[i].index});
+  wires.push({from:outs[i].node,to:ins[i].node,inputIndex:ins[i].index});
  }
 }
 function getOrderedInputSlots(node){
- if(isChipOutputNode(node))return[];
- if(isChipInputNode(node))return[0];
  let used=new Set(wires.filter(w=>w.to===node).map(w=>w.inputIndex));
+ if(node&&node.chipPin)return[0];
  if(node&&node.inputs&&node.inputs.length){
   let slots=[];
   for(let i=0;i<node.inputs.length;i++)if(!used.has(i))slots.push(i);
@@ -1275,30 +1155,26 @@ function getOrderedInputSlots(node){
 }
 function connectSelectionsChunked(sourceNodes,targetNodes){
  let outs=collectSelectionPins(sourceNodes,"outputs");
- let targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden&&!isChipOutputNode(n)));
+ let targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden));
  let o=0;
  for(let target of targets){
   let slots=getOrderedInputSlots(target);
   for(let slot of slots){
    if(o>=outs.length)return;
-   let from=outs[o].node;
-   if(isValidWireEndpoints(from,target)){
-    wires.push({from,to:target,inputIndex:slot});
-    o++;
-   }
+   wires.push({from:outs[o].node,to:target,inputIndex:slot});
+   o++;
   }
- }}
+ }
+}
 function connectSelectionsFirstFree(sourceNodes,targetNodes){
  let outs=collectSelectionPins(sourceNodes,"outputs");
- let targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden&&!isChipOutputNode(n)));
+ let targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden));
  let count=Math.min(outs.length,targets.length);
  for(let i=0;i<count;i++){
   let target=targets[i];
   let slots=getOrderedInputSlots(target);
   if(!slots.length)continue;
-  let from=outs[i].node;
-  if(!isValidWireEndpoints(from,target))continue;
-  wires.push({from,to:target,inputIndex:slots[0]});
+  wires.push({from:outs[i].node,to:target,inputIndex:slots[0]});
  }
 }
 function startBatchConnect(mode="chunked"){
@@ -1308,25 +1184,14 @@ function startBatchConnect(mode="chunked"){
  batchConnect={sourceNodes:sortByPosition(sourceNodes),triggerNodes:sortByPosition(sourceNodes),sourceBox:getSelectionBounds(sourceNodes),targetNodes:[],targetBox:null,phase:"target",connectMode:mode};
  clearSelection();
 }
-function finalizeBatchConnect(){
- if(!batchConnect)return;
- let targets=batchConnect.targetNodes.length?batchConnect.targetNodes:collectConnectionTargets(selectedNodes);
- if(!targets.length)return;
- // K füllt die freien Eingänge auf. L verbindet parallel 1:1 und füllt keine weiteren Eingänge.
- if(batchConnect.connectMode==="chunked")connectSelectionsChunked(batchConnect.sourceNodes,targets);
- else connectSelectionsPairwise(batchConnect.sourceNodes,targets);
- let triggerNodes=batchConnect.triggerNodes||batchConnect.sourceNodes;
- batchConnect=null;
- clearSelection();
- restoreTriggerSelection(triggerNodes);
-}
+function finalizeBatchConnect(){if(!batchConnect)return;let targets=batchConnect.targetNodes.length?batchConnect.targetNodes:collectConnectionTargets(selectedNodes);if(!targets.length)return;if(batchConnect.connectMode==="firstFree")connectSelectionsFirstFree(batchConnect.sourceNodes,targets);else connectSelectionsPairwise(batchConnect.sourceNodes,targets);let triggerNodes=batchConnect.triggerNodes||batchConnect.sourceNodes;batchConnect=null;clearSelection();restoreTriggerSelection(triggerNodes);}
 function runQuickConnect(mode){
  if(!selectionActive||!selectedNodes.length)return false;
  let sourceNodes=collectConnectionSources(selectedNodes);
  let targetNodes=collectConnectionTargets(selectedNodes);
  if(!sourceNodes.length||!targetNodes.length)return false;
- // K = auffüllen, L = parallel 1:1.
- if(mode==="chunked")connectSelectionsChunked(sourceNodes,targetNodes);
+ if(mode==="firstFree")connectSelectionsFirstFree(sourceNodes,targetNodes);
+ else if(mode==="chunked")connectSelectionsChunked(sourceNodes,targetNodes);
  else connectSelectionsPairwise(sourceNodes,targetNodes);
  restoreTriggerSelection(sourceNodes);
  return true;
@@ -1349,30 +1214,6 @@ addEventListener("keydown",e=>{
    e.preventDefault();
    return;
   }
- }
-
-
- if((e.code==="Digit1"||e.code==="Numpad1")&&pressedKeys.has("KeyQ")){
-  if(selectAllForQuickBlueprint()) e.preventDefault();
-  return;
- }
-
- if(e.code==="KeyQ"&&pressedKeys.has("Digit1")){
-  if(selectAllForQuickBlueprint()) e.preventDefault();
-  return;
- }
-
- if(e.key.toLowerCase()==="f"){
-  if(copyQuickBlueprintSelection()) e.preventDefault();
-  return;
- }
-
- if(e.key.toLowerCase()==="a"){
-  if(selectionActive&&selectedNodes.length){
-   arrangeSelection();
-   e.preventDefault();
-  }
-  return;
  }
 
  if(e.key.toLowerCase()==="i"){
@@ -1409,19 +1250,19 @@ addEventListener("keydown",e=>{
 
  if(e.key.toLowerCase()==="l"){
   if(batchConnect&&batchConnect.phase==="target"){
-   batchConnect.connectMode="parallel";
+   batchConnect.connectMode="firstFree";
    if(batchConnect.targetNodes.length){
     finalizeBatchConnect();
    }
    e.preventDefault();
    return;
   }
-  if(runQuickConnect("parallel")){
+  if(runQuickConnect("firstFree")){
    e.preventDefault();
    return;
   }
   if(selectionActive&&selectedNodes.length){
-   startBatchConnect("parallel");
+   startBatchConnect("firstFree");
    e.preventDefault();
   }
   return;
@@ -1454,9 +1295,6 @@ addEventListener("keydown",e=>{
  if(e.key==="Delete"||e.key==="Backspace"){
   if(selectionActive){
    deleteSelection();
-   // Löschung sofort an den Server schicken. Der Server speichert zuerst
-   // und verteilt danach den bestätigten Zustand an alle Clients.
-   if(typeof sendLogicState==="function") sendLogicState();
    e.preventDefault();
   }
  }
@@ -1528,18 +1366,15 @@ function drawGrid(){
 }
 
 function drawChipShells(){
- let seen=new Set();
- for(let n of nodes){
-  if(!n||!n.chipId||seen.has(n.chipId))continue;
-  seen.add(n.chipId);
-  let shell=getChipShellRect(n.chipId);
-  if(!shell||!Number.isFinite(shell.x)||!Number.isFinite(shell.y)||!Number.isFinite(shell.w)||!Number.isFinite(shell.h))continue;
-  let chipNodes=getChipNodesById(n.chipId);
-  let inputs=chipNodes.filter(p=>p.chipPin==="in").sort((a,b)=>a.y-b.y);
-  let outputs=chipNodes.filter(p=>p.chipPin==="out").sort((a,b)=>a.y-b.y);
-  let selected=selectedNodes.some(s=>s&&s.chipId===n.chipId);
-  ctx.save();
-  if(simpleGraphics){
+ if(simpleGraphics){
+  let seen=new Set();
+  for(let n of nodes){
+   if(!n||!n.chipId||seen.has(n.chipId))continue;
+   seen.add(n.chipId);
+   let shell=getChipShellRect(n.chipId);
+   if(!shell||!Number.isFinite(shell.x)||!Number.isFinite(shell.y)||!Number.isFinite(shell.w)||!Number.isFinite(shell.h))continue;
+   let selected=selectedNodes.some(s=>s&&s.chipId===n.chipId);
+   ctx.save();
    ctx.fillStyle=selected?"#666":"#777";
    ctx.strokeStyle=selected?"#ffffff":"#bdbdbd";
    ctx.lineWidth=3/zoom;
@@ -1548,51 +1383,43 @@ function drawChipShells(){
    ctx.fillStyle="#111";
    ctx.font="16px Arial";
    ctx.fillText((n.chipName||"CHIP").slice(0,18),shell.x+12,shell.y+22);
-  }else{
-   let g=ctx.createLinearGradient(shell.x,shell.y,shell.x,shell.y+shell.h);
-   if(selected){g.addColorStop(0,"#58b1ff");g.addColorStop(.22,"#2f77ff");g.addColorStop(.55,"#1f4fb8");g.addColorStop(1,"#0b1c3e");ctx.shadowBlur=26;ctx.shadowColor="rgba(80,160,255,.92)";}else{g.addColorStop(0,"#9aa4b3");g.addColorStop(.2,"#66717f");g.addColorStop(.55,"#424c5b");g.addColorStop(1,"#151b27");ctx.shadowBlur=16;ctx.shadowColor="rgba(0,0,0,.5)";}
-   ctx.fillStyle=g;
-   ctx.strokeStyle=selected?"#e8f5ff":"rgba(255,255,255,.30)";
-   ctx.lineWidth=3/zoom;
-   roundPath(shell.x,shell.y,shell.w,shell.h,22);
-   ctx.fill();ctx.stroke();
-   ctx.shadowBlur=0;
-   ctx.fillStyle="rgba(255,255,255,.22)";
-   roundPath(shell.x+6,shell.y+6,shell.w-12,10,8);ctx.fill();
-   ctx.fillStyle="rgba(0,0,0,.22)";
-   roundPath(shell.x+8,shell.y+shell.h-17,shell.w-16,8,6);ctx.fill();
-   ctx.fillStyle="rgba(255,255,255,.08)";
-   ctx.fillRect(shell.x+20,shell.y+24,shell.w-40,1);
-   ctx.fillRect(shell.x+20,shell.y+shell.h-24,shell.w-40,1);
-   ctx.fillStyle="rgba(8,10,14,.35)";
-   roundPath(shell.x+18,shell.y+30,shell.w-36,shell.h-60,14);ctx.fill();
-   ctx.fillStyle=selected?"#f4fbff":"#e2e8f0";
-   ctx.font="bold 16px Arial";
-   ctx.fillText((n.chipName||"CHIP").slice(0,18),shell.x+14,shell.y+24);
-   ctx.fillStyle="rgba(255,255,255,.13)";
-   for(let i=0;i<Math.max(3,Math.ceil((inputs.length+outputs.length)/3));i++)ctx.fillRect(shell.x+30,shell.y+18+i*14,shell.w-60,1);
-   ctx.fillStyle="rgba(255,255,255,.08)";
-   ctx.fillRect(shell.x+18,shell.y+shell.h/2-1,shell.w-36,2);
+   ctx.restore();
   }
-  if(selected){
-   ctx.textBaseline="middle";
-   ctx.font="bold 11px Arial";
-   ctx.textAlign="left";
-   ctx.fillStyle="#baffdf";
-   if(inputs.length)ctx.fillText("INPUTS",shell.x+18,shell.y+shell.h-18);
-   ctx.fillStyle="#bcecff";
-   ctx.textAlign="right";
-   if(outputs.length)ctx.fillText("OUTPUTS",shell.x+shell.w-18,shell.y+shell.h-18);
-   ctx.font="bold 10px Arial";
-   ctx.fillStyle="#baffdf";
-   ctx.textAlign="left";
-   inputs.forEach((p,i)=>ctx.fillText("IN "+(i+1),shell.x+18,p.y+6));
-   ctx.fillStyle="#bcecff";
-   ctx.textAlign="right";
-   outputs.forEach((p,i)=>ctx.fillText("OUT "+(i+1),shell.x+shell.w-18,p.y+6));
-   ctx.textAlign="left";
-   ctx.textBaseline="alphabetic";
-  }
+  return;
+ }
+ let seen=new Set();
+ for(let n of nodes){
+  if(!n||!n.chipId||seen.has(n.chipId))continue;
+  seen.add(n.chipId);
+  let shell=getChipShellRect(n.chipId);
+  if(!shell||!Number.isFinite(shell.x)||!Number.isFinite(shell.y)||!Number.isFinite(shell.w)||!Number.isFinite(shell.h))continue;
+  let selected=selectedNodes.some(s=>s&&s.chipId===n.chipId);
+  ctx.save();
+  let g=ctx.createLinearGradient(shell.x,shell.y,shell.x,shell.y+shell.h);
+  if(selected){g.addColorStop(0,"#58b1ff");g.addColorStop(.22,"#2f77ff");g.addColorStop(.55,"#1f4fb8");g.addColorStop(1,"#0b1c3e");ctx.shadowBlur=26;ctx.shadowColor="rgba(80,160,255,.92)";}else{g.addColorStop(0,"#9aa4b3");g.addColorStop(.2,"#66717f");g.addColorStop(.55,"#424c5b");g.addColorStop(1,"#151b27");ctx.shadowBlur=16;ctx.shadowColor="rgba(0,0,0,.5)";}
+  ctx.fillStyle=g;
+  ctx.strokeStyle=selected?"#e8f5ff":"rgba(255,255,255,.30)";
+  ctx.lineWidth=3/zoom;
+  roundPath(shell.x,shell.y,shell.w,shell.h,22);
+  ctx.fill();ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.fillStyle="rgba(255,255,255,.22)";
+  roundPath(shell.x+6,shell.y+6,shell.w-12,10,8);ctx.fill();
+  ctx.fillStyle="rgba(0,0,0,.22)";
+  roundPath(shell.x+8,shell.y+shell.h-17,shell.w-16,8,6);ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,.08)";
+  ctx.fillRect(shell.x+20,shell.y+24,shell.w-40,1);
+  ctx.fillRect(shell.x+20,shell.y+shell.h-24,shell.w-40,1);
+  ctx.fillStyle="rgba(8,10,14,.35)";
+  roundPath(shell.x+18,shell.y+30,shell.w-36,shell.h-60,14);ctx.fill();
+  ctx.fillStyle=selected?"#f4fbff":"#e2e8f0";
+  ctx.font="bold 16px Arial";
+  ctx.fillText((n.chipName||"CHIP").slice(0,18),shell.x+14,shell.y+24);
+  let pinCount=Math.max(0,(n.inputs?.length||0)+(n.outputs?.length||0));
+  ctx.fillStyle="rgba(255,255,255,.13)";
+  for(let i=0;i<Math.max(3,Math.ceil(pinCount/3));i++)ctx.fillRect(shell.x+30,shell.y+18+i*14,shell.w-60,1);
+  ctx.fillStyle="rgba(255,255,255,.08)";
+  ctx.fillRect(shell.x+18,shell.y+shell.h/2-1,shell.w-36,2);
   ctx.restore();
  }
 }
@@ -1787,8 +1614,6 @@ function drawBlueprintPreview(){
 function drawPanel(){
  ctx.setTransform(1,0,0,1,0,0);
  if(simpleGraphics){
-  // UI-Rahmen dürfen nicht die Welt-Zoomstärke übernehmen.
-  ctx.lineWidth=1;
   let barH=mode==="pc"?90:56;
   ctx.fillStyle="rgba(0,0,0,0.6)";
   ctx.fillRect(0,h-barH,w,barH);
@@ -1948,50 +1773,6 @@ const logicSocket = io();
 let applyingRemoteLogicState = false;
 let logicSyncReady = false;
 let lastLogicSnapshot = "";
-let pendingLogicSnapshot = "";
-let logicServerRevision = 0;
-let lastBlueprintSerializedVersion = -1;
-let lastBlueprintSyncData = [];
-let lastBlueprintSentVersion = -1;
-let lastDisplayedStorageBytes = 0;
-let serverStorageBytes = 0;
-
-function formatStorageSize(bytes){
-  if(bytes >= 1024*1024) return (bytes/(1024*1024)).toFixed(2)+" MB";
-  if(bytes >= 1024) return (bytes/1024).toFixed(2)+" KB";
-  return Math.round(bytes)+" B";
-}
-
-function updateServerStorageDisplay(){
-  const el=document.getElementById("serverStorage");
-  if(!el) return;
-  const bytes=Math.max(0,Number(serverStorageBytes)||0);
-  el.textContent="Server: "+(bytes/1024).toFixed(2)+" KB · "+(bytes*8).toLocaleString("de-DE")+" bit";
-}
-function updateStorageDisplay(){
-  const el=document.getElementById("memoryUsage");
-  if(!el) return;
-  let blueprintBytes=0;
-  if(lastBlueprintSerializedVersion !== blueprintLibraryVersion){
-    const data=getBlueprintSyncData();
-    blueprintBytes=new Blob([JSON.stringify(data)]).size;
-  }else{
-    blueprintBytes=new Blob([JSON.stringify(lastBlueprintSyncData)]).size;
-  }
-  const stateBytes=new Blob([lastLogicSnapshot||serializeLogicState()]).size;
-  lastDisplayedStorageBytes=stateBytes+blueprintBytes;
-  el.textContent="Speicher: "+formatStorageSize(lastDisplayedStorageBytes)+" · "+(lastDisplayedStorageBytes*8).toLocaleString("de-DE")+" bit";
-}
-
-function getBlueprintSyncData(){
-  if(lastBlueprintSerializedVersion !== blueprintLibraryVersion){
-    // Nur bei einer echten Änderung wird die komplette Bibliothek kopiert.
-    // Das verhindert, dass ein großer Blueprint alle 50 ms erneut dupliziert wird.
-    lastBlueprintSyncData = blueprints.map(bp => sanitizeBlueprintForStorage(bp));
-    lastBlueprintSerializedVersion = blueprintLibraryVersion;
-  }
-  return lastBlueprintSyncData;
-}
 
 function getLogicSyncId(n){
   if(!n.__logicSyncId){
@@ -2001,52 +1782,42 @@ function getLogicSyncId(n){
 }
 
 function serializeLogicState(){
-  const nodeIds = new Map();
-  for(const n of nodes) nodeIds.set(n,getLogicSyncId(n));
-  const snapshotNodes = nodes.map(n => {
-    const d = {
-      id:getLogicSyncId(n),
-      x:Number(n.x)||0,
-      y:Number(n.y)||0,
-      relX:Number(n.x)||0,
-      relY:Number(n.y)||0,
-      type:n.type || "switch",
-      state:getSavedNodeState(n),
-      delay:Number(n.delay)||0,
-      stay:!!n.stay,
-      name:n.name || "",
-      chipId:n.chipId || null,
-      chipName:n.chipName || "",
-      chipPin:n.chipPin || "",
-      chipShell:n.chipShell || null,
-      hidden:!!n.hidden,
-      assignedKey:n.assignedKey || "",
-      interval:Number(n.interval)||1000,
-      memoryState:!!n.memoryState,
-      timerRunning:!!n.timerRunning,
-      offTimerRunning:!!n.offTimerRunning,
-      timerStart:Number(n.timerStart)||0,
-      offTimerStart:Number(n.offTimerStart)||0,
-      clockState:n.clockState !== false,
-      clockLastToggle:Number(n.clockLastToggle)||0
-    };
-    if(n.type === "switch") d.state = !!(n.state || n.output);
-    return d;
-  });
-
   return JSON.stringify({
-    version:4,
-    name:"Logic Builder",
-    chip:false,
-    mixedChipSelection:false,
-    nodes:snapshotNodes,
-    wires:wires.map(w => ({
-      from:nodeIds.get(w.from),
-      to:nodeIds.get(w.to),
+    version: 3,
+    nodes: nodes.map(n => {
+      const d = {
+        id:getLogicSyncId(n),
+        x:Number(n.x)||0,
+        y:Number(n.y)||0,
+        type:n.type || "switch",
+        chipId:n.chipId || null,
+        chipPin:n.chipPin || "",
+        chipShell:n.chipShell || null
+      };
+
+      // Diese Einstellungen werden bewusst gemeinsam übertragen:
+      // Key-Zuweisungen, Switch-/Output-Namen, Timerwerte und Clock-Frequenz.
+      if(n.type === "key") d.assignedKey = n.assignedKey || "";
+      if(n.type === "switch" || n.type === "output"){
+        d.name = n.name || "";
+        if(n.type === "switch") d.state = !!n.state;
+      }
+      if(n.type === "timer"){
+        d.delay = Number(n.delay)||0;
+        d.stay = !!n.stay;
+      }
+      if(n.type === "clock") d.interval = Number(n.interval)||1000;
+
+      return d;
+    }),
+    wires: wires.map(w => ({
+      from:nodes.indexOf(w.from),
+      to:nodes.indexOf(w.to),
       inputIndex:Number.isFinite(w.inputIndex) ? w.inputIndex : 0
-    })).filter(w => w.from && w.to),
+    })).filter(w => w.from >= 0 && w.to >= 0)
   });
 }
+
 function applyLogicState(state){
   if(!state || !Array.isArray(state.nodes) || !Array.isArray(state.wires)) return false;
 
@@ -2097,11 +1868,10 @@ function applyLogicState(state){
     nodes.push(...newNodes);
 
     wires.length = 0;
-    const nodesBySyncId = new Map(nodes.map(n => [n.__logicSyncId, n]));
     for(const w of state.wires){
-      const from = nodesBySyncId.get(w.from) || (Number.isInteger(w.from) ? nodes[w.from] : null);
-      const to = nodesBySyncId.get(w.to) || (Number.isInteger(w.to) ? nodes[w.to] : null);
-      if(from && to && from.chipPin!=="in" && to.chipPin!=="out"){
+      const from = nodes[w.from];
+      const to = nodes[w.to];
+      if(from && to){
         wires.push({
           from,
           to,
@@ -2116,154 +1886,32 @@ function applyLogicState(state){
   }
 }
 
-
-function setServerStatus(text){
-  const el=document.getElementById("serverStatus");
-  if(el) el.textContent="Server: "+text;
-}
-function setServerEqualStatus(){
-  setServerStatus("Server = Client · gleicher Stand (Version "+logicServerRevision+")");
-}
-function sendStateChange(payload){
-  setServerStatus("Server ≠ Client · deine Änderung wird gespeichert ...");
-  logicSocket.emit("stateChange", payload);
-}
 function sendLogicState(){
   if(!logicSyncReady || applyingRemoteLogicState) return;
   const snapshot = serializeLogicState();
-  if(snapshot === lastLogicSnapshot) {
-    setServerEqualStatus();
-    return;
-  }
-  if(snapshot === pendingLogicSnapshot) return;
-
-  pendingLogicSnapshot = snapshot;
-  const payload = JSON.parse(snapshot);
-  payload.baseRevision = logicServerRevision;
-  sendStateChange(payload);
+  if(snapshot === lastLogicSnapshot) return;
+  lastLogicSnapshot = snapshot;
+  logicSocket.emit("stateChange", JSON.parse(snapshot));
 }
-
-function applyBlueprintLibraryState(list){
-  if(!Array.isArray(list)) return false;
-  applyingRemoteLogicState = true;
-  try{
-    blueprints.length = 0;
-    for(const raw of list){
-      const bp = expandBlueprint(cloneBlueprint(raw));
-      if(bp && Array.isArray(bp.nodes)) blueprints.push(bp);
-    }
-    blueprintLibraryVersion++;
-    lastBlueprintSerializedVersion = -1;
-    lastBlueprintSentVersion = blueprintLibraryVersion;
-    clampBlueprintScroll();
-    return true;
-  }finally{
-    applyingRemoteLogicState = false;
-  }
-}
-
-function sendBlueprintLibrary(){
-  if(!logicSyncReady || applyingRemoteLogicState) return;
-  if(lastBlueprintSentVersion === blueprintLibraryVersion) return;
-  const payload = {version:1,blueprints:getBlueprintSyncData()};
-  lastBlueprintSentVersion = blueprintLibraryVersion;
-  setServerStatus("Blueprint-Änderung wird an den Server gesendet ...");
-  logicSocket.emit("blueprintLibraryChange", payload);
-}
-
-logicSocket.on("connect", () => {
-  setServerStatus("Verbunden, warte auf Serverstand ...");
-});
-logicSocket.on("disconnect", () => {
-  setServerStatus("Verbindung zum Server getrennt.");
-});
-logicSocket.on("connect_error", () => {
-  setServerStatus("Verbindung fehlgeschlagen.");
-});
-logicSocket.on("stateAck", ack => {
-  if(Number.isFinite(Number(ack?.serverStorageBytes))){
-    serverStorageBytes=Number(ack.serverStorageBytes);
-    updateServerStorageDisplay();
-  }
-  if(Number.isInteger(ack?.serverRevision) && ack.serverRevision >= logicServerRevision){
-    logicServerRevision = ack.serverRevision;
-    const counts = Number.isInteger(ack?.nodeCount)
-      ? " · "+ack.nodeCount+" Gatter"+(Number.isInteger(ack?.wireCount) ? ", "+ack.wireCount+" Wires" : "")
-      : "";
-    setServerStatus("Server = Client · deine Änderung wurde gespeichert (Version "+logicServerRevision+counts+").");
-  }
-});
-logicSocket.on("stateRejected", info => {
-  if(Number.isInteger(info?.serverRevision)) logicServerRevision = info.serverRevision;
-  pendingLogicSnapshot = "";
-  setServerStatus("Server ≠ Client · dein Stand war veraltet, Serverstand wird übernommen ...");
-});
-
-logicSocket.on("blueprintLibrary", library => {
-  if(library && Number.isFinite(Number(library.serverStorageBytes))){
-    serverStorageBytes=Number(library.serverStorageBytes);
-    updateServerStorageDisplay();
-  }
-  if(library && Array.isArray(library.blueprints)){
-    applyBlueprintLibraryState(library.blueprints);
-  }
-});
 
 logicSocket.on("state", state => {
-  if(Number.isFinite(Number(state?.serverStorageBytes))){
-    serverStorageBytes=Number(state.serverStorageBytes);
-    updateServerStorageDisplay();
-  }
-  const incomingRevision = Number.isInteger(state?.serverRevision) ? state.serverRevision : 0;
-  if(incomingRevision < logicServerRevision) return;
-  logicServerRevision = incomingRevision;
-
-  const savedNodeCount = Array.isArray(state?.nodes) ? state.nodes.length : 0;
-  const savedWireCount = Array.isArray(state?.wires) ? state.wires.length : 0;
-  const counts = " · "+savedNodeCount+" Gatter, "+savedWireCount+" Wires";
-  const isOwnConfirmedChange = state?.sourceSocketId === logicSocket.id;
-  if(isOwnConfirmedChange){
-    setServerStatus("Server = Client · deine Änderung bestätigt (Version "+incomingRevision+counts+").");
-  }else if(state?.sourceSocketId && !String(state.sourceSocketId).startsWith("server-rejected")){
-    setServerStatus("Server ≠ Client · anderer Benutzer hat geändert, Client wird aktualisiert"+counts+" ...");
-  }else{
-    setServerStatus("Serverstand wird übernommen (Version "+incomingRevision+counts+") ...");
-  }
-
   const legacyState = !state || Number(state.version || 1) < 3;
-
-  const hasBlueprintLibrary = state && Array.isArray(state.blueprints);
 
   if(state && Array.isArray(state.nodes) && Array.isArray(state.wires)){
     if(applyLogicState(state)){
-      if(Number.isInteger(incomingRevision)) logicSocket.emit("stateApplied", incomingRevision);
-      // Dieser Snapshot ist jetzt der verbindlich bestätigte Serverstand.
-      lastLogicSnapshot = serializeLogicState();
-      pendingLogicSnapshot = "";
-      if(!legacyState) setServerEqualStatus();
-    }else{
-      setServerStatus("Server ≠ Client · Serverstand wartet, bis die aktuelle Aktion fertig ist.");
+      // Alte gespeicherte Zustände werden nach dem Einlesen einmal
+      // in das neue Format mit Keys/Namen/Timer/Clocks umgewandelt.
+      if(!legacyState) lastLogicSnapshot = serializeLogicState();
     }
   }
 
-  if(hasBlueprintLibrary) applyBlueprintLibraryState(state.blueprints);
-
   logicSyncReady = true;
-
-  if(hasBlueprintLibrary){
-    lastBlueprintSentVersion = blueprintLibraryVersion;
-  }else{
-    lastBlueprintSentVersion = -1;
-    sendBlueprintLibrary();
-  }
 
   if(legacyState){
     lastLogicSnapshot = "";
-    pendingLogicSnapshot = "";
     sendLogicState();
   }else if(!lastLogicSnapshot){
     lastLogicSnapshot = serializeLogicState();
-    setServerEqualStatus();
   }
 });
 
@@ -2275,7 +1923,6 @@ logicSocket.on("state", state => {
 // - Switch-AN/AUS-Zustand
 // - Timerwerte
 // - Clock-Frequenzen
-// - Blueprint-Bibliothek
 // Laufende Zustände wie Memory-Zustände, Clock-/Timer-Laufzustände
 // und gedrückte Tasten bleiben lokal. Der Switch-AN/AUS-Zustand wird bewusst synchronisiert.
 setInterval(() => {
@@ -2286,189 +1933,11 @@ setInterval(() => {
   if(drag || groupDragging || chipDrag || libraryDrag || selecting) return;
 
   const snapshot = serializeLogicState();
-  if(snapshot !== lastLogicSnapshot && snapshot !== pendingLogicSnapshot){
-    sendLogicState();
-  }else if(snapshot === lastLogicSnapshot && !pendingLogicSnapshot){
-    setServerEqualStatus();
+  if(snapshot !== lastLogicSnapshot){
+    lastLogicSnapshot = snapshot;
+    logicSocket.emit("stateChange", JSON.parse(snapshot));
   }
-  sendBlueprintLibrary();
 }, 50);
-
-setInterval(updateStorageDisplay, 500);
-
-const aiBtn = document.getElementById("aiBtn");
-const aiPopup = document.getElementById("aiPopup");
-const aiPrompt = document.getElementById("aiPrompt");
-const aiAsk = document.getElementById("aiAsk");
-const aiStatus = document.getElementById("aiStatus");
-const aiClose = document.getElementById("aiClose");
-aiClose.addEventListener("click", () => { aiPopup.style.display = "none"; });
-
-function getAiContext(){
-  const visibleNodes = nodes.map((n,index) => ({
-    index, hidden:!!n.hidden, type:n.type, name:n.name||"", x:Math.round(n.x||0), y:Math.round(n.y||0),
-    state:n.type==="switch" ? !!n.state : undefined,
-    delay:n.type==="timer" ? Number(n.delay)||0 : undefined,
-    interval:n.type==="clock" ? Number(n.interval)||1000 : undefined,
-    assignedKey:n.type==="key" ? n.assignedKey||"" : undefined
-  })).filter(n => !n.hidden);
-  const nodeIndex = new Map(nodes.map((n,i)=>[n,i]));
-  const wireData = wires.map(w=>({from:nodeIndex.get(w.from),to:nodeIndex.get(w.to),inputIndex:Number.isFinite(w.inputIndex)?w.inputIndex:0}));
-  const blueprintInfo = blueprints.map((bp,i)=>({index:i,name:bp.name||("Blueprint "+(i+1)),nodes:Array.isArray(bp.nodes)?bp.nodes.length:0,wires:Array.isArray(bp.wires)?bp.wires.length:0}));
-  return JSON.stringify({
-    editor:"Logic Builder Ultra",
-    nodeCount:nodes.length,
-    gateTypes:["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"],
-    nodes:visibleNodes,
-    wires:wireData,
-    blueprints:blueprintInfo
-  });
-}
-
-function applyAiActions(actions){
-  if(!Array.isArray(actions)||!actions.length)return {changed:0,details:[]};
-  const allowed=["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"];
-  let changed=0;
-  const details=[];
-
-  for(const a of actions){
-    if(!a || typeof a.action!=="string") continue;
-
-    if(a.action==="add_gate"){
-      if(!allowed.includes(a.type)) continue;
-      const n=new Node(Number(a.x)||0,Number(a.y)||0,a.type);
-      if(typeof a.name==="string"&&a.name.trim()) n.name=a.name.trim();
-      nodes.push(n);
-      changed++;
-      details.push("Gatter hinzugefügt");
-      continue;
-    }
-
-    if(a.action==="delete_gate"){
-      const i=Number(a.index);
-      if(Number.isInteger(i)&&i>=0&&i<nodes.length){
-        const target=nodes[i];
-        for(let w=wires.length-1;w>=0;w--){
-          if(wires[w].from===target||wires[w].to===target) wires.splice(w,1);
-        }
-        nodes.splice(i,1);
-        changed++;
-        details.push("Gatter gelöscht");
-      }
-      continue;
-    }
-
-    if(a.action==="move_gate"){
-      const i=Number(a.index);
-      if(Number.isInteger(i)&&i>=0&&i<nodes.length){
-        nodes[i].x=Number(a.x)||0;
-        nodes[i].y=Number(a.y)||0;
-        changed++;
-        details.push("Gatter verschoben");
-      }
-      continue;
-    }
-
-    if(a.action==="connect"){
-      const from=Number(a.from), to=Number(a.to), inputIndex=Number.isInteger(Number(a.inputIndex))?Number(a.inputIndex):0;
-      if(Number.isInteger(from)&&Number.isInteger(to)&&nodes[from]&&nodes[to]&&nodes[from].chipPin!=="in"&&nodes[to].chipPin!=="out"){
-        const exists=wires.some(w=>w.from===nodes[from]&&w.to===nodes[to]&&w.inputIndex===inputIndex);
-        if(!exists){wires.push({from:nodes[from],to:nodes[to],inputIndex});changed++;details.push("Wire verbunden");}
-      }
-      continue;
-    }
-
-    if(a.action==="disconnect"){
-      const from=Number(a.from), to=Number(a.to);
-      if(Number.isInteger(from)&&Number.isInteger(to)&&nodes[from]&&nodes[to]){
-        for(let i=wires.length-1;i>=0;i--){
-          if(wires[i].from===nodes[from]&&wires[i].to===nodes[to] &&
-             (!Number.isInteger(Number(a.inputIndex)) || wires[i].inputIndex===Number(a.inputIndex))){
-            wires.splice(i,1); changed++; details.push("Wire getrennt");
-          }
-        }
-      }
-      continue;
-    }
-
-    if(a.action==="rename_gate"){
-      const i=Number(a.index);
-      if(Number.isInteger(i)&&i>=0&&i<nodes.length&&typeof a.name==="string"){
-        nodes[i].name=a.name;
-        changed++; details.push("Gatter umbenannt");
-      }
-      continue;
-    }
-
-    if(a.action==="set_switch"){
-      const i=Number(a.index);
-      if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="switch"){
-        nodes[i].state=!!a.state;
-        changed++; details.push("Schalter gesetzt");
-      }
-      continue;
-    }
-
-    if(a.action==="set_timer"){
-      const i=Number(a.index);
-      if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="timer"){
-        if(Number.isFinite(Number(a.delay))) nodes[i].delay=Number(a.delay);
-        if(typeof a.stay==="boolean") nodes[i].stay=a.stay;
-        changed++; details.push("Timer geändert");
-      }
-      continue;
-    }
-
-    if(a.action==="set_clock"){
-      const i=Number(a.index);
-      if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="clock"){
-        if(Number.isFinite(Number(a.interval))) nodes[i].interval=Number(a.interval);
-        changed++; details.push("Clock geändert");
-      }
-      continue;
-    }
-  }
-
-  if(changed){
-    clearSelection();
-    sendLogicState();
-  }
-  return {changed,details};
-}
-
-aiBtn.addEventListener("click", () => {
-  aiPopup.style.display = "block";
-  aiPrompt.focus();
-});
-
-aiAsk.addEventListener("click", async () => {
-  const prompt = aiPrompt.value.trim();
-  if(!prompt) return;
-
-  aiAsk.disabled = true;
-  aiStatus.textContent = "Gemini denkt ...";
-
-  try{
-    const response = await fetch("/api/gemini", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({prompt, context:getAiContext()})
-    });
-    const data = await response.json();
-
-    if(!response.ok){
-      throw new Error((data?.error || "Unbekannter Fehler") + (data?.details ? " — " + data.details : ""));
-    }
-
-    const result = applyAiActions(data.actions);
-    aiStatus.textContent = (data.text || "Gemini hat keine Antwort geliefert.") +
-      (result.changed ? "\n\nEditor geändert: "+result.details.join(", ")+".\nDie Änderung wurde an den Server gesendet." : "\n\nKeine Editor-Aktion ausgeführt.");
-  }catch(error){
-    aiStatus.textContent = "Fehler: " + error.message;
-  }finally{
-    aiAsk.disabled = false;
-  }
-});
 </script>
 </body>
 </html>
