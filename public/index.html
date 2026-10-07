@@ -1828,25 +1828,94 @@ function getAiContext(){
   return JSON.stringify({editor:"Logic Builder Ultra",nodeCount:nodes.length,gateTypes:["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"],nodes:visibleNodes,wires:wireData,blueprints:blueprintInfo});
 }
 
-function applyAiActions(actions){
+let aiActionInProgress=false;
+
+function waitForAiStateAck(){
+  return new Promise(resolve=>{
+    let done=false;
+    const finish=ok=>{
+      if(done)return;
+      done=true;
+      clearTimeout(timer);
+      logicSocket.off("stateAck",onAck);
+      logicSocket.off("stateRejected",onRejected);
+      resolve(ok);
+    };
+    const onAck=ack=>{
+      if(ack && Number.isInteger(ack.serverRevision)) serverRevision=ack.serverRevision;
+      finish(true);
+    };
+    const onRejected=info=>{
+      if(info && Number.isInteger(info.serverRevision)) serverRevision=info.serverRevision;
+      finish(false);
+    };
+    const timer=setTimeout(()=>finish(false),5000);
+    logicSocket.once("stateAck",onAck);
+    logicSocket.once("stateRejected",onRejected);
+  });
+}
+
+async function applyAiActions(actions){
   if(!Array.isArray(actions)||!actions.length)return {changed:0,details:[]};
-  const allowed=["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"];
+  const allowed=["switch","lamp","not","or3","and","or","xor","timer","key","clock","memory","led","output"];
   let changed=0; const details=[];
-  for(const a of actions){
-    if(!a||typeof a.action!=="string")continue;
-    if(a.action==="add_gate"&&allowed.includes(a.type)){
-      const n=new Node(Number(a.x)||0,Number(a.y)||0,a.type); if(typeof a.name==="string"&&a.name.trim())n.name=a.name.trim(); nodes.push(n); changed++; details.push("Gatter hinzugefügt"); continue;
+  aiActionInProgress=true;
+  try{
+    for(const a of actions){
+      if(!a||typeof a.action!=="string")continue;
+      let didChange=false;
+      if(a.action==="add_gate"&&allowed.includes(a.type)){
+        const n=new Node(Number(a.x)||0,Number(a.y)||0,a.type);
+        if(typeof a.name==="string"&&a.name.trim()&&a.type!=="lamp")n.name=a.name.trim();
+        nodes.push(n); didChange=true; details.push("Gatter hinzugefügt");
+      }else if(a.action==="delete_gate"){
+        const i=Number(a.index);
+        if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type!=="lamp"){
+          const t=nodes[i];
+          for(let j=wires.length-1;j>=0;j--)if(wires[j].from===t||wires[j].to===t)wires.splice(j,1);
+          nodes.splice(i,1); didChange=true; details.push("Gatter gelöscht");
+        }
+      }else if(a.action==="move_gate"){
+        const i=Number(a.index);
+        if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type!=="lamp"){
+          nodes[i].x=Number(a.x)||0; nodes[i].y=Number(a.y)||0; didChange=true; details.push("Gatter verschoben");
+        }
+      }else if(a.action==="connect"){
+        const from=Number(a.from),to=Number(a.to),inputIndex=Number.isInteger(Number(a.inputIndex))?Number(a.inputIndex):0;
+        if(nodes[from]&&nodes[to]&&!wires.some(w=>w.from===nodes[from]&&w.to===nodes[to]&&w.inputIndex===inputIndex)){
+          wires.push({from:nodes[from],to:nodes[to],inputIndex}); didChange=true; details.push("Wire verbunden");
+        }
+      }else if(a.action==="disconnect"){
+        const from=Number(a.from),to=Number(a.to);
+        if(nodes[from]&&nodes[to])for(let j=wires.length-1;j>=0;j--)if(wires[j].from===nodes[from]&&wires[j].to===nodes[to]&&(!Number.isInteger(Number(a.inputIndex))||wires[j].inputIndex===Number(a.inputIndex))){wires.splice(j,1);didChange=true;details.push("Wire getrennt");}
+      }else if(a.action==="rename_gate"){
+        const i=Number(a.index);
+        if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type!=="lamp"&&typeof a.name==="string"){nodes[i].name=a.name;didChange=true;details.push("Gatter umbenannt");}
+      }else if(a.action==="set_switch"){
+        const i=Number(a.index);
+        if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="switch"){nodes[i].state=!!a.value;didChange=true;details.push("Schalter gesetzt");}
+      }else if(a.action==="set_timer"){
+        const i=Number(a.index);
+        if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="timer"){if(Number.isFinite(Number(a.delay)))nodes[i].delay=Number(a.delay);if(typeof a.stay==="boolean")nodes[i].stay=a.stay;didChange=true;details.push("Timer geändert");}
+      }else if(a.action==="set_clock"){
+        const i=Number(a.index);
+        if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="clock"&&Number.isFinite(Number(a.interval))){nodes[i].interval=Number(a.interval);didChange=true;details.push("Clock geändert");}
+      }
+      if(didChange){
+        changed++;
+        clearSelection();
+        const before=lastLogicSnapshot;
+        sendLogicState();
+        if(lastLogicSnapshot!==before){
+          const acked=await waitForAiStateAck();
+          if(!acked) break;
+          await new Promise(r=>setTimeout(r,70));
+        }
+      }
     }
-    if(a.action==="delete_gate"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length){const t=nodes[i];for(let j=wires.length-1;j>=0;j--)if(wires[j].from===t||wires[j].to===t)wires.splice(j,1);nodes.splice(i,1);changed++;details.push("Gatter gelöscht");}continue;}
-    if(a.action==="move_gate"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length){nodes[i].x=Number(a.x)||0;nodes[i].y=Number(a.y)||0;changed++;details.push("Gatter verschoben");}continue;}
-    if(a.action==="connect"){const from=Number(a.from),to=Number(a.to),inputIndex=Number.isInteger(Number(a.inputIndex))?Number(a.inputIndex):0;if(nodes[from]&&nodes[to]){if(!wires.some(w=>w.from===nodes[from]&&w.to===nodes[to]&&w.inputIndex===inputIndex)){wires.push({from:nodes[from],to:nodes[to],inputIndex});changed++;details.push("Wire verbunden");}}continue;}
-    if(a.action==="disconnect"){const from=Number(a.from),to=Number(a.to);if(nodes[from]&&nodes[to])for(let j=wires.length-1;j>=0;j--)if(wires[j].from===nodes[from]&&wires[j].to===nodes[to]&&(!Number.isInteger(Number(a.inputIndex))||wires[j].inputIndex===Number(a.inputIndex))){wires.splice(j,1);changed++;details.push("Wire getrennt");}continue;}
-    if(a.action==="rename_gate"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length&&typeof a.name==="string"){nodes[i].name=a.name;changed++;details.push("Gatter umbenannt");}continue;}
-    if(a.action==="set_switch"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="switch"){nodes[i].state=!!a.state;changed++;details.push("Schalter gesetzt");}continue;}
-    if(a.action==="set_timer"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="timer"){if(Number.isFinite(Number(a.delay)))nodes[i].delay=Number(a.delay);if(typeof a.stay==="boolean")nodes[i].stay=a.stay;changed++;details.push("Timer geändert");}continue;}
-    if(a.action==="set_clock"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="clock"){if(Number.isFinite(Number(a.interval)))nodes[i].interval=Number(a.interval);changed++;details.push("Clock geändert");}continue;}
+  }finally{
+    aiActionInProgress=false;
   }
-  if(changed){clearSelection();sendLogicState();}
   return {changed,details};
 }
 
