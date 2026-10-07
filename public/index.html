@@ -680,6 +680,50 @@ function collectSelectionPins(list,kind){
  }
  return pins;
 }
+function buildBlueprintFromNodeCluster(source){
+ if(!source)return null;
+ if(source.chipId)return buildBlueprintFromChipId(source.chipId);
+ const cluster=new Set([source]);
+ let changed=true;
+ while(changed){
+  changed=false;
+  for(const w of wires){
+   if(!w||!w.from||!w.to)continue;
+   if(cluster.has(w.from)&&!cluster.has(w.to)){cluster.add(w.to);changed=true;}
+   else if(cluster.has(w.to)&&!cluster.has(w.from)){cluster.add(w.from);changed=true;}
+  }
+ }
+ const list=[...cluster].filter(n=>!n.hidden);
+ if(!list.length)return null;
+ const oldSelected=selectedNodes;
+ const oldActive=selectionActive;
+ const oldBox=selectionBox;
+ selectedNodes=list.slice();
+ selectionActive=true;
+ selectionBox=getSelectionBounds(list)||null;
+ let bp=null;
+ try{bp=buildBlueprintFromSelection();}catch{}
+ if(!bp){
+  const allNodes=list;
+  const map=new Map();
+  bp={name:"",nodes:[],wires:[],chip:true,mixedChipSelection:false};
+  for(const n of allNodes){
+   const id=Math.random();
+   map.set(n,id);
+   bp.nodes.push({id,type:n.type,relX:n.x,relY:n.y,state:getSavedNodeState(n),delay:n.delay,stay:n.stay,name:n.name,chipId:null,chipPin:null,chipShell:null,hidden:false,assignedKey:n.assignedKey,interval:n.interval,memoryState:n.memoryState});
+  }
+  for(const w of wires){
+   if(allNodes.includes(w.from)&&allNodes.includes(w.to)){
+    bp.wires.push({from:map.get(w.from),to:map.get(w.to),inputIndex:w.inputIndex});
+   }
+  }
+  bp=sanitizeBlueprintForStorage(bp);
+ }
+ selectedNodes=oldSelected;
+ selectionActive=oldActive;
+ selectionBox=oldBox;
+ return bp;
+}
 function buildBlueprintFromChipId(chipId){
  if(!chipId)return null;
  const chipNodes=nodes.filter(n=>n.chipId===chipId);
@@ -1939,27 +1983,27 @@ async function applyAiActions(actions){
       }else if(a.action==="save_chip"){
         const i=Number(a.index);
         const source=Number.isInteger(i)&&i>=0&&i<nodes.length?nodes[i]:null;
-        const chipId=source?.chipId||null;
-        if(chipId){
-          const bp=buildBlueprintFromChipId(chipId);
-          if(bp){
-            bp.name=(typeof a.name==="string"&&a.name.trim())?a.name.trim():(bp.name||"CHIP");
-            bp.chip=true;
-            zeroBlueprintSwitches(bp);
-            bp=sanitizeBlueprintForStorage(bp);
-            blueprints.push(bp);
-            clampBlueprintScroll();
-            didChange=true;
-            details.push("Chip in Blueprint-Bibliothek gespeichert");
-          }
+        const bp0=buildBlueprintFromNodeCluster(source);
+        if(bp0){
+          const bp=bp0;
+          bp.name=(typeof a.name==="string"&&a.name.trim())?a.name.trim():(bp.name||"CHIP");
+          bp.chip=true;
+          bp.mixedChipSelection=false;
+          zeroBlueprintSwitches(bp);
+          const storedBp=sanitizeBlueprintForStorage(bp);
+          blueprints.push(storedBp);
+          clampBlueprintScroll();
+          didChange=true;
+          details.push("Chip in Blueprint-Bibliothek gespeichert");
         }
       }else if(a.action==="copy_chip"){
         const i=Number(a.index);
         const source=Number.isInteger(i)&&i>=0&&i<nodes.length?nodes[i]:null;
-        const chipId=source?.chipId||null;
-        if(chipId&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))){
-          const bp=buildBlueprintFromChipId(chipId);
+        if(source&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))){
+          const bp=buildBlueprintFromNodeCluster(source);
           if(bp){
+            bp.chip=true;
+            bp.mixedChipSelection=false;
             placeBlueprint(bp,Number(a.x),Number(a.y));
             didChange=true;
             details.push("Chip vervielfältigt");
