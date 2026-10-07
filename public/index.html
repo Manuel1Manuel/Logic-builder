@@ -1270,6 +1270,10 @@ addEventListener("keydown",e=>{
  }
 
  if(e.key.toLowerCase()==="q"){
+  return;
+ }
+
+ if(e.key==="1"&&pressedKeys.has("KeyQ")){
   if(!e.repeat){
    const all=nodes.filter(n=>n&&!n.hidden);
    if(all.length){
