@@ -427,6 +427,19 @@ io.on("connection", (socket) => {
     try {
       if(!library || !Array.isArray(library.blueprints)) return;
 
+      const baseRevision = Number.isInteger(library.baseRevision) ? library.baseRevision : null;
+      if(baseRevision === null || baseRevision !== stateRevision || socket.lastAppliedRevision !== stateRevision){
+        const current = getState.get();
+        const currentState = JSON.parse(current.data || "{}");
+        socket.emit("blueprintLibrary", {
+          blueprints: Array.isArray(currentState.blueprints) ? currentState.blueprints : [],
+          serverRevision: stateRevision,
+          serverStorageBytes: getServerStorageBytes()
+        });
+        socket.emit("stateRejected", { serverRevision: stateRevision, reason: "blueprint-revision-conflict" });
+        return;
+      }
+
       // Die große Bibliothek wird separat gespeichert und übertragen.
       // Dadurch blockiert ein großer Blueprint nicht mehr den normalen
       // Realtime-Kanal für Blockbewegungen und Verdrahtung.
@@ -437,10 +450,20 @@ io.on("connection", (socket) => {
       } catch {}
 
       stored.blueprints = library.blueprints;
-      saveState.run(JSON.stringify(stored));
+      const storedJson = JSON.stringify(stored);
+      saveState.run(storedJson);
 
-      socket.broadcast.emit("blueprintLibrary", { ...library, serverStorageBytes: getServerStorageBytes() });
-      socket.emit("blueprintLibrary", { ...library, serverStorageBytes: getServerStorageBytes() });
+      stateRevision++;
+      saveRevision.run(stateRevision);
+      socket.lastAppliedRevision = stateRevision;
+
+      const payload = {
+        blueprints: library.blueprints,
+        serverRevision: stateRevision,
+        serverStorageBytes: Buffer.byteLength(storedJson, "utf8")
+      };
+
+      io.emit("blueprintLibrary", payload);
     } catch (error) {
       console.error("Fehler beim Speichern der Blueprint-Bibliothek:", error);
     }
