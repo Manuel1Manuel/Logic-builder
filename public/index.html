@@ -11,7 +11,7 @@ body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none
 <body>
 <canvas id="c"></canvas>
 <div id="modeToggle">PC</div>
-<div id="touchModeToggle">Links</div><button id="aiBtn">KI</button><div id="storageInfo" aria-live="polite"><span id="serverBitsLine" class="storageLine">Server Bits: –</span><span id="clientBitsLine" class="storageLine">Client Bits: –</span><span id="storageCompareLine" class="storageLine">Vergleich: –</span></div><div id="aiPopup"><button id="aiClose" title="Chat schließen">×</button><div id="aiHeader"><div id="aiGraphic" class="complex"><span>◈</span></div><div><div style="font-size:16px;">Manual AI</div><div style="font-size:11px;opacity:.7;">Logic Builder Assistenz</div></div></div><textarea id="aiPrompt" placeholder="Beschreibe, was du wissen oder mit der Schaltung machen möchtest ..."></textarea><div style="margin-top:9px;display:flex;gap:7px;align-items:center;"><button id="aiAsk">Fragen</button><div id="aiThinking"><span>Manual AI denkt</span><span id="aiThinkingDots"><i></i><i></i><i></i></span></div></div><div id="aiStatus"></div></div>
+<div id="touchModeToggle">Links</div><button id="aiBtn">KI</button><div id="storageInfo" aria-live="polite"><span id="serverBitsLine" class="storageLine">Server Bits: –</span><span id="clientBitsLine" class="storageLine">Client Bits: –</span><span id="storageCompareLine" class="storageLine">Vergleich: –</span></div><div id="aiPopup"><button id="aiClose" title="Chat schließen">×</button><div id="aiHeader"><div id="aiGraphic" class="complex"><span>◈</span></div><div><div style="font-size:16px;">Manuel KI</div><div style="font-size:11px;opacity:.7;">Logic Builder Assistenz</div></div></div><textarea id="aiPrompt" placeholder="Beschreibe, was du wissen oder mit der Schaltung machen möchtest ..."></textarea><div style="margin-top:9px;display:flex;gap:7px;align-items:center;"><button id="aiAsk">Fragen</button><div id="aiThinking"><span>Manuel KI denkt</span><span id="aiThinkingDots"><i></i><i></i><i></i></span></div></div><div id="aiStatus"></div></div>
 <div id="menuBtn">Menü</div>
 <div id="menuPopup">
 <label style="color:white;display:flex;gap:8px;align-items:center;">
@@ -1794,7 +1794,7 @@ loop();simLoop();
 
 loadPreblueprints();
 
-/* ===== Manual AI ===== */
+/* ===== Manuel KI ===== */
 const aiBtn=document.getElementById("aiBtn");
 const aiPopup=document.getElementById("aiPopup");
 const aiPrompt=document.getElementById("aiPrompt");
@@ -1930,7 +1930,7 @@ aiAsk.addEventListener("click",async()=>{
     const data=await response.json();
     if(!response.ok)throw new Error((data?.error||"Unbekannter Fehler")+(data?.details?" — "+data.details:""));
     const result=applyAiActions(data.actions);
-    aiStatus.textContent=(data.text||"Manual AI hat keine Antwort geliefert.")+(result.changed?"\n\nEditor geändert: "+result.details.join(", ")+".\nDie Änderung wurde an den Server gesendet.":"\n\nKeine Editor-Aktion ausgeführt.");
+    aiStatus.textContent=(data.text||"Manuel KI hat keine Antwort geliefert.")+(result.changed?"\n\nEditor geändert: "+result.details.join(", ")+".\nDie Änderung wurde an den Server gesendet.":"\n\nKeine Editor-Aktion ausgeführt.");
   }catch(error){aiStatus.textContent="Fehler: "+error.message;}
   finally{aiAsk.disabled=false;aiThinking.style.display="none";}
 });
