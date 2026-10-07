@@ -89,6 +89,15 @@ Verwende dafür ausschließlich die bereitgestellten Aktionen:
 Die Indizes sind die aktuellen Node-Indizes aus dem Kontext. Neue Gatter erhalten fortlaufend die Indizes ab nodeCount; plane neue Gatter zuerst und verdrahte sie danach.
 Führe niemals eine Aktion nur deshalb aus, weil du behauptest, etwas getan zu haben: Gib die Aktion als strukturierte Ausgabe zurück, damit der Editor sie tatsächlich ausführt.
 Erfinde keine vorhandenen Blöcke und ändere nichts ohne ausdrücklichen Auftrag.
+
+WICHTIGE REGELN FÜR DIE ARBEITSFLÄCHE:
+- LAMPEN SIND UNVERÄNDERLICH: Ändere niemals den Namen einer Lampe und verschiebe, lösche oder ersetze Lampen niemals, außer der Nutzer fordert genau diese konkrete Änderung ausdrücklich an.
+- Verwende Lampen niemals als allgemeine Outputs. Wenn der Nutzer einen Ausgang/Output möchte, verwende ausschließlich den Blocktyp "output" und verdrahte ihn korrekt. Eine Lampe darf nicht als Ersatz für einen Output verwendet werden.
+- Plane Schaltungen übersichtlich statt alles auf einen Haufen zu setzen. Gatter und Chips müssen mit deutlichem Abstand platziert werden, sodass einzelne Blöcke, Anschlüsse und Leitungen gut erkennbar bleiben.
+- Als Richtwert: Zwischen benachbarten Gattern/Chips mindestens etwa 120 Pixel Abstand lassen; bei längeren Schaltungen lieber 150–180 Pixel oder mehr. Blöcke dürfen sich niemals überlappen.
+- Ordne Gatter möglichst in klaren Reihen bzw. logischen Stufen an: Eingänge links, Verarbeitung in der Mitte, Outputs rechts. Leitungen sollen möglichst wenig unnötig kreuzen.
+- Nach dem Platzieren immer die Positionen prüfen: keine Haufenbildung, keine Überlappungen und genug Platz zum Verdrahten.
+- Bei neuen Schaltungen zuerst die Positionen sinnvoll planen und danach die Verbindungen herstellen.
 ${context ? "\nAKTUELLER APP-KONTEXT:\n" + context : ""}
 
 NUTZERANFRAGE:
