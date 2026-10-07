@@ -81,7 +81,7 @@ try{const _d=Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx),"shadowB
 let tickMs=0,lastTick=0;
 const nodes=[],wires=[];
 let mouseScreen={x:0,y:0},mouseWorld={x:0,y:0};
-let drag=null,connectFrom=null,selecting=false,selectionStart={x:0,y:0},selectionEnd={x:0,y:0},selectionBox=null,selectedNodes=[],selectionActive=false,groupDragging=false,blueprint=null,blueprints=[],blueprintScroll=0,blueprintScrollDrag=false,blueprintScrollDragOffset=0,libraryDrag=null,pendingBlueprint=null,panning=false,copyPending=null,timerMenuNode=null,nameNode=null,rightRenameCandidate=null,chipDrag=null,timerMenuCandidate=null,keyMenuCandidate=null,clockMenuCandidate=null,keyMenuNode=null,clockMenuNode=null,pressedKeys=new Set(),mode="pc",touchMode="left",activeTouchId=null,activeTouchButton=0,lastTouchX=0,lastTouchY=0,pinchActive=false,pinchStartDist=0,pinchStartZoom=1,pinchWorldMidX=0,pinchWorldMidY=0,selectionWireMode=null,bpActionIndex=-1,batchConnect=null,hiddenInputPins=true;
+let drag=null,connectFrom=null,selecting=false,selectionStart={x:0,y:0},selectionEnd={x:0,y:0},selectionBox=null,selectedNodes=[],selectionActive=false,groupDragging=false,blueprint=null,blueprints=[],blueprintScroll=0,blueprintScrollDrag=false,blueprintScrollDragOffset=0,libraryDrag=null,pendingBlueprint=null,panning=false,copyPending=null,timerMenuNode=null,nameNode=null,rightRenameCandidate=null,chipDrag=null,timerMenuCandidate=null,keyMenuCandidate=null,clockMenuCandidate=null,keyMenuNode=null,clockMenuNode=null,pressedKeys=new Set(),mode="pc",touchMode="left",activeTouchId=null,activeTouchButton=0,lastTouchX=0,lastTouchY=0,pinchActive=false,pinchStartDist=0,pinchStartZoom=1,pinchWorldMidX=0,pinchWorldMidY=0,selectionWireMode=null,bpActionIndex=-1,batchConnect=null,hiddenInputPins=false;
 let hiddenNames=false;
 const PIN_HIT_RADIUS=22;
 const nodeVisibility={switch:true,lamp:true,not:true,or3:true,and:true,or:true,xor:true,output:true,timer:true,key:true,clock:true,memory:true,led:true};
@@ -1250,7 +1250,7 @@ addEventListener("keydown",e=>{
   return;
  }
 
- if(e.key.toLowerCase()==="y"){
+ if(e.key==="ü"||e.key==="Ü"){
   resetAllClocks();
   e.preventDefault();
   return;
