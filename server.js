@@ -120,7 +120,42 @@ ${prompt}`;
         temperature: 0,
         reasoning_format: "hidden",
         response_format: {
-          type: "json_object"
+          type: "json_schema",
+          json_schema: {
+            name: "logic_builder_response",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                answer: { type: "string" },
+                actions: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      action: { type: "string", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock"] },
+                      type: { type: ["string","null"] },
+                      index: { type: ["integer","null"] },
+                      from: { type: ["integer","null"] },
+                      to: { type: ["integer","null"] },
+                      inputIndex: { type: ["integer","null"] },
+                      x: { type: ["number","null"] },
+                      y: { type: ["number","null"] },
+                      name: { type: ["string","null"] },
+                      value: { type: ["boolean","null"] },
+                      delay: { type: ["number","null"] },
+                      stay: { type: ["number","null"] },
+                      interval: { type: ["number","null"] }
+                    },
+                    required: ["action","type","index","from","to","inputIndex","x","y","name","value","delay","stay","interval"],
+                    additionalProperties: false
+                  }
+                }
+              },
+              required: ["answer","actions"],
+              additionalProperties: false
+            }
+          }
         }
       })
     }
