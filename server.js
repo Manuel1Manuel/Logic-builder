@@ -121,6 +121,7 @@ ${prompt}`;
           content: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema."
         }],
         temperature: 0,
+        max_completion_tokens: 65536,
         reasoning_format: "hidden",
         response_format: {
           type: "json_schema",
