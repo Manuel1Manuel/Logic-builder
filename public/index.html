@@ -6,12 +6,12 @@
 <title>Logic Builder Ultra</title>
 <style>
 body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none;}canvas{display:block;background:radial-gradient(circle at center,#1a1a1a,#050505);touch-action:none;}#modeToggle{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:8px 14px;z-index:120;cursor:pointer;}#touchModeToggle{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:70;display:none;cursor:pointer;}#menuBtn{position:fixed;left:10px;top:50%;transform:translateY(80px);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:80;cursor:pointer;}#menuPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:90;display:none;flex-direction:column;gap:10px;color:white;min-width:250px;max-width:min(92vw,420px);max-height:80vh;overflow:auto;}#menuPopup input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#menuPopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#bpPopup{position:fixed;top:-220px;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:10;transition:top 0.3s;display:flex;flex-direction:column;gap:10px;}#bpPopup input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;}#bpPopup button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImport{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:8px;z-index:20;display:flex;gap:6px;align-items:center;}#bpImport input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;width:220px;}#bpImport button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#copyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:50;display:none;flex-direction:column;gap:10px;align-items:center;}#copyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#timerMenu{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:10px;z-index:60;display:none;flex-direction:column;gap:8px;color:white;min-width:340px;max-height:80vh;overflow:auto;}#timerMenu input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#timerMenu button{background:#00ffff;border:none;padding:5px;cursor:pointer;}#menuList{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;padding-right:4px;}#menuList label{display:flex;align-items:center;gap:8px;white-space:nowrap;}#namePopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;}#namePopup input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#namePopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#keyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#keyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#clockMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#clockMenu input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#clockMenu button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#bpActionPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:14px;z-index:110;display:none;flex-direction:column;gap:10px;align-items:center;}#bpActionPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;width:140px;}@media (pointer:coarse){#touchModeToggle{display:block;}}
-</style>
+#aiBtn{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:10px 14px;z-index:80;cursor:pointer;border-radius:999px;}#aiPopup{position:fixed;right:10px;top:50%;transform:translateY(-50%);width:min(420px,calc(100vw - 30px));background:#0b0f16;border:1px solid #78dcff;border-radius:18px;padding:14px;z-index:200;display:none;box-shadow:0 14px 45px rgba(0,0,0,.55);color:#fff;}#aiPopup textarea{width:100%;height:120px;box-sizing:border-box;resize:vertical;background:#161b24;color:#fff;border:1px solid #78dcff;border-radius:10px;padding:9px;outline:none;}#aiPopup button{background:#00ffff;border:0;padding:7px 12px;border-radius:9px;cursor:pointer;}#aiClose{float:right;font-size:18px;}#aiHeader{display:flex;align-items:center;gap:10px;margin-bottom:10px;}#aiGraphic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid #78dcff;overflow:hidden;}#aiGraphic.simple{background:#111;font-size:22px;}#aiGraphic.complex{background:radial-gradient(circle,#17384a 0,#0b1119 68%);position:relative;}#aiGraphic.complex::before{content:"";width:18px;height:18px;border:2px solid #78dcff;border-radius:5px;box-shadow:0 0 12px rgba(120,220,255,.7),0 0 0 5px rgba(0,255,255,.08);animation:manuelPulse 1.3s infinite;}#aiGraphic.complex::after{content:"";position:absolute;width:30px;height:30px;border:1px dashed rgba(0,255,255,.7);border-radius:50%;animation:manuelSpin 3s linear infinite;}#aiStatus{white-space:pre-wrap;margin-top:10px;min-height:24px;line-height:1.35;}#aiThinking{display:none;align-items:center;gap:8px;margin-top:8px;font-size:12px;opacity:.9;}#aiThinkingDots{display:flex;gap:3px;}#aiThinkingDots i{width:5px;height:5px;border-radius:50%;background:#00ffff;animation:manuelDot 1s infinite;}#aiThinkingDots i:nth-child(2){animation-delay:.15s;}#aiThinkingDots i:nth-child(3){animation-delay:.3s;}@keyframes manuelPulse{50%{transform:scale(1.12);opacity:.7;}}@keyframes manuelSpin{to{transform:rotate(360deg);}}@keyframes manuelDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}</style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="modeToggle">PC</div>
-<div id="touchModeToggle">Links</div>
+<div id="touchModeToggle">Links</div><button id="aiBtn">KI</button><div id="aiPopup"><button id="aiClose" title="Chat schließen">×</button><div id="aiHeader"><div id="aiGraphic" class="complex"><span>◈</span></div><div><div style="font-size:16px;">Manuel KI</div><div style="font-size:11px;opacity:.7;">Logic Builder Assistenz</div></div></div><textarea id="aiPrompt" placeholder="Beschreibe, was du wissen oder mit der Schaltung machen möchtest ..."></textarea><div style="margin-top:9px;display:flex;gap:7px;align-items:center;"><button id="aiAsk">Fragen</button><div id="aiThinking"><span>Manuel KI denkt</span><span id="aiThinkingDots"><i></i><i></i><i></i></span></div></div><div id="aiStatus"></div></div>
 <div id="menuBtn">Menü</div>
 <div id="menuPopup">
 <label style="color:white;display:flex;gap:8px;align-items:center;">
@@ -1767,6 +1767,75 @@ loop();simLoop();
 
 loadPreblueprints();
 
+/* ===== Manuel KI ===== */
+const aiBtn=document.getElementById("aiBtn");
+const aiPopup=document.getElementById("aiPopup");
+const aiPrompt=document.getElementById("aiPrompt");
+const aiAsk=document.getElementById("aiAsk");
+const aiStatus=document.getElementById("aiStatus");
+const aiClose=document.getElementById("aiClose");
+const aiGraphic=document.getElementById("aiGraphic");
+const aiThinking=document.getElementById("aiThinking");
+
+function updateAiGraphic(){
+  if(!aiGraphic)return;
+  const complex=!simpleGraphics;
+  aiGraphic.classList.toggle("complex",complex);
+  aiGraphic.classList.toggle("simple",!complex);
+  aiGraphic.innerHTML=complex ? "" : "<span>✦</span>";
+}
+updateAiGraphic();
+
+function getAiContext(){
+  const visibleNodes=nodes.map((n,index)=>({
+    index,type:n.type,name:n.name||"",x:Math.round(n.x||0),y:Math.round(n.y||0),
+    state:n.type==="switch"?!!n.state:undefined,
+    delay:n.type==="timer"?Number(n.delay)||0:undefined,
+    interval:n.type==="clock"?Number(n.interval)||1000:undefined,
+    assignedKey:n.type==="key"?n.assignedKey||"":undefined
+  })).filter(n=>!nodes[n.index].hidden);
+  const nodeIndex=new Map(nodes.map((n,i)=>[n,i]));
+  const wireData=wires.map(w=>({from:nodeIndex.get(w.from),to:nodeIndex.get(w.to),inputIndex:Number.isFinite(w.inputIndex)?w.inputIndex:0}));
+  const blueprintInfo=blueprints.map((bp,i)=>({index:i,name:bp.name||("Blueprint "+(i+1)),nodes:Array.isArray(bp.nodes)?bp.nodes.length:0,wires:Array.isArray(bp.wires)?bp.wires.length:0}));
+  return JSON.stringify({editor:"Logic Builder Ultra",nodeCount:nodes.length,gateTypes:["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"],nodes:visibleNodes,wires:wireData,blueprints:blueprintInfo});
+}
+
+function applyAiActions(actions){
+  if(!Array.isArray(actions)||!actions.length)return {changed:0,details:[]};
+  const allowed=["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"];
+  let changed=0; const details=[];
+  for(const a of actions){
+    if(!a||typeof a.action!=="string")continue;
+    if(a.action==="add_gate"&&allowed.includes(a.type)){
+      const n=new Node(Number(a.x)||0,Number(a.y)||0,a.type); if(typeof a.name==="string"&&a.name.trim())n.name=a.name.trim(); nodes.push(n); changed++; details.push("Gatter hinzugefügt"); continue;
+    }
+    if(a.action==="delete_gate"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length){const t=nodes[i];for(let j=wires.length-1;j>=0;j--)if(wires[j].from===t||wires[j].to===t)wires.splice(j,1);nodes.splice(i,1);changed++;details.push("Gatter gelöscht");}continue;}
+    if(a.action==="move_gate"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length){nodes[i].x=Number(a.x)||0;nodes[i].y=Number(a.y)||0;changed++;details.push("Gatter verschoben");}continue;}
+    if(a.action==="connect"){const from=Number(a.from),to=Number(a.to),inputIndex=Number.isInteger(Number(a.inputIndex))?Number(a.inputIndex):0;if(nodes[from]&&nodes[to]){if(!wires.some(w=>w.from===nodes[from]&&w.to===nodes[to]&&w.inputIndex===inputIndex)){wires.push({from:nodes[from],to:nodes[to],inputIndex});changed++;details.push("Wire verbunden");}}continue;}
+    if(a.action==="disconnect"){const from=Number(a.from),to=Number(a.to);if(nodes[from]&&nodes[to])for(let j=wires.length-1;j>=0;j--)if(wires[j].from===nodes[from]&&wires[j].to===nodes[to]&&(!Number.isInteger(Number(a.inputIndex))||wires[j].inputIndex===Number(a.inputIndex))){wires.splice(j,1);changed++;details.push("Wire getrennt");}continue;}
+    if(a.action==="rename_gate"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length&&typeof a.name==="string"){nodes[i].name=a.name;changed++;details.push("Gatter umbenannt");}continue;}
+    if(a.action==="set_switch"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="switch"){nodes[i].state=!!a.state;changed++;details.push("Schalter gesetzt");}continue;}
+    if(a.action==="set_timer"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="timer"){if(Number.isFinite(Number(a.delay)))nodes[i].delay=Number(a.delay);if(typeof a.stay==="boolean")nodes[i].stay=a.stay;changed++;details.push("Timer geändert");}continue;}
+    if(a.action==="set_clock"){const i=Number(a.index);if(Number.isInteger(i)&&i>=0&&i<nodes.length&&nodes[i].type==="clock"){if(Number.isFinite(Number(a.interval)))nodes[i].interval=Number(a.interval);changed++;details.push("Clock geändert");}continue;}
+  }
+  if(changed){clearSelection();sendLogicState();}
+  return {changed,details};
+}
+
+aiBtn.addEventListener("click",()=>{updateAiGraphic();aiPopup.style.display="block";aiPrompt.focus();});
+aiClose.addEventListener("click",()=>{aiPopup.style.display="none";});
+aiAsk.addEventListener("click",async()=>{
+  const prompt=aiPrompt.value.trim(); if(!prompt)return;
+  aiAsk.disabled=true; aiThinking.style.display="flex"; aiStatus.textContent=""; updateAiGraphic();
+  try{
+    const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,context:getAiContext()})});
+    const data=await response.json();
+    if(!response.ok)throw new Error((data?.error||"Unbekannter Fehler")+(data?.details?" — "+data.details:""));
+    const result=applyAiActions(data.actions);
+    aiStatus.textContent=(data.text||"Manuel KI hat keine Antwort geliefert.")+(result.changed?"\n\nEditor geändert: "+result.details.join(", ")+".\nDie Änderung wurde an den Server gesendet.":"\n\nKeine Editor-Aktion ausgeführt.");
+  }catch(error){aiStatus.textContent="Fehler: "+error.message;}
+  finally{aiAsk.disabled=false;aiThinking.style.display="none";}
+});
 
 /* ===== Gemeinsamer Online-Zustand: Struktur + ausgewählte Einstellungen ===== */
 const logicSocket = io();
