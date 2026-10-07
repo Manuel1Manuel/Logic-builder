@@ -94,8 +94,8 @@ Verwende ausschließlich diese Aktionen:
 - set_switch: Schalterzustand setzen
 - set_timer: Timer delay/stay setzen
 - set_clock: Clock interval setzen
-- save_chip: einen bereits vorhandenen Chip anhand eines beliebigen Nodes dieses Chips in die Blueprint-Bibliothek speichern; optional name
-- copy_chip: einen vorhandenen Chip anhand eines beliebigen Nodes dieses Chips vervielfältigen; x/y ist die neue Position
+- save_chip: den Schaltungsverbund rund um einen Node als Blueprint in die Blueprint-Bibliothek speichern und als Chip markieren; wenn der Node bereits zu einem Chip gehört, den kompletten Chip verwenden; optional name
+- copy_chip: einen vorhandenen Chip ODER den Schaltungsverbund rund um einen Node als Chip vervielfältigen; x/y ist die neue Position
 - place_blueprint: einen Blueprint aus der Blueprint-Bibliothek anhand blueprintIndex auf der Arbeitsfläche platzieren; x/y ist die neue Position
 
 WICHTIG ZU INDIZES UND MEHREREN AKTIONEN:
@@ -108,13 +108,15 @@ Beim Umbenennen mehrerer Nodes muss für jeden passenden Node eine eigene rename
 Bei "alle A in B umbenennen" ist A das bisherige Kriterium bzw. der bisherige Name und B der neue Name. Führe die Umbenennung für ALLE Treffer aus.
 Bei globalen Änderungen darfst du nicht bei der ersten passenden Instanz aufhören.
 Bei Aktionen, die neue Nodes erzeugen, erhalten neue Gatter fortlaufende Indizes ab dem aktuellen nodeCount. Plane bei einer neuen Schaltung die vollständige Aktionenkette und verwende danach die korrekten neuen Indizes für die Verbindungen.
-Bei save_chip und copy_chip reicht als index irgendein aktueller Node des gewünschten Chips; nutze chipId/chipName aus dem Kontext, um den gesamten Chip zu identifizieren.
-WICHTIG: Ein Nutzer muss NICHT vorher einen Chip im Editor haben, wenn er sagt, dass du einen Chip erstellen, bauen, speichern oder als Blueprint anlegen sollst. In diesem Fall baust du den gewünschten Schaltplan zuerst mit add_gate und connect auf der Arbeitsfläche auf und machst ihn danach mit save_chip zu einem Chip in der Blueprint-Bibliothek. Das ist ein vollständiger Arbeitsablauf: erst alle benötigten Gatter erzeugen, dann alle Verbindungen herstellen, dann den fertigen Verbund speichern.
-Beispiel: Sagt der Nutzer „Erstelle einen Chip mit zwei Switchen und zwei Outputs, die über Kreuz verbunden sind“, dann musst du konkret 4 Nodes erzeugen: 2x switch und 2x output, sinnvoll nebeneinander platzieren, und anschließend die zwei Switches gekreuzt mit den zwei Outputs verbinden. Danach musst du einen der neu erzeugten Nodes über seinen aktuellen Index mit save_chip speichern. Der Nutzer erwartet bei „Chip erstellen“ also nicht nur eine Erklärung, sondern die tatsächlichen add_gate-, connect- und save_chip-Aktionen in einer vollständigen actions-Liste.
-Wenn der Nutzer „als Chip speichern“, „als Blueprint speichern“, „in die Blueprint-Bibliothek einfügen“ oder sinngemäß „daraus einen Chip machen“ sagt und der gewünschte Schaltplan noch kein Chip ist, darfst du NICHT mit „kein Chip vorhanden“ ablehnen. Baue bzw. verwende den gewünschten Schaltplan und speichere ihn danach als Chip.
-Wenn der Nutzer einen Blueprint vervielfältigen oder aus der Bibliothek auf die Arbeitsfläche setzen möchte, verwende place_blueprint.
-Wenn der Nutzer ausdrücklich einen vorhandenen Chip auf der Arbeitsfläche kopieren/duplizieren möchte, verwende copy_chip statt nur einzelne Gatter zu kopieren.
-Bei größeren Aufgaben müssen alle notwendigen add_gate-, connect- und anschließend save_chip-Aktionen in derselben vollständigen actions-Liste stehen.
+Bei save_chip und copy_chip reicht als index ein Node des gewünschten Schaltungsverbunds. Ist dieser Node noch kein Chip, bildet der Editor den zusammenhängenden Schaltungsverbund über die vorhandenen Wires und speichert/vervielfältigt diesen Verbund als Chip. Ist der Node bereits Teil eines Chips, wird stattdessen der komplette Chip über chipId verwendet.
+WICHTIG: Ein Nutzer muss NICHT vorher einen Chip im Editor haben, wenn er sagt, dass du einen Chip erstellen, bauen, speichern oder als Blueprint anlegen sollst. Baue den gewünschten Schaltplan zuerst mit add_gate und connect auf der Arbeitsfläche auf und speichere genau diesen fertigen Verbund anschließend mit save_chip als Blueprint mit aktiviertem Chip-Modus in der Blueprint-Bibliothek.
+Beispiel: Sagt der Nutzer „Erstelle einen Chip mit zwei Switchen und zwei Outputs, die über Kreuz verbunden sind“, dann musst du genau 4 Nodes erzeugen: 2x switch und 2x output, sinnvoll platzieren, die beiden Switches gekreuzt mit den beiden Outputs verbinden und danach save_chip mit dem Index eines dieser vier Nodes ausführen. save_chip darf hier NICHT abgelehnt werden, nur weil die Nodes vorher noch keine chipId haben.
+Wenn der Nutzer zusätzlich sagt, den neuen Chip einmal auf der Arbeitsfläche zu kopieren, muss die actions-Liste nach dem save_chip zusätzlich copy_chip mit einem der vier Nodes und der gewünschten neuen x/y-Position enthalten. copy_chip muss auch für einen noch nicht als Chip markierten Schaltungsverbund funktionieren.
+„Als Blueprint speichern“ und „als Chip aktivieren“ bedeuten: den gewünschten Verbund in die Blueprint-Bibliothek aufnehmen, blueprint.chip=true setzen und als Chip-Blueprint speichern. Nicht nur die vier Einzelgatter auf der Arbeitsfläche stehen lassen.
+Wenn der Nutzer „als Chip speichern“, „als Blueprint speichern“, „in die Blueprint-Bibliothek einfügen“, „daraus einen Chip machen“ oder „als Chip aktivieren“ sagt und der gewünschte Schaltplan noch kein Chip ist, darfst du NICHT mit „kein Chip vorhanden“ ablehnen.
+Wenn der Nutzer einen Blueprint aus der Bibliothek auf die Arbeitsfläche setzen möchte, verwende place_blueprint.
+Wenn der Nutzer einen vorhandenen oder gerade erstellten Schaltungsverbund als Chip auf der Arbeitsfläche kopieren/duplizieren möchte, verwende copy_chip statt nur einzelne Gatter zu kopieren.
+Bei größeren Aufgaben müssen alle notwendigen add_gate-, connect-, save_chip- und gegebenenfalls copy_chip-Aktionen in derselben vollständigen actions-Liste stehen.
 
 WICHTIG: SOFORTIGE AUSFÜHRUNG:
 Die Aktionliste wird vom Editor als ein gemeinsamer Änderungsauftrag verarbeitet. Gib deshalb bei einer größeren Aufgabe ALLE notwendigen Aktionen in EINER vollständigen actions-Liste zurück.
