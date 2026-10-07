@@ -45,13 +45,13 @@ function hasValidAuth(req){
 
 app.use(express.urlencoded({ extended: false }));
 
-// Gemini API bleibt ausschließlich serverseitig.
-// Der API-Key kommt aus Render: GEMINI_API_KEY.
+// AI-APIs bleiben ausschließlich serverseitig.
+// API-Keys kommen aus Render: GEMINI_API_KEY und optional CEREBRAS_API_KEY.
 app.use(express.json({ limit: "256kb" }));
 
 app.post("/api/gemini", async (req, res) => {
-  if(!process.env.GEMINI_API_KEY){
-    res.status(503).json({ error: "GEMINI_API_KEY ist nicht gesetzt." });
+  if(!process.env.GEMINI_API_KEY && !process.env.CEREBRAS_API_KEY){
+    res.status(503).json({ error: "Weder GEMINI_API_KEY noch CEREBRAS_API_KEY ist gesetzt." });
     return;
   }
 
@@ -94,8 +94,39 @@ ${context ? "\nAKTUELLER APP-KONTEXT:\n" + context : ""}
 NUTZERANFRAGE:
 ${prompt}`;
 
-  try{
-    const response = await fetch(
+  const responseSchema = {
+  type: "OBJECT",
+  properties: {
+    answer: { type: "STRING" },
+    actions: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          action: { type: "STRING", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock"] },
+          type: { type: "STRING", enum: ["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"] },
+          index: { type: "INTEGER" },
+          index2: { type: "INTEGER" },
+          from: { type: "INTEGER" },
+          to: { type: "INTEGER" },
+          inputIndex: { type: "INTEGER" },
+          x: { type: "NUMBER" },
+          y: { type: "NUMBER" },
+          name: { type: "STRING" },
+          state: { type: "BOOLEAN" },
+          delay: { type: "NUMBER" },
+          stay: { type: "BOOLEAN" },
+          interval: { type: "NUMBER" }
+        },
+        required: ["action"]
+      }
+    }
+  },
+  required: ["answer","actions"]
+};
+
+  async function callGemini(){
+    return fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
       {
         method: "POST",
@@ -107,65 +138,86 @@ ${prompt}`;
           contents: [{ parts: [{ text: systemContext }] }],
           generationConfig: {
             responseMimeType: "application/json",
-            responseSchema: {
-              type: "OBJECT",
-              properties: {
-                answer: { type: "STRING" },
-                actions: {
-                  type: "ARRAY",
-                  items: {
-                    type: "OBJECT",
-                    properties: {
-                      action: { type: "STRING", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock"] },
-                      type: { type: "STRING", enum: ["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"] },
-                      index: { type: "INTEGER" },
-                      index2: { type: "INTEGER" },
-                      from: { type: "INTEGER" },
-                      to: { type: "INTEGER" },
-                      inputIndex: { type: "INTEGER" },
-                      x: { type: "NUMBER" },
-                      y: { type: "NUMBER" },
-                      name: { type: "STRING" },
-                      state: { type: "BOOLEAN" },
-                      delay: { type: "NUMBER" },
-                      stay: { type: "BOOLEAN" },
-                      interval: { type: "NUMBER" }
-                    },
-                    required: ["action"]
-                  }
-                }
-              },
-              required: ["answer","actions"]
-            }
+            responseSchema
           }
         })
       }
     );
-
-    const data = await response.json();
-
-    if(!response.ok){
-      console.error("Gemini API Fehler:", data);
-      res.status(502).json({ error: "Gemini API Fehler.", details: data?.error?.message || "Unbekannter Fehler" });
-      return;
-    }
-
-    const raw = data?.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("") || "{}";
-    let result;
-    try{
-      result = JSON.parse(raw);
-    }catch{
-      result = { answer: raw, actions: [] };
-    }
-
-    res.json({
-      text: result.answer || "",
-      actions: Array.isArray(result.actions) ? result.actions : []
-    });
-  }catch(error){
-    console.error("Gemini Anfrage fehlgeschlagen:", error);
-    res.status(502).json({ error: "Gemini konnte nicht erreicht werden." });
   }
+
+  async function callCerebras(){
+    return fetch(
+      "https://api.cerebras.ai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + process.env.CEREBRAS_API_KEY
+        },
+        body: JSON.stringify({
+          model: "gpt-oss-120b",
+          messages: [
+            {
+              role: "system",
+              content: systemContext + "\n\nWICHTIG: Antworte ausschließlich mit gültigem JSON im Format {\\"answer\\":\\"...\\",\\"actions\\":[...]}."
+            }
+          ],
+          response_format: { type: "json_object" }
+        })
+      }
+    );
+  }
+
+  let response;
+  let provider = "";
+
+  if(process.env.GEMINI_API_KEY){
+    response = await callGemini();
+    provider = "Gemini";
+
+    if(!response.ok && process.env.CEREBRAS_API_KEY){
+      const geminiError = await response.text();
+      console.warn("Gemini nicht verfügbar, wechsle zu Cerebras:", geminiError);
+      response = await callCerebras();
+      provider = "Cerebras";
+    }
+  }else if(process.env.CEREBRAS_API_KEY){
+    response = await callCerebras();
+    provider = "Cerebras";
+  }
+
+  const data = await response.json();
+
+  if(!response.ok){
+    console.error(provider + " API Fehler:", data);
+    res.status(502).json({
+      error: provider + " API Fehler.",
+      details: data?.error?.message || "Unbekannter Fehler"
+    });
+    return;
+  }
+
+  let raw = "";
+  if(provider === "Gemini"){
+    raw = data?.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("") || "{}";
+  }else{
+    raw = data?.choices?.[0]?.message?.content || "{}";
+  }
+
+  raw = raw.trim().replace(/^\`\`\`json\s*/i, "").replace(/^\`\`\`\s*/i, "").replace(/\s*\`\`\`$/i, "");
+
+  let result;
+  try{
+    result = JSON.parse(raw);
+  }catch{
+    result = { answer: raw, actions: [] };
+  }
+
+  res.json({
+    text: result.answer || "",
+    actions: Array.isArray(result.actions) ? result.actions : [],
+    provider
+  });
 });
 
 app.get("/login", (req, res) => {
