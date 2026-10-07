@@ -2537,6 +2537,7 @@ setInterval(() => {
   const snapshot = serializeLogicState();
   const logicChanged = snapshot !== lastLogicSnapshot;
   if(logicChanged){
+    if(!historyApplying && lastLogicSnapshot) rememberHistorySnapshot(lastLogicSnapshot);
     lastLogicSnapshot = snapshot;
     const payload = JSON.parse(snapshot);
     payload.baseRevision = serverRevision;
