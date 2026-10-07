@@ -718,7 +718,6 @@ async async function saveAiKnowledgeEntry(bp,name){
   try{
     const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({libraryLearn:true,libraryEntry:entry})});
     const data=await response.json();
-    const data=await response.json();
     const latest=getAiKnowledgeLibrary();
     const found=latest.find(x=>x.id===entry.id);
     if(found&&response.ok&&typeof data.text==="string"&&data.text.trim()){
