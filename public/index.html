@@ -2555,6 +2555,61 @@ setInterval(() => {
 
   if(logicChanged || blueprintChanged) updateStorageInfo();
 }, 50);
+/* ===== Unsichtbare Tastenkürzel: Ctrl/Cmd+Z und Ctrl/Cmd+Y ===== */
+let undoStack = [];
+let redoStack = [];
+let historyApplying = false;
+
+function rememberHistorySnapshot(snapshot){
+  if(historyApplying || !snapshot) return;
+  if(undoStack[undoStack.length-1] === snapshot) return;
+  undoStack.push(snapshot);
+  if(undoStack.length > 50) undoStack.shift();
+  redoStack.length = 0;
+}
+
+function applyHistorySnapshot(snapshot){
+  if(!snapshot) return;
+  historyApplying = true;
+  try{ applyLogicState(JSON.parse(snapshot)); }catch{}
+  historyApplying = false;
+  lastLogicSnapshot = "";
+  sendLogicState();
+}
+
+function undoLogic(){
+  if(!undoStack.length || drag || groupDragging || chipDrag || libraryDrag || selecting) return;
+  const current = serializeLogicState();
+  const previous = undoStack.pop();
+  redoStack.push(current);
+  applyHistorySnapshot(previous);
+}
+
+function redoLogic(){
+  if(!redoStack.length || drag || groupDragging || chipDrag || libraryDrag || selecting) return;
+  const current = serializeLogicState();
+  const next = redoStack.pop();
+  undoStack.push(current);
+  if(undoStack.length > 50) undoStack.shift();
+  applyHistorySnapshot(next);
+}
+
+addEventListener("keydown", event => {
+  if(!(event.ctrlKey || event.metaKey) || event.altKey) return;
+  const target = event.target;
+  if(target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+
+  if(event.key.toLowerCase() === "z"){
+    event.preventDefault();
+    if(event.shiftKey) redoLogic();
+    else undoLogic();
+  }else if(event.key.toLowerCase() === "y"){
+    event.preventDefault();
+    redoLogic();
+  }
+});
+
+
 </script>
 </body>
 </html>
