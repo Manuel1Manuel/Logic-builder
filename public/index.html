@@ -871,14 +871,24 @@ function connectSelectionToTarget(target,pinHit){
  }
 }
 function connectSelectionsParallel(sourceNodes,targetNodes){
-  const sources=sortByPosition(expandActionNodes(sourceNodes).filter(n=>!n.hidden&&n.outputs&&n.outputs.length));
-  const targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden&&n.inputs&&n.inputs.length));
-  const count=Math.min(sources.length,targets.length);
+  let sources,targetList;
+  if(targetNodes===null){
+    const ordered=sortByPosition(expandActionNodes(sourceNodes).filter(n=>!n.hidden))
+      .sort((a,b)=>(a.x||0)-(b.x||0)||(a.y||0)-(b.y||0));
+    const mid=Math.floor(ordered.length/2);
+    sources=ordered.slice(0,mid).filter(n=>n.outputs&&n.outputs.length);
+    targetList=ordered.slice(mid).filter(n=>n.inputs&&n.inputs.length);
+  }else{
+    sources=sortByPosition(expandActionNodes(sourceNodes).filter(n=>!n.hidden&&n.outputs&&n.outputs.length));
+    targetList=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden&&n.inputs&&n.inputs.length));
+  }
+
+  const count=Math.min(sources.length,targetList.length);
   for(let i=0;i<count;i++){
-    const src=sources[i], target=targets[i];
-    if(!canConnectNodes(src,target)) continue;
+    const src=sources[i],target=targetList[i];
+    if(!canConnectNodes(src,target))continue;
     const idx=getFreeSlot(target);
-    if(idx!==-1) wires.push({from:src,to:target,inputIndex:idx});
+    if(idx!==-1)wires.push({from:src,to:target,inputIndex:idx});
   }
 }
 function connectSourceToSelection(source){
@@ -1401,12 +1411,37 @@ function connectSelectionsFirstFree(sourceNodes,targetNodes){
 }
 function startBatchConnect(mode="chunked"){
  if(!selectionActive||!selectedNodes.length)return;
- let sourceNodes=collectConnectionSources(selectedNodes);
+ let originalSelection=selectedNodes.slice();
+ let sourceNodes=collectConnectionSources(originalSelection);
  if(!sourceNodes.length)return;
- batchConnect={sourceNodes:sortByPosition(sourceNodes),triggerNodes:sortByPosition(sourceNodes),sourceBox:getSelectionBounds(sourceNodes),targetNodes:[],targetBox:null,phase:"target",connectMode:mode};
+ batchConnect={
+  sourceNodes:sortByPosition(sourceNodes),
+  triggerNodes:sortByPosition(sourceNodes),
+  selectionNodes:originalSelection,
+  sourceBox:getSelectionBounds(sourceNodes),
+  targetNodes:[],
+  targetBox:null,
+  phase:"target",
+  connectMode:mode
+ };
  clearSelection();
 }
-function finalizeBatchConnect(){if(!batchConnect)return;let targets=batchConnect.targetNodes.length?batchConnect.targetNodes:collectConnectionTargets(selectedNodes);if(!targets.length)return;if(batchConnect.connectMode==="firstFree")connectSelectionsFirstFree(batchConnect.sourceNodes,targets);else connectSelectionsPairwise(batchConnect.sourceNodes,targets);let triggerNodes=batchConnect.triggerNodes||batchConnect.sourceNodes;batchConnect=null;clearSelection();restoreTriggerSelection(triggerNodes);}
+function finalizeBatchConnect(){
+ if(!batchConnect)return;
+ let targets=batchConnect.targetNodes.length?batchConnect.targetNodes:collectConnectionTargets(selectedNodes);
+ if(batchConnect.connectMode==="parallel"){
+  connectSelectionsParallel(batchConnect.selectionNodes||[],batchConnect.targetNodes.length?batchConnect.targetNodes:null);
+ }else{
+  if(!targets.length)return;
+  if(batchConnect.connectMode==="firstFree")connectSelectionsFirstFree(batchConnect.sourceNodes,targets);
+  else connectSelectionsPairwise(batchConnect.sourceNodes,targets);
+ }
+ let triggerNodes=batchConnect.triggerNodes||batchConnect.sourceNodes;
+ batchConnect=null;
+ clearSelection();
+ restoreTriggerSelection(triggerNodes);
+}
+
 function runQuickConnect(mode){
  if(!selectionActive||!selectedNodes.length)return false;
  let sourceNodes=collectConnectionSources(selectedNodes);
@@ -1478,10 +1513,8 @@ addEventListener("keydown",e=>{
 
  if(e.key.toLowerCase()==="l"){
   if(batchConnect&&batchConnect.phase==="target"){
-   batchConnect.connectMode="firstFree";
-   if(batchConnect.targetNodes.length){
-    finalizeBatchConnect();
-   }
+   batchConnect.connectMode="parallel";
+   finalizeBatchConnect();
    e.preventDefault();
    return;
   }
