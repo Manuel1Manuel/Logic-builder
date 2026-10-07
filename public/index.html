@@ -115,7 +115,14 @@ document.getElementById("aiLibraryBtn").onclick=()=>openAiLibrary();
 document.getElementById("aiLibraryClose").onclick=()=>closeAiLibrary();
 document.getElementById("aiLibraryBlueprint").onclick=()=>{const e=getAiKnowledgeLibrary().find(x=>x.id===aiLibrarySelectedId);if(!e||!e.blueprint)return;const bp=cloneBlueprint(e.blueprint);bp.name=e.name||bp.name||"KI-Blueprint";bp.chip=!!bp.chip;blueprints.push(sanitizeBlueprintForStorage(bp));clampBlueprintScroll();closeAiLibrary();};
 document.getElementById("aiLibraryPlace").onclick=()=>{const e=getAiKnowledgeLibrary().find(x=>x.id===aiLibrarySelectedId);if(!e||!e.blueprint)return;libraryDrag={bp:cloneBlueprint(e.blueprint)};closeAiLibrary();};
-document.getElementById("aiLibraryRetry").onclick=async()=>{const e=getAiKnowledgeLibrary().find(x=>x.id===aiLibrarySelectedId);if(!e||!e.blueprint)return;await saveAiKnowledgeEntry(e.blueprint,e.name);};
+document.getElementById("aiLibraryRetry").onclick=async()=>{
+  const list=getAiKnowledgeLibrary(),e=list.find(x=>x.id===aiLibrarySelectedId);if(!e||!e.blueprint)return;
+  const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({libraryLearn:true,libraryEntry:e})});
+  const data=await response.json();
+  if(response.ok&&typeof data.text==="string"&&data.text.trim()){e.understanding=data.text.trim();delete e.summaryError;}
+  else{const msg=String(data?.details||data?.error||"").toLowerCase();e.summaryError=(response.status===429||/token|rate.?limit|quota|capacity/.test(msg))?"no_tokens":"unavailable";}
+  setAiKnowledgeLibrary(list);renderAiLibrary();
+};
 updateHideNamesButton();
 function updateHidePinsButton(){document.getElementById("hidePinsBtn").textContent=hiddenInputPins?"Eingabe-Pins einblenden":"Eingabe-Pins ausblenden";}
 document.getElementById("hidePinsBtn").onclick=()=>{hiddenInputPins=!hiddenInputPins;updateHidePinsButton();};
@@ -711,14 +718,18 @@ async async function saveAiKnowledgeEntry(bp,name){
   try{
     const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({libraryLearn:true,libraryEntry:entry})});
     const data=await response.json();
-    if(response.ok&&typeof data.text==="string"&&data.text.trim()){
-      const latest=getAiKnowledgeLibrary();
-      const found=latest.find(x=>x.id===entry.id);
-      if(found){
-        found.understanding=data.text.trim();
-        setAiKnowledgeLibrary(latest);
-      }
+    const data=await response.json();
+    const latest=getAiKnowledgeLibrary();
+    const found=latest.find(x=>x.id===entry.id);
+    if(found&&response.ok&&typeof data.text==="string"&&data.text.trim()){
+      found.understanding=data.text.trim();
+      delete found.summaryError;
+      setAiKnowledgeLibrary(latest);
       aiStatus.textContent="Manuel KI: Okay, ich habe verstanden, was du als KI-Wissen gespeichert hast. Ich habe mir Aufbau, Namen und die Verbindungen als Referenz gemerkt.";
+    }else if(found&&!response.ok){
+      const msg=String(data?.details||data?.error||"").toLowerCase();
+      found.summaryError=(response.status===429||/token|rate.?limit|quota|capacity/.test(msg))?"no_tokens":"unavailable";
+      setAiKnowledgeLibrary(latest);
     }
   }catch(error){
     const latest=getAiKnowledgeLibrary();const found=latest.find(x=>x.id===entry.id);if(found){found.summaryError="no_tokens";setAiKnowledgeLibrary(latest);}
@@ -2021,6 +2032,10 @@ function updateAiGraphic(){
   aiGraphic.classList.toggle("complex",complex);
   aiGraphic.classList.toggle("simple",!complex);
   if(aiBtn){aiBtn.classList.toggle("complex",complex);aiBtn.classList.toggle("simple",!complex);}
+  const libBtn=document.getElementById("aiLibraryBtn"),libPopup=document.getElementById("aiLibraryPopup"),storage=document.getElementById("storageInfo");
+  if(libBtn){libBtn.classList.toggle("complex",complex);libBtn.classList.toggle("simple",!complex);}
+  if(libPopup){libPopup.classList.toggle("complex",complex);libPopup.classList.toggle("simple",!complex);}
+  if(storage){storage.classList.toggle("complex",complex);storage.classList.toggle("simple",!complex);}
   aiGraphic.innerHTML=complex ? "" : "<span>✦</span>";
 }
 updateAiGraphic();
