@@ -689,7 +689,7 @@ function getAiKnowledgeContext(){
     blueprint:entry.blueprint||null
   }));
 }
-async let aiLibrarySelectedId=null;
+let aiLibrarySelectedId=null;
 let aiLibraryRetryAt=0;
 function getAiLibraryDisplayList(){return getAiKnowledgeLibrary().map((entry,index)=>({entry,index})).sort((a,b)=>(a.entry.name||"").localeCompare(b.entry.name||"","de",{sensitivity:"base"}));}
 function drawAiLibraryPreview(bp){
@@ -703,7 +703,7 @@ function renderAiLibrary(){
  const listEl=document.getElementById("aiLibraryList"),summaryEl=document.getElementById("aiLibrarySummary"),metaEl=document.getElementById("aiLibraryMeta"),retry=document.getElementById("aiLibraryRetry");if(!listEl)return;const items=getAiLibraryDisplayList();listEl.textContent="";if(!items.length){listEl.textContent="Noch kein KI-Wissen gespeichert.";summaryEl.textContent="";metaEl.textContent="";drawAiLibraryPreview(null);retry.style.display="none";return;}if(!aiLibrarySelectedId||!items.some(x=>x.entry.id===aiLibrarySelectedId))aiLibrarySelectedId=items[0].entry.id;for(const item of items){const b=document.createElement("button");b.type="button";b.textContent=item.entry.name||"Unbenannt";b.classList.toggle("selected",item.entry.id===aiLibrarySelectedId);b.onclick=()=>{aiLibrarySelectedId=item.entry.id;renderAiLibrary();};listEl.appendChild(b);}const selected=items.find(x=>x.entry.id===aiLibrarySelectedId)?.entry;if(!selected)return;drawAiLibraryPreview(selected.blueprint);metaEl.textContent=(selected.name||"Unbenannt")+" · "+(selected.createdAt?new Date(selected.createdAt).toLocaleString("de-DE"):"");if(selected.understanding){summaryEl.textContent=selected.understanding;retry.style.display="none";}else{summaryEl.textContent=selected.summaryError==="no_tokens"?"Die KI hat momentan keine Token, um diesen Eintrag zusammenzufassen. Sobald wieder Kapazität vorhanden ist, kann die Zusammenfassung erstellt werden.":"Die KI-Zusammenfassung ist für diesen Eintrag noch nicht verfügbar.";retry.style.display="inline-block";}}
 function openAiLibrary(){document.getElementById("aiLibraryPopup").style.display="block";renderAiLibrary();}
 function closeAiLibrary(){document.getElementById("aiLibraryPopup").style.display="none";}
-async async function saveAiKnowledgeEntry(bp,name){
+async function saveAiKnowledgeEntry(bp,name){
   const list=getAiKnowledgeLibrary();
   const entry={
     id:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():("ai_"+Date.now()+"_"+Math.random().toString(36).slice(2)),
