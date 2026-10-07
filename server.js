@@ -343,7 +343,8 @@ ${prompt}`
           type: "json_object"
         }
         })
-      );
+      }
+    );
   }catch(error){
     clearTimeout(timeout);
     console.error(provider+" API Netzwerkfehler:", error);
