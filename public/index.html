@@ -954,13 +954,15 @@ function handleCanvasMouseDown(e){
  if(e.button===0&&selectionActive&&selectionWireMode){
   let target=getConnectTargetAtPoint(mouseWorld.x,mouseWorld.y);
   if(target){
-   let pinHit=getPinHitAtPoint(mouseWorld.x,mouseWorld.y,target);
-   if(selectionWireMode==="from"&&pinHit&&pinHit.kind==="input")connectSelectionToTarget(target,pinHit);
-   else if(selectionWireMode==="to"&&pinHit&&pinHit.kind==="output")connectSourceToSelection(target);
+   if(selectionWireMode==="from"){
+    connectSelectionToTarget(target);
+   }else if(selectionWireMode==="to"&&(target.chipPin?target.chipPin==="out":(target.outputs&&target.outputs.length))){
+    connectSourceToSelection(target);
+   }
   }
   selectionWireMode=null;
   return;
- }
+}
  let additiveSelect=e.ctrlKey||e.metaKey||pressedKeys.has("KeyQ");
  if(!additiveSelect&&!selectionWireMode){
   let inside=selectionActive&&selectionBox&&pointInSelection(mouseWorld.x,mouseWorld.y);
