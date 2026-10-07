@@ -870,6 +870,17 @@ function connectSelectionToTarget(target,pinHit){
   wires.push({from:src,to:target,inputIndex:idx});
  }
 }
+function connectSelectionsParallel(sourceNodes,targetNodes){
+  const sources=sortByPosition(expandActionNodes(sourceNodes).filter(n=>!n.hidden&&n.outputs&&n.outputs.length));
+  const targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden&&n.inputs&&n.inputs.length));
+  const count=Math.min(sources.length,targets.length);
+  for(let i=0;i<count;i++){
+    const src=sources[i], target=targets[i];
+    if(!canConnectNodes(src,target)) continue;
+    const idx=getFreeSlot(target);
+    if(idx!==-1) wires.push({from:src,to:target,inputIndex:idx});
+  }
+}
 function connectSourceToSelection(source){
  if(source&&source.chipId&&source.chipPin!=="out")return;
  let targets=collectConnectionTargets(selectedNodes).filter(n=>n!==source);
