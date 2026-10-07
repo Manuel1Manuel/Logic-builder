@@ -32,6 +32,9 @@ body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none
 <label style="color:white;display:flex;gap:8px;align-items:center;">
 Chip? <input id="bpChip" type="checkbox">
 </label>
+<label style="color:white;display:flex;gap:8px;align-items:center;">
+KI-Wissen? <input id="bpAiKnowledge" type="checkbox">
+</label>
 <button id="bpOk">OK</button>
 </div>
 <div id="bpImport">
@@ -647,7 +650,55 @@ function flattenChipBlueprint(bp){if(!bp||!bp.nodes)return bp;if(!bp.chip)return
 function zeroBlueprintSwitches(bp){if(!bp||!bp.nodes)return bp;for(let n of bp.nodes){if(n.type==="switch")n.state=false;if(n.type==="timer"){n.timerRunning=false;n.offTimerRunning=false;n.timerStart=0;n.offTimerStart=0;}if(n.type==="clock"){n.clockState=true;n.clockLastToggle=0;}if(n.type==="memory")n.memoryState=false;}return bp;}
 function buildBlueprintFromSelection(){if(!selectionActive||!selectedNodes.length)return null;let chipIds=[...new Set(selectedNodes.filter(n=>n.chipId).map(n=>n.chipId))];let mixedChipSelection=chipIds.length>0&&selectedNodes.some(n=>!n.chipId);if(chipIds.length===1&&selectedNodes.every(n=>n.chipId===chipIds[0])){let bp={name:"",nodes:[],wires:[],chip:true,mixedChipSelection:false};let chipId=chipIds[0];let chipNodes=sortByPosition(expandActionNodes(selectedNodes).filter(n=>n.chipId===chipId));let map=new Map();let firstChipNode=chipNodes[0];if(firstChipNode)bp.name=firstChipNode.chipName||firstChipNode.name||"CHIP";for(let n of chipNodes){let id=Math.random();map.set(n,id);bp.nodes.push({id,type:n.type,relX:n.x,relY:n.y,state:getSavedNodeState(n),delay:n.delay,stay:n.stay,name:n.name,chipId:n.chipId,chipPin:n.chipPin,chipShell:n.chipShell,hidden:n.hidden,assignedKey:n.assignedKey,interval:n.interval,memoryState:n.memoryState,timerRunning:n.timerRunning,offTimerRunning:n.offTimerRunning,timerStart:n.timerStart,offTimerStart:n.offTimerStart,clockState:n.clockState,clockLastToggle:n.clockLastToggle});}for(let w of wires){if(chipNodes.includes(w.from)&&chipNodes.includes(w.to)){bp.wires.push({from:map.get(w.from),to:map.get(w.to),inputIndex:w.inputIndex});}}return sanitizeBlueprintForStorage(bp);}let bp={name:"",nodes:[],wires:[],chip:false,mixedChipSelection:mixedChipSelection};let map=new Map();let allNodes=[];let seen=new Set();for(let n of selectedNodes){if(!seen.has(n)){seen.add(n);allNodes.push(n);}}for(let cid of chipIds){for(let n of nodes){if(n.chipId===cid&&!seen.has(n)){seen.add(n);allNodes.push(n);}}}let bounds=getSelectionBounds(allNodes.filter(n=>!n.hidden));if(!bounds)return null;for(let n of allNodes){let id=Math.random();map.set(n,id);bp.nodes.push({id,type:n.type,relX:n.x-bounds.x,relY:n.y-bounds.y,state:getSavedNodeState(n),delay:n.delay,stay:n.stay,name:n.name,chipId:n.chipId,chipName:n.chipName,chipPin:n.chipPin,chipShell:n.chipShell,hidden:n.hidden,assignedKey:n.assignedKey,interval:n.interval,memoryState:n.memoryState,timerRunning:n.timerRunning,offTimerRunning:n.offTimerRunning,timerStart:n.timerStart,offTimerStart:n.offTimerStart,clockState:n.clockState,clockLastToggle:n.clockLastToggle});}for(let w of wires){if(allNodes.includes(w.from)&&allNodes.includes(w.to)){bp.wires.push({from:map.get(w.from),to:map.get(w.to),inputIndex:w.inputIndex});}}return sanitizeBlueprintForStorage(bp);}
 function saveSelectedToClipboard(){const bp=buildBlueprintFromSelection();if(!bp)return false;const text=JSON.stringify(bp);if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).catch(()=>fallbackCopyText(text));}else fallbackCopyText(text);return true;}
-function fallbackCopyText(text){const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch{}ta.remove();}function saveBlueprintToLibrary(){let bp=blueprint?cloneBlueprint(blueprint):buildBlueprintFromSelection();if(!bp)return;pendingBlueprint=bp;document.getElementById("bpPopup").style.top="50%";document.getElementById("bpName").value=bp.name||"";document.getElementById("bpChip").checked=!!bp.chip;document.getElementById("bpName").focus();}
+function fallbackCopyText(text){const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch{}ta.remove();}function saveBlueprintToLibrary(){let bp=blueprint?cloneBlueprint(blueprint):buildBlueprintFromSelection();if(!bp)return;pendingBlueprint=bp;document.getElementById("bpPopup").style.top="50%";document.getElementById("bpName").value=bp.name||"";document.getElementById("bpChip").checked=!!bp.chip;document.getElementById("bpAiKnowledge").checked=false;document.getElementById("bpName").focus();}
+function getAiKnowledgeLibrary(){
+  try{
+    const raw=localStorage.getItem("logicBuilderAiKnowledge");
+    const list=raw?JSON.parse(raw):[];
+    return Array.isArray(list)?list:[];
+  }catch{return [];}
+}
+function setAiKnowledgeLibrary(list){
+  try{
+    localStorage.setItem("logicBuilderAiKnowledge",JSON.stringify(list));
+    return true;
+  }catch{return false;}
+}
+function getAiKnowledgeContext(){
+  return getAiKnowledgeLibrary().map((entry,index)=>({
+    index,
+    createdAt:entry.createdAt||"",
+    name:entry.name||("KI-Wissen "+(index+1)),
+    understanding:entry.understanding||"",
+    blueprint:entry.blueprint||null
+  }));
+}
+async function saveAiKnowledgeEntry(bp,name){
+  const list=getAiKnowledgeLibrary();
+  const entry={
+    id:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():("ai_"+Date.now()+"_"+Math.random().toString(36).slice(2)),
+    createdAt:new Date().toISOString(),
+    name:name||("KI-Wissen "+(list.length+1)),
+    blueprint:sanitizeBlueprintForStorage(cloneBlueprint(bp)),
+    understanding:""
+  };
+  list.push(entry);
+  setAiKnowledgeLibrary(list);
+  aiStatus.textContent="Manuel KI: Ich habe den neuen Eintrag erhalten und versuche zu verstehen, warum diese Schaltung so aufgebaut und benannt wurde.";
+  try{
+    const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({libraryLearn:true,libraryEntry:entry})});
+    const data=await response.json();
+    if(response.ok&&typeof data.text==="string"&&data.text.trim()){
+      const latest=getAiKnowledgeLibrary();
+      const found=latest.find(x=>x.id===entry.id);
+      if(found){
+        found.understanding=data.text.trim();
+        setAiKnowledgeLibrary(latest);
+      }
+      aiStatus.textContent="Manuel KI: Okay, ich habe verstanden, was du als KI-Wissen gespeichert hast. Ich habe mir Aufbau, Namen und die Verbindungen als Referenz gemerkt.";
+    }
+  }catch{}
+}
 const blueprintVisibleRows=8;
 
 function clampBlueprintScroll(){let max=Math.max(0,blueprints.length-blueprintVisibleRows);if(blueprintScroll<0)blueprintScroll=0;if(blueprintScroll>max)blueprintScroll=max;}
@@ -820,7 +871,7 @@ function tryConnectFrom(src,wx,wy){
 document.getElementById("nameSave").onclick=()=>{if(nameNode){let v=document.getElementById("nameInput").value.trim();if(v)nameNode.name=v;}document.getElementById("namePopup").style.display="none";nameNode=null;};
 document.getElementById("copyYes").onclick=()=>{if(copyPending)copyToClipboard(JSON.stringify(copyPending));copyPending=null;document.getElementById("copyPopup").style.display="none";};
 document.getElementById("copyNo").onclick=()=>{copyPending=null;document.getElementById("copyPopup").style.display="none";};
-document.getElementById("bpOk").onclick=()=>{if(pendingBlueprint){let name=document.getElementById("bpName").value.trim();pendingBlueprint.name=name?name:("Blueprint "+(blueprints.length+1));pendingBlueprint.chip=document.getElementById("bpChip").checked;if(pendingBlueprint.chip){pendingBlueprint=flattenChipBlueprint(pendingBlueprint);}zeroBlueprintSwitches(pendingBlueprint);pendingBlueprint=sanitizeBlueprintForStorage(pendingBlueprint);blueprints.push(pendingBlueprint);clampBlueprintScroll();pendingBlueprint=null;document.getElementById("bpPopup").style.top="-220px";}};
+document.getElementById("bpOk").onclick=()=>{if(pendingBlueprint){let name=document.getElementById("bpName").value.trim();const aiKnowledge=document.getElementById("bpAiKnowledge").checked;pendingBlueprint.name=name?name:("Blueprint "+(blueprints.length+1));pendingBlueprint.chip=document.getElementById("bpChip").checked;if(pendingBlueprint.chip){pendingBlueprint=flattenChipBlueprint(pendingBlueprint);}zeroBlueprintSwitches(pendingBlueprint);pendingBlueprint=sanitizeBlueprintForStorage(pendingBlueprint);const savedForAi=aiKnowledge?cloneBlueprint(pendingBlueprint):null;const savedAiName=pendingBlueprint.name;blueprints.push(pendingBlueprint);clampBlueprintScroll();pendingBlueprint=null;document.getElementById("bpPopup").style.top="-220px";if(savedForAi)saveAiKnowledgeEntry(savedForAi,savedAiName);}};
 document.getElementById("bpLoad").onclick=()=>{let v=document.getElementById("bpData").value.trim();if(v)loadBlueprintString(v);document.getElementById("bpData").value="";};
 document.getElementById("timerSave").onclick=()=>{if(timerMenuNode){timerMenuNode.delay=parseInt(document.getElementById("timerDelay").value)||timerMenuNode.delay;timerMenuNode.stay=document.getElementById("timerStay").checked;}document.getElementById("timerMenu").style.display="none";timerMenuNode=null;};
 document.getElementById("keyPopupClose").onclick=()=>{document.getElementById("keyPopup").style.display="none";keyMenuNode=null;};
@@ -1960,7 +2011,7 @@ function getAiContext(){
   const nodeIndex=new Map(nodes.map((n,i)=>[n,i]));
   const wireData=wires.map(w=>({from:nodeIndex.get(w.from),to:nodeIndex.get(w.to),inputIndex:Number.isFinite(w.inputIndex)?w.inputIndex:0}));
   const blueprintInfo=blueprints.map((bp,i)=>({index:i,name:bp.name||("Blueprint "+(i+1)),nodes:Array.isArray(bp.nodes)?bp.nodes.length:0,wires:Array.isArray(bp.wires)?bp.wires.length:0}));
-  return JSON.stringify({editor:"Logic Builder Ultra",nodeCount:nodes.length,gateTypes:["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"],nodes:visibleNodes,wires:wireData,blueprints:blueprintInfo});
+  return JSON.stringify({editor:"Logic Builder Ultra",nodeCount:nodes.length,gateTypes:["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"],nodes:visibleNodes,wires:wireData,blueprints:blueprintInfo,aiKnowledge:getAiKnowledgeContext()});
 }
 
 let aiActionInProgress=false;
