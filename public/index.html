@@ -689,6 +689,7 @@ function getAiKnowledgeContext(){
     blueprint:entry.blueprint||null
   }));
 }
+}
 let aiLibrarySelectedId=null;
 let aiLibraryRetryAt=0;
 function getAiLibraryDisplayList(){return getAiKnowledgeLibrary().map((entry,index)=>({entry,index})).sort((a,b)=>(a.entry.name||"").localeCompare(b.entry.name||"","de",{sensitivity:"base"}));}
