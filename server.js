@@ -94,9 +94,12 @@ Verwende ausschließlich diese Aktionen:
 - set_switch: Schalterzustand setzen
 - set_timer: Timer delay/stay setzen
 - set_clock: Clock interval setzen
-- save_chip: den Schaltungsverbund rund um einen Node als Blueprint in die Blueprint-Bibliothek speichern und als Chip markieren; wenn der Node bereits zu einem Chip gehört, den kompletten Chip verwenden; optional name
-- copy_chip: einen vorhandenen Chip ODER den Schaltungsverbund rund um einen Node als Chip vervielfältigen; x/y ist die neue Position
+- save_chip: nur wenn der Nutzer AUSDRÜCKLICH verlangt, einen Schaltungsverbund als Chip/Blueprint zu speichern; den Schaltungsverbund rund um einen Node als Blueprint in die Blueprint-Bibliothek speichern und als Chip markieren
+- copy_chip: nur wenn der Nutzer ausdrücklich einen Chip/Blueprint vervielfältigen möchte; einen vorhandenen Chip ODER den Schaltungsverbund rund um einen Node als Chip vervielfältigen; x/y ist die neue Position
 - place_blueprint: einen Blueprint aus der Blueprint-Bibliothek anhand blueprintIndex auf der Arbeitsfläche platzieren; x/y ist die neue Position
+- select_nodes: die angegebenen aktuellen Node-Indizes auswählen; indices ist die vollständige Liste der gewünschten Nodes
+- open_chip_popup: das sichtbare Speichern-Fenster für die aktuelle Auswahl öffnen; nur verwenden, wenn der Nutzer ausdrücklich einen Chip/Blueprint speichern oder daraus einen Chip machen möchte
+- confirm_chip_save: im geöffneten Speichern-Fenster sichtbar den Chip-Modus aktivieren und den Speichern-Button ausführen; nur zusammen mit einem ausdrücklich gewünschten Chip/Blueprint-Speichervorgang verwenden
 
 WICHTIG ZU INDIZES UND MEHREREN AKTIONEN:
 Ein "index" ist kein dauerhafter Name. Beim Löschen eines Nodes rücken nachfolgende Nodes im nodes-Array nach und können dadurch neue Indizes bekommen.
@@ -108,14 +111,31 @@ Beim Umbenennen mehrerer Nodes muss für jeden passenden Node eine eigene rename
 Bei "alle A in B umbenennen" ist A das bisherige Kriterium bzw. der bisherige Name und B der neue Name. Führe die Umbenennung für ALLE Treffer aus.
 Bei globalen Änderungen darfst du nicht bei der ersten passenden Instanz aufhören.
 Bei Aktionen, die neue Nodes erzeugen, erhalten neue Gatter fortlaufende Indizes ab dem aktuellen nodeCount. Plane bei einer neuen Schaltung die vollständige Aktionenkette und verwende danach die korrekten neuen Indizes für die Verbindungen.
-Bei save_chip und copy_chip reicht als index ein Node des gewünschten Schaltungsverbunds. Ist dieser Node noch kein Chip, bildet der Editor den zusammenhängenden Schaltungsverbund über die vorhandenen Wires und speichert/vervielfältigt diesen Verbund als Chip. Ist der Node bereits Teil eines Chips, wird stattdessen der komplette Chip über chipId verwendet.
-WICHTIG: Ein Nutzer muss NICHT vorher einen Chip im Editor haben, wenn er sagt, dass du einen Chip erstellen, bauen, speichern oder als Blueprint anlegen sollst. Baue den gewünschten Schaltplan zuerst mit add_gate und connect auf der Arbeitsfläche auf und speichere genau diesen fertigen Verbund anschließend mit save_chip als Blueprint mit aktiviertem Chip-Modus in der Blueprint-Bibliothek.
-Beispiel: Sagt der Nutzer „Erstelle einen Chip mit zwei Switchen und zwei Outputs, die über Kreuz verbunden sind“, dann musst du genau 4 Nodes erzeugen: 2x switch und 2x output, sinnvoll platzieren, die beiden Switches gekreuzt mit den beiden Outputs verbinden und danach save_chip mit dem Index eines dieser vier Nodes ausführen. save_chip darf hier NICHT abgelehnt werden, nur weil die Nodes vorher noch keine chipId haben.
-Wenn der Nutzer zusätzlich sagt, den neuen Chip einmal auf der Arbeitsfläche zu kopieren, muss die actions-Liste nach dem save_chip zusätzlich copy_chip mit einem der vier Nodes und der gewünschten neuen x/y-Position enthalten. copy_chip muss auch für einen noch nicht als Chip markierten Schaltungsverbund funktionieren.
-„Als Blueprint speichern“ und „als Chip aktivieren“ bedeuten: den gewünschten Verbund in die Blueprint-Bibliothek aufnehmen, blueprint.chip=true setzen und als Chip-Blueprint speichern. Nicht nur die vier Einzelgatter auf der Arbeitsfläche stehen lassen.
-Wenn der Nutzer „als Chip speichern“, „als Blueprint speichern“, „in die Blueprint-Bibliothek einfügen“, „daraus einen Chip machen“ oder „als Chip aktivieren“ sagt und der gewünschte Schaltplan noch kein Chip ist, darfst du NICHT mit „kein Chip vorhanden“ ablehnen.
+CHIPS NUR AUF AUSDRÜCKLICHE ANWEISUNG:
+Erstelle, speichere oder aktiviere NIEMALS automatisch einen Chip, nur weil du eine Schaltung aufgebaut hast. Eine normale Anfrage wie „baue“, „erstelle“, „mache“, „verbinde“ oder „zeichne“ eine Schaltung bedeutet NUR die gewünschte Schaltung auf der Arbeitsfläche zu bauen. Solange der Nutzer nicht ausdrücklich „Chip“, „als Chip speichern“, „als Blueprint speichern“, „in die Blueprint-Bibliothek“, „als Chip aktivieren“ oder sinngemäß dasselbe verlangt, darfst du KEINE Chip-Speicheraktion ausführen und KEINEN Chip in der Bibliothek anlegen.
+
+Wenn der Nutzer ausdrücklich einen Chip verlangt, dann baue GENAU den vom Nutzer gewünschten Schaltungsverbund. Erfinde dafür keine andere Schaltung und speichere nicht irgendeinen bereits vorhandenen Chip. Wenn der Nutzer z. B. einen Chip mit zwei Switches und zwei Outputs über Kreuz verlangt, müssen genau diese gewünschten vier Nodes und genau diese Verbindungen Grundlage des Chips sein.
+
+WICHTIGER CHIP-SPEICHERABLAUF:
+Wenn ein Chip/Blueprint ausdrücklich gespeichert werden soll, nutze den sichtbaren Editor-Ablauf, damit die Aktion auch für den Nutzer nachvollziehbar ist:
+1. Baue zuerst die vom Nutzer verlangte Schaltung vollständig mit add_gate und connect auf der Arbeitsfläche.
+2. Wenn die gewünschten Nodes schon existieren, verwende genau diese Nodes und erfinde keine anderen.
+3. Wähle danach mit select_nodes ALLE Nodes aus, die genau zum gewünschten Chip gehören. indices muss die vollständige aktuelle Indexliste dieser Auswahl sein.
+4. Öffne mit open_chip_popup das sichtbare Speichern-Fenster.
+5. Danach führe mit confirm_chip_save den sichtbaren Speichervorgang aus. Diese Aktion aktiviert den Chip-Modus im Fenster und drückt den Speichern-Button. Der Nutzer soll dabei den Popup-Ablauf sehen können.
+6. Verwende save_chip NICHT als Ersatz für diesen sichtbaren Ablauf, wenn der Nutzer ausdrücklich verlangt, dass du über die Auswahl und das Chip-Speicherfenster arbeitest.
+7. Wenn der Nutzer danach ausdrücklich eine Kopie auf der Arbeitsfläche verlangt, füge anschließend copy_chip hinzu. Nutze dafür einen Node aus genau dem gerade gewünschten Chip.
+
+Wenn der Nutzer nur sagt „Erstelle einen Chip mit ...“, ist das ausdrücklich eine Chip-Anweisung: Schaltung bauen, exakt die gewünschten Nodes auswählen, Popup öffnen und dort als Chip speichern. Wenn er dagegen nur „Erstelle ...“ ohne Chip/Blueprint-Bezug sagt, wird KEIN Chip gespeichert.
+
+„Als Blueprint speichern“, „in die Blueprint-Bibliothek einfügen“ und „als Chip aktivieren“ sind ebenfalls ausdrückliche Speicheranweisungen. Verwende auch dann den sichtbaren select_nodes -> open_chip_popup -> confirm_chip_save Ablauf.
+
+Bei copy_chip reicht als index ein Node des gewünschten Schaltungsverbunds. Ist dieser Node bereits Teil eines Chips, wird der komplette Chip über chipId verwendet. Ist er noch kein Chip, bildet der Editor den zusammenhängenden Schaltungsverbund über die vorhandenen Wires und vervielfältigt genau diesen als Chip.
+
 Wenn der Nutzer einen Blueprint aus der Bibliothek auf die Arbeitsfläche setzen möchte, verwende place_blueprint.
-Wenn der Nutzer einen vorhandenen oder gerade erstellten Schaltungsverbund als Chip auf der Arbeitsfläche kopieren/duplizieren möchte, verwende copy_chip statt nur einzelne Gatter zu kopieren.
+
+Wenn der Nutzer eine normale Schaltung ohne Chip-Anweisung verlangt, darf die actions-Liste keine save_chip-, open_chip_popup- oder confirm_chip_save-Aktion enthalten.
+
 Bei größeren Aufgaben müssen alle notwendigen add_gate-, connect-, save_chip- und gegebenenfalls copy_chip-Aktionen in derselben vollständigen actions-Liste stehen.
 WICHTIG: Lehne eine vom Nutzer verlangte große oder komplexe Schaltung niemals nur wegen ihrer Größe ab. Sage niemals, dass eine Aufgabe „zu viele Gatter“ hat, „nicht sinnvoll in einem Schritt“ sei, „in kleinere Teilaufgaben aufgeteilt“ werden müsse oder dass der Nutzer konkrete Operationen erst auswählen müsse, wenn er bereits eine konkrete Gesamtaufgabe verlangt hat. Führe die gesamte Anweisung selbstständig aus und liefere ALLE dafür nötigen Aktionen in einer einzigen vollständigen actions-Liste. Das gilt ausdrücklich auch für komplette Byte-ALUs, Addierer, Subtrahierer, Vergleicher, Schiebeschaltungen und andere große Schaltungen mit vielen Gattern. Wenn die Anfrage mehrere Operationen nennt, plane die komplette Topologie selbst und baue alle verlangten Operationen. Stelle bei einer großen Schaltung nicht nur einen Teil fertig und bitte nicht um weitere Aufteilung. Wenn die Aktionliste sehr groß wird, gib trotzdem die vollständige Liste aus und nutze die verfügbaren Aktionen konsequent.
 
@@ -194,12 +214,13 @@ ${prompt}`
                   items: {
                     type: "object",
                     properties: {
-                      action: { type: "string", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock","save_chip","copy_chip","place_blueprint"] },
+                      action: { type: "string", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock","save_chip","copy_chip","place_blueprint","select_nodes","open_chip_popup","confirm_chip_save"] },
                       type: { type: ["string","null"] },
                       index: { type: ["integer","null"] },
                       from: { type: ["integer","null"] },
                       to: { type: ["integer","null"] },
                       blueprintIndex: { type: ["integer","null"] },
+                      indices: { type: ["array","null"], items: { type: "integer" } },
                       inputIndex: { type: ["integer","null"] },
                       x: { type: ["number","null"] },
                       y: { type: ["number","null"] },
@@ -209,7 +230,7 @@ ${prompt}`
                       stay: { type: ["number","null"] },
                       interval: { type: ["number","null"] }
                     },
-                    required: ["action","type","index","from","to","inputIndex","blueprintIndex","x","y","name","value","delay","stay","interval"],
+                    required: ["action","type","index","from","to","inputIndex","blueprintIndex","indices","x","y","name","value","delay","stay","interval"],
                     additionalProperties: false
                   }
                 }
