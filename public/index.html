@@ -2041,7 +2041,6 @@ function applyBlueprintLibrary(list){
 logicSocket.on("state", state => {
   const legacyState = !state || Number(state.version || 1) < 3;
   serverRevision = Number.isInteger(state?.serverRevision) ? state.serverRevision : serverRevision;
-  updateStorageInfo(Number.isFinite(state?.serverStorageBytes) ? state.serverStorageBytes : lastServerStorageBytes);
 
   if(state && Array.isArray(state.nodes) && Array.isArray(state.wires)){
     if(applyLogicState(state)){
@@ -2062,6 +2061,7 @@ logicSocket.on("state", state => {
     lastBlueprintSnapshot = "";
   }
 
+  updateStorageInfo(Number.isFinite(state?.serverStorageBytes) ? state.serverStorageBytes : lastServerStorageBytes);
   logicSyncReady = true;
   logicSocket.emit("stateApplied", serverRevision);
 
