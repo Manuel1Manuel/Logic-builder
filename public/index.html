@@ -1251,12 +1251,22 @@ function collectConnectionTargets(list){
  return sortByPosition(expandActionNodes(list).filter(n=>!n.hidden)).filter(n=>n.chipId?n.chipPin==="in":(n.inputs&&n.inputs.length));
 }
 
+function canConnectNodes(from,to){
+ if(!from||!to||from===to)return false;
+ if(from.chipPin&&from.chipPin!=="out")return false;
+ if(to.chipPin&&to.chipPin!=="in")return false;
+ if(from.chipId&&to.chipId&&from.chipId===to.chipId)return false;
+ return true;
+}
 function connectSelectionsPairwise(sourceNodes,targetNodes){
  let outs=collectSelectionPins(sourceNodes,"outputs");
  let ins=collectSelectionPins(targetNodes,"inputs");
- let count=Math.min(outs.length,ins.length);
- for(let i=0;i<count;i++){
-  wires.push({from:outs[i].node,to:ins[i].node,inputIndex:ins[i].index});
+ let o=0;
+ for(let i=0;i<ins.length&&o<outs.length;i++){
+  while(o<outs.length&&!canConnectNodes(outs[o].node,ins[i].node))o++;
+  if(o>=outs.length)break;
+  wires.push({from:outs[o].node,to:ins[i].node,inputIndex:ins[i].index});
+  o++;
  }
 }
 function getOrderedInputSlots(node){
@@ -1277,6 +1287,7 @@ function connectSelectionsChunked(sourceNodes,targetNodes){
  for(let target of targets){
   let slots=getOrderedInputSlots(target);
   for(let slot of slots){
+   while(o<outs.length&&!canConnectNodes(outs[o].node,target))o++;
    if(o>=outs.length)return;
    wires.push({from:outs[o].node,to:target,inputIndex:slot});
    o++;
@@ -1286,12 +1297,14 @@ function connectSelectionsChunked(sourceNodes,targetNodes){
 function connectSelectionsFirstFree(sourceNodes,targetNodes){
  let outs=collectSelectionPins(sourceNodes,"outputs");
  let targets=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden));
- let count=Math.min(outs.length,targets.length);
- for(let i=0;i<count;i++){
-  let target=targets[i];
+ let o=0;
+ for(let target of targets){
   let slots=getOrderedInputSlots(target);
   if(!slots.length)continue;
-  wires.push({from:outs[i].node,to:target,inputIndex:slots[0]});
+  while(o<outs.length&&!canConnectNodes(outs[o].node,target))o++;
+  if(o>=outs.length)break;
+  wires.push({from:outs[o].node,to:target,inputIndex:slots[0]});
+  o++;
  }
 }
 function startBatchConnect(mode="chunked"){
