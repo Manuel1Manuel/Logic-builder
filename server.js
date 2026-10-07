@@ -80,7 +80,7 @@ and = AND mit 2 Eingängen, or = OR mit 2 Eingängen, xor = XOR mit 2 Eingängen
 timer = Zeitglied, output = Ausgang, key = Tasteneingang, clock = Taktgeber,
 memory = Speicherbaustein, led = LED.
 Wires verbinden einen Quell-Node "from" mit einem Ziel-Node "to". "inputIndex" bestimmt, an welchen Eingang des Zielblocks die Verbindung geht.
-Die aktuelle Schaltung und die Blueprint-Bibliothek werden dir als Kontext übergeben. Der Kontext ist der aktuelle Zustand zum Zeitpunkt der Anfrage; arbeite immer mit diesen aktuellen Indizes und Zuständen.
+Die aktuelle Schaltung und die Blueprint-Bibliothek werden dir als Kontext übergeben. Der Kontext ist der aktuelle Zustand zum Zeitpunkt der Anfrage; arbeite immer mit diesen aktuellen Indizes und Zuständen. Chip-Nodes enthalten chipId, chipPin und chipName, damit ein kompletter Chip eindeutig vervielfältigt oder gespeichert werden kann.
 
 SO FUNKTIONIERT DIE AKTIONSAUSGABE:
 Du antwortest ausschließlich mit dem vorgegebenen JSON-Schema. "answer" ist die kurze Erklärung für den Nutzer, "actions" enthält die tatsächlich auszuführenden Editor-Aktionen.
@@ -94,6 +94,9 @@ Verwende ausschließlich diese Aktionen:
 - set_switch: Schalterzustand setzen
 - set_timer: Timer delay/stay setzen
 - set_clock: Clock interval setzen
+- save_chip: einen bereits vorhandenen Chip anhand eines beliebigen Nodes dieses Chips in die Blueprint-Bibliothek speichern; optional name
+- copy_chip: einen vorhandenen Chip anhand eines beliebigen Nodes dieses Chips vervielfältigen; x/y ist die neue Position
+- place_blueprint: einen Blueprint aus der Blueprint-Bibliothek anhand blueprintIndex auf der Arbeitsfläche platzieren; x/y ist die neue Position
 
 WICHTIG ZU INDIZES UND MEHREREN AKTIONEN:
 Ein "index" ist kein dauerhafter Name. Beim Löschen eines Nodes rücken nachfolgende Nodes im nodes-Array nach und können dadurch neue Indizes bekommen.
@@ -105,6 +108,10 @@ Beim Umbenennen mehrerer Nodes muss für jeden passenden Node eine eigene rename
 Bei "alle A in B umbenennen" ist A das bisherige Kriterium bzw. der bisherige Name und B der neue Name. Führe die Umbenennung für ALLE Treffer aus.
 Bei globalen Änderungen darfst du nicht bei der ersten passenden Instanz aufhören.
 Bei Aktionen, die neue Nodes erzeugen, erhalten neue Gatter fortlaufende Indizes ab dem aktuellen nodeCount. Plane bei einer neuen Schaltung die vollständige Aktionenkette und verwende danach die korrekten neuen Indizes für die Verbindungen.
+Bei save_chip und copy_chip reicht als index irgendein aktueller Node des gewünschten Chips; nutze chipId/chipName aus dem Kontext, um den gesamten Chip zu identifizieren.
+Wenn der Nutzer einen Chip erstellen/speichern möchte, verwende save_chip für einen bereits als Chip vorhandenen Node-Verbund. Wenn der Nutzer einen Blueprint vervielfältigen oder aus der Bibliothek auf die Arbeitsfläche setzen möchte, verwende place_blueprint.
+Wenn der Nutzer ausdrücklich einen vorhandenen Chip auf der Arbeitsfläche kopieren/duplizieren möchte, verwende copy_chip statt nur einzelne Gatter zu kopieren.
+Bei größeren Aufgaben können add_gate/connect und anschließend save_chip in derselben vollständigen actions-Liste stehen.
 
 WICHTIG: SOFORTIGE AUSFÜHRUNG:
 Die Aktionliste wird vom Editor als ein gemeinsamer Änderungsauftrag verarbeitet. Gib deshalb bei einer größeren Aufgabe ALLE notwendigen Aktionen in EINER vollständigen actions-Liste zurück.
@@ -181,11 +188,12 @@ ${prompt}`
                   items: {
                     type: "object",
                     properties: {
-                      action: { type: "string", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock"] },
+                      action: { type: "string", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock","save_chip","copy_chip","place_blueprint"] },
                       type: { type: ["string","null"] },
                       index: { type: ["integer","null"] },
                       from: { type: ["integer","null"] },
                       to: { type: ["integer","null"] },
+                      blueprintIndex: { type: ["integer","null"] },
                       inputIndex: { type: ["integer","null"] },
                       x: { type: ["number","null"] },
                       y: { type: ["number","null"] },
@@ -195,7 +203,7 @@ ${prompt}`
                       stay: { type: ["number","null"] },
                       interval: { type: ["number","null"] }
                     },
-                    required: ["action","type","index","from","to","inputIndex","x","y","name","value","delay","stay","interval"],
+                    required: ["action","type","index","from","to","inputIndex","blueprintIndex","x","y","name","value","delay","stay","interval"],
                     additionalProperties: false
                   }
                 }
