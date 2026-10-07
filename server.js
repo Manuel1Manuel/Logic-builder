@@ -50,17 +50,26 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: "256kb" }));
 
 app.post("/api/gemini", async (req, res) => {
-  const provider = String(req.body?.provider || "gemini").toLowerCase() === "groq" ? "Groq" : "Gemini";
+  const requestedProvider = String(req.body?.provider || "gemini").toLowerCase();
+  const provider = requestedProvider === "groq"
+    ? "Groq"
+    : requestedProvider === "openrouter"
+      ? "OpenRouter"
+      : "Gemini";
   const apiKey = provider === "Groq"
     ? String(process.env.GROQ_API_KEY || "").trim()
-    : String(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
+    : provider === "OpenRouter"
+      ? String(process.env.OPENROUTER_API_KEY || "").trim()
+      : String(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
 
   if(!apiKey){
     res.status(503).json({
       error: provider + " API-Key ist nicht gesetzt.",
       details: provider === "Groq"
         ? "Bitte GROQ_API_KEY in Render Environment setzen."
-        : "Bitte GEMINI_API_KEY (oder GOOGLE_API_KEY) in Render Environment setzen."
+        : provider === "OpenRouter"
+          ? "Bitte OPENROUTER_API_KEY in Render Environment setzen."
+          : "Bitte GEMINI_API_KEY (oder GOOGLE_API_KEY) in Render Environment setzen."
     });
     return;
   }
@@ -94,7 +103,9 @@ Antworte nur als JSON mit dem Feld "understanding".`;
     try{
       const learnUrl = provider === "Groq"
         ? "https://api.groq.com/openai/v1/chat/completions"
-        : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+        : provider === "OpenRouter"
+          ? "https://openrouter.ai/api/v1/chat/completions"
+          : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 45000);
       const response = await fetch(
@@ -107,7 +118,7 @@ Antworte nur als JSON mit dem Feld "understanding".`;
             "Authorization": "Bearer " + apiKey
           },
           body: JSON.stringify({
-            model: provider === "Groq" ? "openai/gpt-oss-120b" : "gemini-3.8-flash",
+            model: provider === "Groq" ? "openai/gpt-oss-120b" : provider === "OpenRouter" ? "openrouter/auto" : "gemini-3.8-flash",
             messages: [{
               role: "system",
               content: "Du bist Manuel KI. Du analysierst ausschließlich Logic-Builder-Schaltungen als Referenzwissen. Keine Editor-Aktionen."
@@ -275,7 +286,9 @@ ${prompt}`
 
   const aiUrl = provider === "Groq"
     ? "https://api.groq.com/openai/v1/chat/completions"
-    : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+    : provider === "OpenRouter"
+      ? "https://openrouter.ai/api/v1/chat/completions"
+      : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 45000);
   let response;
@@ -290,7 +303,7 @@ ${prompt}`
         "Authorization": "Bearer " + apiKey
       },
       body: JSON.stringify({
-        model: provider === "Groq" ? "openai/gpt-oss-120b" : "gemini-3.8-flash",
+        model: provider === "Groq" ? "openai/gpt-oss-120b" : provider === "OpenRouter" ? "openrouter/auto" : "gemini-3.8-flash",
         messages: [{
           role: "system",
           content: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema."
