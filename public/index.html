@@ -6,7 +6,8 @@
 <title>Logic Builder Ultra</title>
 <style>
 body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none;}canvas{display:block;background:radial-gradient(circle at center,#1a1a1a,#050505);touch-action:none;}#modeToggle{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:8px 14px;z-index:120;cursor:pointer;}#touchModeToggle{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:70;display:none;cursor:pointer;}#menuBtn{position:fixed;left:10px;top:50%;transform:translateY(80px);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:80;cursor:pointer;}#menuPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:90;display:none;flex-direction:column;gap:10px;color:white;min-width:250px;max-width:min(92vw,420px);max-height:80vh;overflow:auto;}#menuPopup input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#menuPopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#bpPopup{position:fixed;top:-220px;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:10;transition:top 0.3s;display:flex;flex-direction:column;gap:10px;}#bpPopup input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;}#bpPopup button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImport{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:8px;z-index:20;display:flex;gap:6px;align-items:center;}#bpImport input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;width:220px;}#bpImport button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#copyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:50;display:none;flex-direction:column;gap:10px;align-items:center;}#copyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#timerMenu{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:10px;z-index:60;display:none;flex-direction:column;gap:8px;color:white;min-width:340px;max-height:80vh;overflow:auto;}#timerMenu input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#timerMenu button{background:#00ffff;border:none;padding:5px;cursor:pointer;}#menuList{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;padding-right:4px;}#menuList label{display:flex;align-items:center;gap:8px;white-space:nowrap;}#namePopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;}#namePopup input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#namePopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#keyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#keyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#clockMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#clockMenu input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#clockMenu button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#bpActionPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:14px;z-index:110;display:none;flex-direction:column;gap:10px;align-items:center;}#bpActionPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;width:140px;}@media (pointer:coarse){#touchModeToggle{display:block;}}
-#aiBtn{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:10px 14px;z-index:80;cursor:pointer;border-radius:999px;}#aiPopup{position:fixed;right:10px;top:50%;transform:translateY(-50%);width:min(420px,calc(100vw - 30px));background:#0b0f16;border:1px solid #78dcff;border-radius:18px;padding:14px;z-index:200;display:none;box-shadow:0 14px 45px rgba(0,0,0,.55);color:#fff;}#aiPopup textarea{width:100%;height:120px;box-sizing:border-box;resize:vertical;background:#161b24;color:#fff;border:1px solid #78dcff;border-radius:10px;padding:9px;outline:none;}#aiPopup button{background:#00ffff;border:0;padding:7px 12px;border-radius:9px;cursor:pointer;}#aiClose{float:right;font-size:18px;}#aiHeader{display:flex;align-items:center;gap:10px;margin-bottom:10px;}#aiGraphic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid #78dcff;overflow:hidden;}#aiGraphic.simple{background:#111;font-size:22px;}#aiGraphic.complex{background:radial-gradient(circle,#17384a 0,#0b1119 68%);position:relative;}#aiGraphic.complex::before{content:"";width:18px;height:18px;border:2px solid #78dcff;border-radius:5px;box-shadow:0 0 12px rgba(120,220,255,.7),0 0 0 5px rgba(0,255,255,.08);animation:manuelPulse 1.3s infinite;}#aiGraphic.complex::after{content:"";position:absolute;width:30px;height:30px;border:1px dashed rgba(0,255,255,.7);border-radius:50%;animation:manuelSpin 3s linear infinite;}#aiStatus{white-space:pre-wrap;margin-top:10px;min-height:24px;line-height:1.35;}#aiThinking{display:none;align-items:center;gap:8px;margin-top:8px;font-size:12px;opacity:.9;}#aiThinkingDots{display:flex;gap:3px;}#aiThinkingDots i{width:5px;height:5px;border-radius:50%;background:#00ffff;animation:manuelDot 1s infinite;}#aiThinkingDots i:nth-child(2){animation-delay:.15s;}#aiThinkingDots i:nth-child(3){animation-delay:.3s;}@keyframes manuelPulse{50%{transform:scale(1.12);opacity:.7;}}@keyframes manuelSpin{to{transform:rotate(360deg);}}@keyframes manuelDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}</style>
+#aiBtn{position:fixed;left:10px;top:54px;right:auto;transform:none;background:#111;border:1px solid #78dcff;color:#fff;padding:8px 14px;z-index:80;cursor:pointer;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.28);}#aiPopup{position:fixed;right:10px;top:50%;transform:translateY(-50%);width:min(420px,calc(100vw - 30px));background:#0b0f16;border:1px solid #78dcff;border-radius:18px;padding:14px;z-index:200;display:none;box-shadow:0 14px 45px rgba(0,0,0,.55);color:#fff;}#aiPopup textarea{width:100%;height:120px;box-sizing:border-box;resize:vertical;background:#161b24;color:#fff;border:1px solid #78dcff;border-radius:10px;padding:9px;outline:none;}#aiPopup button{background:#00ffff;border:0;padding:7px 12px;border-radius:9px;cursor:pointer;}#aiClose{float:right;font-size:18px;}#aiHeader{display:flex;align-items:center;gap:10px;margin-bottom:10px;}#aiGraphic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid #78dcff;overflow:hidden;}#aiGraphic.simple{background:#111;font-size:22px;border-radius:0;border-color:#00ffff;}#aiGraphic.complex{background:radial-gradient(circle,#17384a 0,#0b1119 68%);position:relative;border-radius:14px;border-color:#78dcff;}#aiGraphic.complex::before{content:"";width:18px;height:18px;border:2px solid #78dcff;border-radius:5px;box-shadow:0 0 12px rgba(120,220,255,.7),0 0 0 5px rgba(0,255,255,.08);animation:manuelPulse 1.3s infinite;}#aiGraphic.complex::after{content:"";position:absolute;width:30px;height:30px;border:1px dashed rgba(0,255,255,.7);border-radius:50%;animation:manuelSpin 3s linear infinite;}#aiStatus{white-space:pre-wrap;margin-top:10px;min-height:24px;line-height:1.35;}#aiThinking{display:none;align-items:center;gap:8px;margin-top:8px;font-size:12px;opacity:.9;}#aiThinkingDots{display:flex;gap:3px;}#aiThinkingDots i{width:5px;height:5px;border-radius:50%;background:#00ffff;animation:manuelDot 1s infinite;}#aiThinkingDots i:nth-child(2){animation-delay:.15s;}#aiThinkingDots i:nth-child(3){animation-delay:.3s;}@keyframes manuelPulse{50%{transform:scale(1.12);opacity:.7;}}@keyframes manuelSpin{to{transform:rotate(360deg);}}@keyframes manuelDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}</style>
+<style>#storageInfo{position:fixed;left:10px;top:96px;display:flex;align-items:center;gap:10px;background:rgba(8,10,16,.92);border:1px solid #78dcff;border-radius:12px;padding:6px 9px;color:#fff;font:11px Arial;z-index:80;box-shadow:0 8px 20px rgba(0,0,0,.28);}#storageInfo span{white-space:nowrap;}#storageMatch{font-size:10px;color:#78dcff;}@media (max-width:600px){#storageInfo{top:94px;gap:7px;font-size:10px;}}</style>
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -38,6 +39,7 @@ Chip? <input id="bpChip" type="checkbox">
 <input id="bpData" type="text" placeholder="Paste Blueprint">
 <button id="bpLoad">Load</button>
 </div>
+<div id="storageInfo"><span>Server Bits: <b id="serverBits">0</b></span><span>Client Bits: <b id="clientBits">0</b></span><span id="storageMatch">●</span></div>
 <div id="copyPopup">
 <div style="color:white">Blueprint kopieren?</div>
 <button id="copyYes">Ja</button>
@@ -118,6 +120,7 @@ function applyUiSkin(){const base={borderRadius:"16px",boxShadow:"0 12px 28px rg
 applyUiSkin();
 function updateUiTheme(){
  const blue=themeBlue();
+ updateAiGraphic();
  const radius=simpleGraphics?"0px":"14px";
  const buttonRadius=simpleGraphics?"0px":"9px";
  const inputRadius=simpleGraphics?"0px":"7px";
@@ -680,7 +683,7 @@ function collectSelectionPins(list,kind){
  return pins;
 }
 function placeBlueprint(bp,x,y){if(!bp)return;let map=new Map();if(bp.chip){let inputs=sortByPosition(bp.nodes.filter(n=>n.type==="switch"&&!(bp.mixedChipSelection&&n.chipPin)));let outputs=sortByPosition(bp.nodes.filter(n=>n.type==="output"&&!(bp.mixedChipSelection&&n.chipPin)));let internals=bp.nodes.filter(n=>n.type!=="switch"&&n.type!=="output");let layout=getChipLayout(inputs.length,outputs.length,x,y);let chipId="chip_"+Math.random().toString(36).slice(2);let shell=layout.shell;inputs.forEach((b,i)=>{let n=new Node(layout.inputX-11,layout.inputStart+i*layout.pinGap-11,"switch");n.state=false;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=chipId;n.chipName=bp.name||"CHIP";n.chipPin="in";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});internals.forEach((b,i)=>{let n=new Node(x+shell.w/2-60,y+shell.h/2-50+(i*2),b.type);n.state=false;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;if(b.type==="memory")n.memoryState=false;if(b.type==="clock"){n.clockState=true;n.clockLastToggle=performance.now();}if(b.type==="timer"){n.timerRunning=false;n.offTimerRunning=false;n.timerStart=0;n.offTimerStart=0;}n.chipId=chipId;n.chipName=bp.name||"CHIP";n.chipShell=shell;n.hidden=true;nodes.push(n);map.set(b.id,n);});outputs.forEach((b,i)=>{let n=new Node(layout.outputX-11,layout.outputStart+i*layout.pinGap-11,"output");n.state=false;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=chipId;n.chipName=bp.name||"CHIP";n.chipPin="out";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});for(let bw of bp.wires){let from=map.get(bw.from);let to=map.get(bw.to);if(from&&to)wires.push({from,to,inputIndex:bw.inputIndex});}return;}let chipGroups=new Map();let normalNodes=[];for(let b of bp.nodes){if(b.chipId){if(!chipGroups.has(b.chipId))chipGroups.set(b.chipId,[]);chipGroups.get(b.chipId).push(b);}else normalNodes.push(b);}for(let b of normalNodes){let n=new Node(x+(b.relX||0),y+(b.relY||0),b.type);n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;if(b.type==="memory"&&b.memoryState)n.memoryState=!!b.memoryState;if(b.type==="clock"){n.clockState=b.clockState!==undefined?!!b.clockState:true;n.clockLastToggle=b.clockLastToggle||performance.now();}if(b.type==="timer"){n.timerRunning=!!b.timerRunning;n.offTimerRunning=!!b.offTimerRunning;n.timerStart=b.timerStart||0;n.offTimerStart=b.offTimerStart||0;}nodes.push(n);map.set(b.id,n);}for(let [chipId,group] of chipGroups){let inputs=sortByPosition(group.filter(n=>n.chipPin==="in"));let outputs=sortByPosition(group.filter(n=>n.chipPin==="out"));let internals=group.filter(n=>!n.chipPin&&n.hidden);let minX=Math.min(...group.map(n=>n.relX));let minY=Math.min(...group.map(n=>n.relY));let baseX=x+minX;let baseY=y+minY;let layout=getChipLayout(inputs.length,outputs.length,baseX,baseY);let newChipId="chip_"+Math.random().toString(36).slice(2);let shell=layout.shell;let chipName=group[0].chipName||group[0].name||"CHIP";inputs.forEach((b,i)=>{let n=new Node(layout.inputX-11,layout.inputStart+i*layout.pinGap-11,"switch");n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=newChipId;n.chipName=chipName;n.chipPin="in";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});internals.forEach((b,i)=>{let n=new Node(baseX+shell.w/2-60,baseY+shell.h/2-50+(i*2),b.type);n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;if(b.type==="memory"&&b.memoryState)n.memoryState=!!b.memoryState;if(b.type==="clock"){n.clockState=b.clockState!==undefined?!!b.clockState:true;n.clockLastToggle=b.clockLastToggle||performance.now();}if(b.type==="timer"){n.timerRunning=!!b.timerRunning;n.offTimerRunning=!!b.offTimerRunning;n.timerStart=b.timerStart||0;n.offTimerStart=b.offTimerStart||0;}n.chipId=newChipId;n.chipName=chipName;n.chipShell=shell;n.hidden=true;nodes.push(n);map.set(b.id,n);});outputs.forEach((b,i)=>{let n=new Node(layout.outputX-11,layout.outputStart+i*layout.pinGap-11,"output");n.state=!!b.state;n.delay=b.delay;n.stay=b.stay;n.name=b.name||b.type.toUpperCase();n.assignedKey=b.assignedKey||"";n.interval=b.interval||1000;n.chipId=newChipId;n.chipName=chipName;n.chipPin="out";n.chipShell=shell;n.inputs=[{x:9,y:9,value:false}];n.outputs=[{x:11,y:11}];nodes.push(n);map.set(b.id,n);});}for(let bw of bp.wires){let from=map.get(bw.from);let to=map.get(bw.to);if(from&&to)wires.push({from,to,inputIndex:bw.inputIndex});}}
-function loadBlueprintString(str){try{let bp=JSON.parse(str);if(!bp||!bp.nodes)return;bp.name=bp.name||("Imported "+(blueprints.length+1));blueprints.push(bp);clampBlueprintScroll();}catch(e){}}
+function loadBlueprintString(str){try{let bp=JSON.parse(str);if(!bp||!Array.isArray(bp.nodes))return;bp=expandBlueprint(cloneBlueprint(bp));bp.name=bp.name||("Imported "+(blueprints.length+1));bp=sanitizeBlueprintForStorage(bp);blueprints.push(bp);clampBlueprintScroll();}catch(e){}}
 function copyToClipboard(text){try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text);return;}const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);}catch(e){}}
 function copyBlueprint(bp){copyPending=bp;document.getElementById("copyPopup").style.display="flex";}
 function openNamePopup(node){nameNode=node;document.getElementById("nameInput").value="";document.getElementById("namePopup").style.display="flex";document.getElementById("nameInput").focus();}
@@ -1767,6 +1770,23 @@ loop();simLoop();
 
 loadPreblueprints();
 
+
+function getClientStorageBytes(){
+  try{
+    const logic=JSON.parse(serializeLogicState());
+    logic.blueprints=JSON.parse(serializeBlueprintLibrary());
+    return new Blob([JSON.stringify(logic)]).size;
+  }catch{return 0;}
+}
+function updateStorageBits(serverBytesOverride=null){
+  const clientBytes=getClientStorageBytes();
+  const serverBytes=Number.isFinite(Number(serverBytesOverride))?Number(serverBytesOverride):0;
+  const cb=document.getElementById("clientBits"),sb=document.getElementById("serverBits"),m=document.getElementById("storageMatch");
+  if(cb)cb.textContent=(clientBytes*8).toLocaleString("de-DE");
+  if(sb)sb.textContent=(serverBytes*8).toLocaleString("de-DE");
+  if(m){m.textContent=serverBytes===clientBytes&&serverBytes>0?"● Gleich":"● Unterschied";m.style.color=serverBytes===clientBytes&&serverBytes>0?themeBlue():"#ffcc66";}
+}
+
 /* ===== Manuel KI ===== */
 const aiBtn=document.getElementById("aiBtn");
 const aiPopup=document.getElementById("aiPopup");
@@ -1783,6 +1803,14 @@ function updateAiGraphic(){
   aiGraphic.classList.toggle("complex",complex);
   aiGraphic.classList.toggle("simple",!complex);
   aiGraphic.innerHTML=complex ? "" : "<span>✦</span>";
+  if(aiPopup){
+    aiPopup.style.borderColor=complex?COMPLEX_BLUE:SIMPLE_BLUE;
+    aiPopup.style.borderRadius=complex?"18px":"0px";
+  }
+  if(aiBtn){
+    aiBtn.style.borderColor=complex?COMPLEX_BLUE:SIMPLE_BLUE;
+    aiBtn.style.borderRadius=complex?"12px":"0px";
+  }
 }
 updateAiGraphic();
 
@@ -1991,6 +2019,7 @@ function applyBlueprintLibrary(list){
 logicSocket.on("state", state => {
   const legacyState = !state || Number(state.version || 1) < 3;
   serverRevision = Number.isInteger(state?.serverRevision) ? state.serverRevision : serverRevision;
+  updateStorageBits(state?.serverStorageBytes);
 
   if(state && Array.isArray(state.nodes) && Array.isArray(state.wires)){
     if(applyLogicState(state)){
@@ -2025,6 +2054,7 @@ logicSocket.on("state", state => {
 logicSocket.on("stateAck", ack => {
   if(!ack) return;
   if(Number.isInteger(ack.serverRevision)) serverRevision = ack.serverRevision;
+  updateStorageBits(ack?.serverStorageBytes);
   logicSocket.emit("stateApplied", serverRevision);
 });
 
@@ -2038,6 +2068,7 @@ logicSocket.on("blueprintLibrary", library => {
     lastBlueprintSnapshot = serializeBlueprintLibrary();
   }
   if(Number.isInteger(library.serverRevision)) serverRevision = library.serverRevision;
+  updateStorageBits(library?.serverStorageBytes);
   logicSocket.emit("stateApplied", serverRevision);
 });
 
@@ -2059,6 +2090,7 @@ setInterval(() => {
   if(drag || groupDragging || chipDrag || libraryDrag || selecting) return;
 
   const snapshot = serializeLogicState();
+  updateStorageBits();
   if(snapshot !== lastLogicSnapshot){
     lastLogicSnapshot = snapshot;
     const payload = JSON.parse(snapshot);
