@@ -53,14 +53,14 @@ app.post("/api/gemini", async (req, res) => {
   const provider = String(req.body?.provider || "gemini").toLowerCase() === "groq" ? "Groq" : "Gemini";
   const apiKey = provider === "Groq"
     ? String(process.env.GROQ_API_KEY || "").trim()
-    : String(process.env.GEMINI_API_KEY || "").trim();
+    : String(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
 
   if(!apiKey){
     res.status(503).json({
       error: provider + " API-Key ist nicht gesetzt.",
       details: provider === "Groq"
         ? "Bitte GROQ_API_KEY in Render Environment setzen."
-        : "Bitte GEMINI_API_KEY in Render Environment setzen."
+        : "Bitte GEMINI_API_KEY (oder GOOGLE_API_KEY) in Render Environment setzen."
     });
     return;
   }
@@ -95,10 +95,13 @@ Antworte nur als JSON mit dem Feld "understanding".`;
       const learnUrl = provider === "Groq"
         ? "https://api.groq.com/openai/v1/chat/completions"
         : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 45000);
       const response = await fetch(
         learnUrl,
         {
           method: "POST",
+          signal: controller.signal,
           headers: {
             "Content-Type": "application/json",
             "Authorization": "Bearer " + apiKey
@@ -118,9 +121,16 @@ Antworte nur als JSON mit dem Feld "understanding".`;
           })
         }
       );
-      const data = await response.json();
+      clearTimeout(timeout);
+      const data = await response.json().catch(() => ({}));
       if(!response.ok){
-        res.status(502).json({error:provider+" API Fehler.",details:data?.error?.message||"Unbekannter Fehler"});
+        const details = data?.error?.message || data?.message || ("HTTP " + response.status + " " + response.statusText);
+        console.error(provider+" API Fehler:", response.status, data);
+        res.status(502).json({
+          error: provider+" API Fehler.",
+          details,
+          status: response.status
+        });
         return;
       }
       const raw = data?.choices?.[0]?.message?.content || "{}";
@@ -130,7 +140,10 @@ Antworte nur als JSON mit dem Feld "understanding".`;
       return;
     }catch(error){
       console.error("Fehler beim Analysieren des KI-Wissens:",error);
-      res.status(502).json({error:"KI-Wissen konnte nicht analysiert werden."});
+      const details = error?.name === "AbortError"
+        ? "Gemini/Groq hat innerhalb von 45 Sekunden nicht geantwortet."
+        : String(error?.message || error);
+      res.status(502).json({error:provider+" API Fehler.",details});
       return;
     }
   }
@@ -264,10 +277,15 @@ ${prompt}`
   const aiUrl = provider === "Groq"
     ? "https://api.groq.com/openai/v1/chat/completions"
     : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-  const response = await fetch(
-    aiUrl,
-    {
-      method: "POST",
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45000);
+  let response;
+  try{
+    response = await fetch(
+      aiUrl,
+      {
+        method: "POST",
+        signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + apiKey
@@ -324,16 +342,30 @@ ${prompt}`
       : {
           type: "json_object"
         }
-      })
-    }
-  );
-  const data = await response.json();
-
-  if(!response.ok){
-    console.error(provider+" API Fehler:", data);
+        })
+      );
+  }catch(error){
+    clearTimeout(timeout);
+    console.error(provider+" API Netzwerkfehler:", error);
     res.status(502).json({
       error: provider+" API Fehler.",
-      details: data?.error?.message || "Unbekannter Fehler"
+      details: error?.name === "AbortError"
+        ? "Die Anfrage hat nach 45 Sekunden abgebrochen."
+        : String(error?.message || error)
+    });
+    return;
+  }
+  clearTimeout(timeout);
+
+  const data = await response.json().catch(() => ({}));
+
+  if(!response.ok){
+    const details = data?.error?.message || data?.message || ("HTTP " + response.status + " " + response.statusText);
+    console.error(provider+" API Fehler:", response.status, data);
+    res.status(502).json({
+      error: provider+" API Fehler.",
+      details,
+      status: response.status
     });
     return;
   }
