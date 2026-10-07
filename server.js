@@ -57,6 +57,72 @@ app.post("/api/gemini", async (req, res) => {
 
   const prompt = typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
   const context = typeof req.body?.context === "string" ? req.body.context : "";
+  const libraryLearn = req.body?.libraryLearn === true;
+  const libraryEntry = req.body?.libraryEntry && typeof req.body.libraryEntry === "object" ? req.body.libraryEntry : null;
+
+  if(libraryLearn){
+    if(!libraryEntry){
+      res.status(400).json({ error: "Kein KI-Wissenseintrag angegeben." });
+      return;
+    }
+
+    const learningPrompt = `Analysiere diesen ausdrücklich als KI-Wissen gespeicherten Logic-Builder-Eintrag.
+Name: ${String(libraryEntry.name || "")}
+Zeitpunkt: ${String(libraryEntry.createdAt || "")}
+Blueprint-Daten:
+${JSON.stringify(libraryEntry.blueprint || {})}
+
+Erkläre kurz und konkret:
+1. Was für eine Schaltung ist das und welche Funktion hat sie?
+2. Welche wichtigen Gatter, Ein-/Ausgänge und Verbindungen erkennst du?
+3. Warum könnte diese konkrete Struktur für den Namen bzw. die Funktion sinnvoll sein?
+4. Was sollte Manuel KI sich als praktische Referenz für spätere Logic-Builder-Aufgaben merken?
+
+Tu nicht so, als hättest du dein Grundmodell dauerhaft trainiert. Formuliere stattdessen eine verständliche Referenz-Erklärung, die später zusammen mit dem gespeicherten Eintrag erneut als Kontext verwendet werden kann.
+Antworte nur als JSON mit dem Feld "understanding".`;
+
+    try{
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + process.env.GROQ_API_KEY
+          },
+          body: JSON.stringify({
+            model: "openai/gpt-oss-120b",
+            messages: [{
+              role: "system",
+              content: "Du bist Manuel KI. Du analysierst ausschließlich Logic-Builder-Schaltungen als Referenzwissen. Keine Editor-Aktionen."
+            },{
+              role: "user",
+              content: learningPrompt
+            }],
+            temperature: 0,
+            max_completion_tokens: 4096,
+            reasoning_format: "hidden",
+            response_format: { type: "json_object" }
+          })
+        }
+      );
+      const data = await response.json();
+      if(!response.ok){
+        res.status(502).json({error:"Groq API Fehler.",details:data?.error?.message||"Unbekannter Fehler"});
+        return;
+      }
+      const raw = data?.choices?.[0]?.message?.content || "{}";
+      let parsed={};
+      try{parsed=JSON.parse(raw);}catch{}
+      res.json({text:typeof parsed.understanding==="string"?parsed.understanding.trim():"",actions:[],provider:"Groq"});
+      return;
+    }catch(error){
+      console.error("Fehler beim Analysieren des KI-Wissens:",error);
+      res.status(502).json({error:"KI-Wissen konnte nicht analysiert werden."});
+      return;
+    }
+  }
+
   if(!prompt){
     res.status(400).json({ error: "Kein Prompt angegeben." });
     return;
@@ -80,7 +146,7 @@ and = AND mit 2 Eingängen, or = OR mit 2 Eingängen, xor = XOR mit 2 Eingängen
 timer = Zeitglied, output = Ausgang, key = Tasteneingang, clock = Taktgeber,
 memory = Speicherbaustein, led = LED.
 Wires verbinden einen Quell-Node "from" mit einem Ziel-Node "to". "inputIndex" bestimmt, an welchen Eingang des Zielblocks die Verbindung geht.
-Die aktuelle Schaltung und die Blueprint-Bibliothek werden dir als Kontext übergeben. Der Kontext ist der aktuelle Zustand zum Zeitpunkt der Anfrage; arbeite immer mit diesen aktuellen Indizes und Zuständen. Chip-Nodes enthalten chipId, chipPin und chipName, damit ein kompletter Chip eindeutig vervielfältigt oder gespeichert werden kann.
+Die aktuelle Schaltung und die Blueprint-Bibliothek werden dir als Kontext übergeben. Zusätzlich kann dir unter "aiKnowledge" eine private, chronologisch geordnete KI-Wissensbibliothek übergeben werden. Diese Bibliothek ist nur für deine interne Referenz im Logic Builder gedacht und wird nicht als normale Blueprint-Bibliothek angezeigt. Nutze ihre gespeicherten Schaltungen und Verständnisnotizen als Beispiele und Orientierung für spätere Aufgaben. Wenn der Nutzer nach dem Inhalt der KI-Wissensbibliothek fragt, nenne die Einträge chronologisch und anhand ihrer gespeicherten Namen/Erklärungen. Behaupte nicht, dein Grundmodell sei dadurch neu trainiert worden; es handelt sich um dauerhaft gespeicherten Kontext, den du bei Anfragen wiederverwenden kannst. Der Kontext ist der aktuelle Zustand zum Zeitpunkt der Anfrage; arbeite immer mit diesen aktuellen Indizes und Zuständen. Chip-Nodes enthalten chipId, chipPin und chipName, damit ein kompletter Chip eindeutig vervielfältigt oder gespeichert werden kann.
 
 SO FUNKTIONIERT DIE AKTIONSAUSGABE:
 Du antwortest ausschließlich mit dem vorgegebenen JSON-Schema. "answer" ist die kurze Erklärung für den Nutzer, "actions" enthält die tatsächlich auszuführenden Editor-Aktionen.
