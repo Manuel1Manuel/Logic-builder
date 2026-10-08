@@ -548,7 +548,23 @@ io.use((socket, next) => {
   else next(new Error("unauthorized"));
 });
 
+const onlineSockets = new Set();
+
+function broadcastOnlineCount(){
+  io.emit("onlineCount", onlineSockets.size);
+}
+
 io.on("connection", (socket) => {
+  onlineSockets.add(socket.id);
+  socket.data.cursor = { x: 0, y: 0, visible: false };
+  broadcastOnlineCount();
+
+  socket.broadcast.emit("remoteCursor", {
+    id: socket.id,
+    x: 0,
+    y: 0,
+    visible: false
+  });
 
   // Aktuellen Logic-Builder-Zustand an neuen Besucher senden
   const row = getState.get();
@@ -571,6 +587,25 @@ io.on("connection", (socket) => {
     if(Number.isInteger(revision) && revision === stateRevision){
       socket.lastAppliedRevision = revision;
     }
+  });
+
+  socket.on("cursorMove", (cursor) => {
+    if(!cursor || !Number.isFinite(cursor.x) || !Number.isFinite(cursor.y)) return;
+    const x = Math.max(0, Math.min(100000, Number(cursor.x)));
+    const y = Math.max(0, Math.min(100000, Number(cursor.y)));
+    socket.data.cursor = { x, y, visible: cursor.visible !== false };
+    socket.broadcast.emit("remoteCursor", {
+      id: socket.id,
+      x,
+      y,
+      visible: socket.data.cursor.visible
+    });
+  });
+
+  socket.on("disconnect", () => {
+    onlineSockets.delete(socket.id);
+    io.emit("remoteCursorGone", socket.id);
+    broadcastOnlineCount();
   });
 
   // Änderung von einem Besucher empfangen
