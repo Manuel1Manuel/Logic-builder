@@ -291,7 +291,7 @@ Wenn die Anfrage ein altes und ein neues Namensmuster nennt, wende die Änderung
 Ignoriere nicht einfach weitere Treffer, nur weil mehrere Aktionen nötig sind.
 
 VERHALTEN BEI BLUEPRINTS/CHIPS:
-Blueprints gehören zur Logic-Builder-Funktionalität und können im Kontext vorhanden sein. Erfinde keine Blueprint-Inhalte, die nicht im Kontext stehen.
+Blueprints sind für dich standardmäßig NICHT sichtbar. Wenn der Nutzer ausdrücklich nach einem Blueprint oder einem Eintrag der normalen Blueprint-Bibliothek fragt, darfst du den dann bereitgestellten konkreten Blueprint verwenden. Ohne eine solche ausdrückliche Anfrage gibt es keinen Blueprint-Kontext. Erfinde niemals Blueprint-Inhalte.
 Wenn der Nutzer eine Schaltung neu aufbauen lässt, verwende nur die bekannten Gattertypen und die bereitgestellten Aktionen.
 
 SICHERHEIT DER AKTIONEN:
