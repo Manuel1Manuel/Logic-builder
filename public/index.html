@@ -2211,7 +2211,7 @@ function waitForAiStateAck(){
   });
 }
 
-async function applyAiActions(actions){
+async async function applyAiActions(actions){
   if(!Array.isArray(actions)||!actions.length)return {changed:0,details:[]};
   const allowed=["switch","lamp","not","or3","and","or","xor","timer","key","clock","memory","led","output"];
   // KI-Modelle können bei derselben JSON-Aufgabe "action" oder "type" für den Aktionsnamen verwenden.
@@ -2444,7 +2444,7 @@ aiAsk.addEventListener("click",async()=>{
     const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,context:getAiContext(prompt),provider:aiProvider})});
     const data=await response.json();
     if(!response.ok)throw new Error((data?.error||"Unbekannter Fehler")+(data?.details?" — "+data.details:""));
-    const result=applyAiActions(data.actions);
+    const result=await applyAiActions(data.actions);
     aiStatus.textContent=(data.text||"Manuel KI hat keine Antwort geliefert.")+(result.changed?"\n\nGeändert: "+result.details.join(", ")+".":"\n\nKeine Änderung ausgeführt.");
   }catch(error){aiStatus.textContent="Fehler: "+error.message;}
   finally{aiAsk.disabled=false;aiThinking.style.display="none";}
