@@ -358,6 +358,9 @@ ${prompt}`
         messages: [{
           role: "system",
           content: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema."
+        },{
+          role: "user",
+          content: prompt
         }],
         ...(provider === "Groq" ? { temperature: 0, max_completion_tokens: 65536 } : { max_tokens: 32768 }),
         ...(provider === "Groq" ? {
