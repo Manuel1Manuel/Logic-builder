@@ -154,7 +154,7 @@ Antworte nur als JSON mit dem Feld "understanding".`;
         const details = data?.error?.message || data?.message || ("HTTP " + response.status + " " + response.statusText);
         console.error(provider+" API Fehler:", response.status, data);
         res.status(502).json({
-          error: provider+" API Fehler.",
+          error: "KI API Fehler.",
           details,
           status: response.status
         });
@@ -397,7 +397,7 @@ ${prompt}`
     clearTimeout(timeout);
     console.error(provider+" API Netzwerkfehler:", error);
     res.status(502).json({
-      error: provider+" API Fehler.",
+      error: "KI API Fehler.",
       details: error?.name === "AbortError"
         ? "Die Anfrage hat nach 45 Sekunden abgebrochen."
         : String(error?.message || error)
@@ -412,7 +412,7 @@ ${prompt}`
     const details = data?.error?.message || data?.message || ("HTTP " + response.status + " " + response.statusText);
     console.error(provider+" API Fehler:", response.status, data);
     res.status(502).json({
-      error: provider+" API Fehler.",
+      error: "KI API Fehler.",
       details,
       status: response.status
     });
