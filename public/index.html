@@ -2187,6 +2187,12 @@ async function applyAiActions(actions){
     if(!a||typeof a!=="object")return a;
     if(typeof a.action==="string")return a;
     if(typeof a.type==="string"&&["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock","save_chip","copy_chip","place_blueprint","select_nodes","open_chip_popup","confirm_chip_save","update_ai_knowledge"].includes(a.type)){
+      // Manche Modelle verwenden "type" für den Aktionsnamen. Bei add_gate
+      // steckt der eigentliche Gattertyp dann in "gateType". Intern erwartet
+      // der Editor aber action:"add_gate" und type:"switch"/"xor"/etc.
+      if(a.type==="add_gate"){
+        return {...a,action:"add_gate",type:(typeof a.gateType==="string"?a.gateType:(typeof a.nodeType==="string"?a.nodeType:""))};
+      }
       return {...a,action:a.type};
     }
     return a;
