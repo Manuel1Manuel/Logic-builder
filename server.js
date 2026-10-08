@@ -559,12 +559,19 @@ io.on("connection", (socket) => {
   socket.data.cursor = { x: 0, y: 0, visible: false };
   broadcastOnlineCount();
 
-  socket.broadcast.emit("remoteCursor", {
-    id: socket.id,
-    x: 0,
-    y: 0,
-    visible: false
-  });
+  for(const otherId of onlineSockets){
+    if(otherId===socket.id) continue;
+    const otherSocket=io.sockets.sockets.get(otherId);
+    const cursor=otherSocket?.data?.cursor;
+    if(cursor){
+      socket.emit("remoteCursor", {
+        id: otherId,
+        x:Number(cursor.x)||0,
+        y:Number(cursor.y)||0,
+        visible:cursor.visible !== false
+      });
+    }
+  }
 
   // Aktuellen Logic-Builder-Zustand an neuen Besucher senden
   const row = getState.get();
