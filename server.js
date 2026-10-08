@@ -408,10 +408,20 @@ ${prompt}`
     return;
   }
 
-  const raw = data?.choices?.[0]?.message?.content || "{}";
+  const message = data?.choices?.[0]?.message || {};
+  let raw = message?.content;
+  if(Array.isArray(raw)){
+    raw = raw.map(part => typeof part === "string" ? part : (typeof part?.text === "string" ? part.text : (typeof part?.content === "string" ? part.content : ""))).join("");
+  }else if(raw && typeof raw === "object"){
+    raw = typeof raw.text === "string" ? raw.text : JSON.stringify(raw);
+  }
+  raw = typeof raw === "string" ? raw.trim() : "";
+  if(raw.startsWith("```json")) raw=raw.slice(7).trim();
+  if(raw.startsWith("```")) raw=raw.slice(3).trim();
+  if(raw.endsWith("```")) raw=raw.slice(0,-3).trim();
   let result;
   try{
-    result = JSON.parse(raw);
+    result = JSON.parse(raw || "{}");
   }catch{
     result = { answer: raw, actions: [] };
   }
