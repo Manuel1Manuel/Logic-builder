@@ -181,6 +181,18 @@ Antworte nur als JSON mit dem Feld "understanding".`;
     res.status(400).json({ error: "Kein Prompt angegeben." });
     return;
   }
+
+  // Reine Begrüßungen werden deterministisch beantwortet. So kann ein
+  // OpenRouter-Modell daraus keine zufällige Logic-Builder-Aufgabe ableiten.
+  const greetingOnly = /^(hi+|hey+|hallo+|moin|servus|guten\\s+(morgen|tag|abend)|guten\\s+mittag)[!,.\\s]*$/i.test(prompt);
+  if(greetingOnly){
+    res.json({
+      text: "Hallo! Ich bin Manuel KI. Was möchtest du im Logic Builder bauen oder ändern?",
+      actions: [],
+      provider
+    });
+    return;
+  }
   if(prompt.length > 20000){
     res.status(413).json({ error: "Der Prompt ist zu lang." });
     return;
