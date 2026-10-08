@@ -127,7 +127,7 @@ Antworte nur als JSON mit dem Feld "understanding".`;
               content: learningPrompt
             }],
             temperature: 0,
-            max_completion_tokens: 4096
+            ...(provider === "Groq" ? { max_completion_tokens: 4096 } : { max_tokens: 4096 })
           })
         }
       );
@@ -309,7 +309,7 @@ ${prompt}`
           content: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema."
         }],
         temperature: 0,
-        max_completion_tokens: provider === "Groq" ? 65536 : 32768,
+        ...(provider === "Groq" ? { max_completion_tokens: 65536 } : { max_tokens: 32768 }),
         ...(provider === "Groq" ? {
           response_format: {
             type: "json_schema",
