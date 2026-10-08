@@ -105,20 +105,31 @@ Antworte nur als JSON mit dem Feld "understanding".`;
         ? "https://api.groq.com/openai/v1/chat/completions"
         : provider === "OpenRouter"
           ? "https://openrouter.ai/api/v1/chat/completions"
-          : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+          : "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 45000);
-      const response = await fetch(
-        learnUrl,
-        {
-          method: "POST",
-          signal: controller.signal,
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + apiKey
-          },
-          body: JSON.stringify({
-            model: provider === "Groq" ? "openai/gpt-oss-120b" : provider === "OpenRouter" ? "openrouter/auto" : "gemini-3.8-flash",
+      const learnHeaders = {
+        "Content-Type": "application/json",
+        ...(provider === "Gemini"
+          ? { "x-goog-api-key": apiKey }
+          : { "Authorization": "Bearer " + apiKey })
+      };
+      const learnBody = provider === "Gemini"
+        ? {
+            systemInstruction: {
+              parts: [{ text: "Du bist Manuel KI. Du analysierst ausschließlich Logic-Builder-Schaltungen als Referenzwissen. Keine Editor-Aktionen." }]
+            },
+            contents: [{
+              role: "user",
+              parts: [{ text: learningPrompt }]
+            }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              maxOutputTokens: 4096
+            }
+          }
+        : {
+            model: provider === "Groq" ? "openai/gpt-oss-120b" : "openrouter/auto",
             messages: [{
               role: "system",
               content: "Du bist Manuel KI. Du analysierst ausschließlich Logic-Builder-Schaltungen als Referenzwissen. Keine Editor-Aktionen."
@@ -127,7 +138,14 @@ Antworte nur als JSON mit dem Feld "understanding".`;
               content: learningPrompt
             }],
             ...(provider === "Groq" ? { temperature: 0, max_completion_tokens: 4096 } : { max_tokens: 4096 })
-          })
+          };
+      const response = await fetch(
+        learnUrl,
+        {
+          method: "POST",
+          signal: controller.signal,
+          headers: learnHeaders,
+          body: JSON.stringify(learnBody)
         }
       );
       clearTimeout(timeout);
@@ -142,7 +160,9 @@ Antworte nur als JSON mit dem Feld "understanding".`;
         });
         return;
       }
-      const raw = data?.choices?.[0]?.message?.content || "{}";
+      const raw = provider === "Gemini"
+        ? (data?.candidates?.[0]?.content?.parts || []).map(part => part?.text || "").join("")
+        : (data?.choices?.[0]?.message?.content || "{}");
       let parsed={};
       try{parsed=JSON.parse(raw);}catch{}
       res.json({text:typeof parsed.understanding==="string"?parsed.understanding.trim():"",actions:[],provider});
@@ -288,22 +308,29 @@ ${prompt}`
     ? "https://api.groq.com/openai/v1/chat/completions"
     : provider === "OpenRouter"
       ? "https://openrouter.ai/api/v1/chat/completions"
-      : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 45000);
-  let response;
-  try{
-    response = await fetch(
-      aiUrl,
-      {
-        method: "POST",
-        signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + apiKey
-      },
-      body: JSON.stringify({
-        model: provider === "Groq" ? "openai/gpt-oss-120b" : provider === "OpenRouter" ? "openrouter/auto" : "gemini-3.8-flash",
+      : "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
+  const requestHeaders = {
+    "Content-Type": "application/json",
+    ...(provider === "Gemini"
+      ? { "x-goog-api-key": apiKey }
+      : { "Authorization": "Bearer " + apiKey })
+  };
+  const requestBody = provider === "Gemini"
+    ? {
+        systemInstruction: {
+          parts: [{ text: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema." }]
+        },
+        contents: [{
+          role: "user",
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          maxOutputTokens: 32768
+        }
+      }
+    : {
+        model: provider === "Groq" ? "openai/gpt-oss-120b" : "openrouter/auto",
         messages: [{
           role: "system",
           content: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema."
@@ -335,12 +362,13 @@ ${prompt}`
                         x: { type: ["number","null"] },
                         y: { type: ["number","null"] },
                         name: { type: ["string","null"] },
+                        understanding: { type: ["string","null"] },
                         value: { type: ["boolean","null"] },
                         delay: { type: ["number","null"] },
                         stay: { type: ["number","null"] },
                         interval: { type: ["number","null"] }
                       },
-                      required: ["action","type","index","from","to","inputIndex","blueprintIndex","indices","x","y","name","value","delay","stay","interval"],
+                      required: ["action","type","index","from","to","inputIndex","blueprintIndex","indices","x","y","name","understanding","value","delay","stay","interval"],
                       additionalProperties: false
                     }
                   }
@@ -351,7 +379,18 @@ ${prompt}`
             }
           }
         } : {})
-        })
+      };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45000);
+  let response;
+  try{
+    response = await fetch(
+      aiUrl,
+      {
+        method: "POST",
+        signal: controller.signal,
+        headers: requestHeaders,
+        body: JSON.stringify(requestBody)
       }
     );
   }catch(error){
