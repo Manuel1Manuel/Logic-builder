@@ -2211,7 +2211,7 @@ function waitForAiStateAck(){
   });
 }
 
-async async function applyAiActions(actions){
+async async async function applyAiActions(actions){
   if(!Array.isArray(actions)||!actions.length)return {changed:0,details:[]};
   const allowed=["switch","lamp","not","or3","and","or","xor","timer","key","clock","memory","led","output"];
   // KI-Modelle können bei derselben JSON-Aufgabe "action" oder "type" für den Aktionsnamen verwenden.
