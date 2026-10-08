@@ -2074,7 +2074,7 @@ function updateAiGraphic(){
 }
 updateAiGraphic();
 
-function getAiContext(){
+function getAiContext(userPrompt=""){
   const visibleNodes=nodes.map((n,index)=>({
     index,type:n.type,name:n.name||"",x:Math.round(n.x||0),y:Math.round(n.y||0),
     chipId:n.chipId||undefined,chipPin:n.chipPin||undefined,chipName:n.chipName||undefined,
@@ -2085,8 +2085,52 @@ function getAiContext(){
   })).filter(n=>!nodes[n.index].hidden);
   const nodeIndex=new Map(nodes.map((n,i)=>[n,i]));
   const wireData=wires.map(w=>({from:nodeIndex.get(w.from),to:nodeIndex.get(w.to),inputIndex:Number.isFinite(w.inputIndex)?w.inputIndex:0}));
+
+  // Die normale Blueprint-Bibliothek bleibt leichtgewichtig. Nur konkret
+  // erwähnte Einträge bekommen ihren vollständigen Bauplan als Kontext.
+  const promptText=String(userPrompt||"").trim().toLocaleLowerCase("de-DE");
   const blueprintInfo=blueprints.map((bp,i)=>({index:i,name:bp.name||("Blueprint "+(i+1)),nodes:Array.isArray(bp.nodes)?bp.nodes.length:0,wires:Array.isArray(bp.wires)?bp.wires.length:0}));
-  return JSON.stringify({editor:"Logic Builder Ultra",nodeCount:nodes.length,gateTypes:["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"],nodes:visibleNodes,wires:wireData,blueprints:blueprintInfo,aiKnowledge:getAiKnowledgeContext()});
+  const requestedBlueprints=[];
+  for(let i=0;i<blueprints.length;i++){
+    const bp=blueprints[i];
+    const name=String(bp.name||"").trim();
+    if(name && promptText.includes(name.toLocaleLowerCase("de-DE"))){
+      requestedBlueprints.push({index:i,name,blueprint:sanitizeBlueprintForStorage(cloneBlueprint(bp))});
+    }
+  }
+
+  // KI-Wissen ist absichtlich NICHT Standardkontext. Es wird nur geladen,
+  // wenn der Nutzer ausdrücklich danach fragt. Bei einem genannten Namen
+  // wird nur der passende Eintrag geladen; eine allgemeine Bitte nach dem
+  // KI-Wissen darf die komplette KI-Wissensbibliothek öffnen.
+  const asksForAiKnowledge=/(ki[- ]?wissen|ki[- ]?wissensbibliothek|mein(?:e|en)? gespeicher(?:t|te)(?:s|n)? wissen|gespeicher(?:t|te)(?:s|n)? ki[- ]?wissen|was weißt du über dein wissen|schau in dein ki[- ]?wissen|greif auf dein ki[- ]?wissen|nutze dein ki[- ]?wissen)/i.test(promptText);
+  let aiKnowledge=[];
+  if(asksForAiKnowledge){
+    const knowledge=getAiKnowledgeLibrary();
+    const named=knowledge.filter(entry=>{
+      const name=String(entry.name||"").trim().toLocaleLowerCase("de-DE");
+      return name && promptText.includes(name);
+    });
+    const selected=named.length?named:knowledge;
+    aiKnowledge=selected.map((entry,index)=>({
+      index:knowledge.indexOf(entry),
+      createdAt:entry.createdAt||"",
+      name:entry.name||("KI-Wissen "+(index+1)),
+      understanding:entry.understanding||"",
+      blueprint:entry.blueprint?sanitizeBlueprintForStorage(cloneBlueprint(entry.blueprint)):undefined
+    }));
+  }
+
+  return JSON.stringify({
+    editor:"Logic Builder Ultra",
+    nodeCount:nodes.length,
+    gateTypes:["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"],
+    nodes:visibleNodes,
+    wires:wireData,
+    blueprints:blueprintInfo,
+    requestedBlueprints,
+    aiKnowledge
+  });
 }
 
 let aiActionInProgress=false;
@@ -2309,7 +2353,7 @@ aiAsk.addEventListener("click",async()=>{
   aiPrompt.value="";
   aiAsk.disabled=true; aiThinking.style.display="flex"; aiStatus.textContent=""; updateAiGraphic();
   try{
-    const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,context:getAiContext(),provider:aiProvider})});
+    const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,context:getAiContext(prompt),provider:aiProvider})});
     const data=await response.json();
     if(!response.ok)throw new Error((data?.error||"Unbekannter Fehler")+(data?.details?" — "+data.details:""));
     const result=applyAiActions(data.actions);
