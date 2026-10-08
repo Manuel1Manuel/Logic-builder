@@ -2181,6 +2181,16 @@ function waitForAiStateAck(){
 async function applyAiActions(actions){
   if(!Array.isArray(actions)||!actions.length)return {changed:0,details:[]};
   const allowed=["switch","lamp","not","or3","and","or","xor","timer","key","clock","memory","led","output"];
+  // KI-Modelle können bei derselben JSON-Aufgabe "action" oder "type" für den Aktionsnamen verwenden.
+  // Der Editor akzeptiert intern "action"; normalisiere deshalb beide Formen, bevor die Aktionen ausgeführt werden.
+  actions=actions.map(a=>{
+    if(!a||typeof a!=="object")return a;
+    if(typeof a.action==="string")return a;
+    if(typeof a.type==="string"&&["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock","save_chip","copy_chip","place_blueprint","select_nodes","open_chip_popup","confirm_chip_save","update_ai_knowledge"].includes(a.type)){
+      return {...a,action:a.type};
+    }
+    return a;
+  });
   let changed=0; const details=[];
   aiActionInProgress=true;
   try{
