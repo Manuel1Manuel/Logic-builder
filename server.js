@@ -126,8 +126,7 @@ Antworte nur als JSON mit dem Feld "understanding".`;
               role: "user",
               content: learningPrompt
             }],
-            temperature: 0,
-            ...(provider === "Groq" ? { max_completion_tokens: 4096 } : { max_tokens: 4096 })
+            ...(provider === "Groq" ? { temperature: 0, max_completion_tokens: 4096 } : { max_tokens: 4096 })
           })
         }
       );
@@ -181,7 +180,7 @@ and = AND mit 2 Eingängen, or = OR mit 2 Eingängen, xor = XOR mit 2 Eingängen
 timer = Zeitglied, output = Ausgang, key = Tasteneingang, clock = Taktgeber,
 memory = Speicherbaustein, led = LED.
 Wires verbinden einen Quell-Node "from" mit einem Ziel-Node "to". "inputIndex" bestimmt, an welchen Eingang des Zielblocks die Verbindung geht.
-Die aktuelle Schaltung und die Blueprint-Bibliothek werden dir als Kontext übergeben. Zusätzlich kann dir unter "aiKnowledge" eine private, chronologisch geordnete KI-Wissensbibliothek übergeben werden. Diese Bibliothek ist nur für deine interne Referenz im Logic Builder gedacht und wird nicht als normale Blueprint-Bibliothek angezeigt. Nutze ihre gespeicherten Schaltungen und Verständnisnotizen als Beispiele und Orientierung für spätere Aufgaben. Wenn der Nutzer nach dem Inhalt der KI-Wissensbibliothek fragt, nenne die Einträge chronologisch und anhand ihrer gespeicherten Namen/Erklärungen. Behaupte nicht, dein Grundmodell sei dadurch neu trainiert worden; es handelt sich um dauerhaft gespeicherten Kontext, den du bei Anfragen wiederverwenden kannst. Der Kontext ist der aktuelle Zustand zum Zeitpunkt der Anfrage; arbeite immer mit diesen aktuellen Indizes und Zuständen. Chip-Nodes enthalten chipId, chipPin und chipName, damit ein kompletter Chip eindeutig vervielfältigt oder gespeichert werden kann.
+Die aktuelle Schaltung und die Blueprint-Bibliothek werden dir als Kontext übergeben. Unter "aiKnowledge" kann dir auf ausdrückliche Aufforderung des Nutzers die private, chronologisch geordnete KI-Wissensbibliothek bereitgestellt werden. Sie ist absichtlich NICHT Teil jeder normalen Anfrage. Wenn "aiKnowledge" im Kontext vorhanden ist, darfst du die enthaltenen Einträge als interne Referenz verwenden. Wenn der Nutzer ausdrücklich verlangt, einen KI-Wissenseintrag zu ändern, zu korrigieren, umzubenennen oder zu ergänzen, nutze update_ai_knowledge mit dem passenden Index aus dem bereitgestellten aiKnowledge-Kontext. Behaupte nicht, dein Grundmodell sei dadurch neu trainiert worden; es handelt sich um dauerhaft gespeicherten Kontext, den du bei Anfragen wiederverwenden kannst. Der Kontext ist der aktuelle Zustand zum Zeitpunkt der Anfrage; arbeite immer mit diesen aktuellen Indizes und Zuständen. Chip-Nodes enthalten chipId, chipPin und chipName, damit ein kompletter Chip eindeutig vervielfältigt oder gespeichert werden kann.
 
 SO FUNKTIONIERT DIE AKTIONSAUSGABE:
 Du antwortest ausschließlich mit dem vorgegebenen JSON-Schema. "answer" ist die kurze Erklärung für den Nutzer, "actions" enthält die tatsächlich auszuführenden Editor-Aktionen.
@@ -201,6 +200,7 @@ Verwende ausschließlich diese Aktionen:
 - select_nodes: die angegebenen aktuellen Node-Indizes auswählen; indices ist die vollständige Liste der gewünschten Nodes
 - open_chip_popup: das sichtbare Speichern-Fenster für die aktuelle Auswahl öffnen; nur verwenden, wenn der Nutzer ausdrücklich einen Chip/Blueprint speichern oder daraus einen Chip machen möchte
 - confirm_chip_save: im geöffneten Speichern-Fenster sichtbar den Chip-Modus aktivieren und den Speichern-Button ausführen; nur zusammen mit einem ausdrücklich gewünschten Chip/Blueprint-Speichervorgang verwenden
+- update_ai_knowledge: einen ausdrücklich genannten Eintrag der KI-Wissensbibliothek bearbeiten; "index" ist der Index aus dem aiKnowledge-Kontext, "name" und/oder "understanding" enthalten die neuen Werte. Nur verwenden, wenn der Nutzer ausdrücklich das KI-Wissen ändern, korrigieren, umbenennen oder ergänzen lassen möchte.
 
 WICHTIG ZU INDIZES UND MEHREREN AKTIONEN:
 Ein "index" ist kein dauerhafter Name. Beim Löschen eines Nodes rücken nachfolgende Nodes im nodes-Array nach und können dadurch neue Indizes bekommen.
@@ -308,8 +308,7 @@ ${prompt}`
           role: "system",
           content: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema."
         }],
-        temperature: 0,
-        ...(provider === "Groq" ? { max_completion_tokens: 65536 } : { max_tokens: 32768 }),
+        ...(provider === "Groq" ? { temperature: 0, max_completion_tokens: 65536 } : { max_tokens: 32768 }),
         ...(provider === "Groq" ? {
           response_format: {
             type: "json_schema",
@@ -325,7 +324,7 @@ ${prompt}`
                     items: {
                       type: "object",
                       properties: {
-                        action: { type: "string", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock","save_chip","copy_chip","place_blueprint","select_nodes","open_chip_popup","confirm_chip_save"] },
+                        action: { type: "string", enum: ["add_gate","delete_gate","move_gate","connect","disconnect","rename_gate","set_switch","set_timer","set_clock","save_chip","copy_chip","place_blueprint","select_nodes","open_chip_popup","confirm_chip_save","update_ai_knowledge"] },
                         type: { type: ["string","null"] },
                         index: { type: ["integer","null"] },
                         from: { type: ["integer","null"] },
