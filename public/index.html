@@ -2104,6 +2104,7 @@ function getAiContext(userPrompt=""){
   })).filter(n=>!nodes[n.index].hidden);
   const nodeIndex=new Map(nodes.map((n,i)=>[n,i]));
   const wireData=wires.map(w=>({from:nodeIndex.get(w.from),to:nodeIndex.get(w.to),inputIndex:Number.isFinite(w.inputIndex)?w.inputIndex:0}));
+  const promptText=String(userPrompt||"").trim().toLocaleLowerCase("de-DE");
 
   // Die Blueprint-Bibliothek ist für die KI vollständig unsichtbar,
   // solange der Nutzer nicht ausdrücklich nach einem Blueprint/Eintrag fragt.
@@ -2145,7 +2146,6 @@ function getAiContext(userPrompt=""){
     gateTypes:["switch","lamp","not","or3","and","or","xor","timer","output","key","clock","memory","led"],
     nodes:visibleNodes,
     wires:wireData,
-    blueprints:blueprintInfo,
     requestedBlueprints,
     aiKnowledge
   });
