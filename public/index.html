@@ -51,7 +51,7 @@ KI-Wissen? <input id="bpAiKnowledge" type="checkbox">
 <button id="bpActionCopy">Kopieren</button>
 <button id="bpActionDelete">Löschen</button>
 <button id="bpActionClose">Schließen</button>
-</div><div id="aiLibraryPopup"><div id="aiLibraryList"></div><div id="aiLibraryDetails"><div style="display:flex;align-items:center;gap:8px;"><strong>B – KI-Bibliothek</strong><button id="aiLibraryClose" type="button">Schließen</button></div><canvas id="aiLibraryPreview" width="700" height="260"></canvas><div id="aiLibraryMeta"></div><div id="aiLibrarySummary"></div><div id="aiLibraryActions"><button id="aiLibraryBlueprint" type="button">Als Blueprint speichern</button><button id="aiLibraryPlace" type="button">Auf Arbeitsfläche platzieren</button><button id="aiLibraryRetry" type="button" style="display:none">Zusammenfassung erneut</button></div></div></div>
+</div><div id="aiLibraryPopup"><div id="aiLibraryList"></div><div id="aiLibraryDetails"><div style="display:flex;align-items:center;gap:8px;"><strong>B – KI-Bibliothek</strong><button id="aiLibraryClose" type="button">Schließen</button></div><canvas id="aiLibraryPreview" width="700" height="260"></canvas><div id="aiLibraryMeta"></div><div id="aiLibrarySummary"></div><div id="aiLibraryActions"><button id="aiLibraryBlueprint" type="button">Als Blueprint speichern</button><button id="aiLibraryPlace" type="button">Auf Arbeitsfläche platzieren</button><button id="aiLibraryRetry" type="button">Zusammenfassen</button></div></div></div>
 <div id="timerMenu">
 <input id="timerDelay" type="number" placeholder="Delay ms">
 <label><input id="timerStay" type="checkbox"> Stay</label>
@@ -719,7 +719,7 @@ function renderAiLibrary(){
   if(!items.length){listEl.textContent="Noch kein KI-Wissen gespeichert.";summaryEl.textContent="";metaEl.textContent="";retry.style.display="none";drawAiLibraryPreview(null);return;}
   for(const item of items){const b=document.createElement("button");b.type="button";b.textContent=item.entry.name||("KI-Wissen "+(item.index+1));b.style.cssText="display:block;width:100%;margin-bottom:6px;text-align:left;background:#101820;color:#fff;border:1px solid #31404d;padding:8px;cursor:pointer;border-radius:0;";if(item.entry.id===aiLibrarySelectedId)b.style.borderColor=simpleGraphics?"#00ffff":"#78dcff";b.onclick=()=>{aiLibrarySelectedId=item.entry.id;renderAiLibrary();};listEl.appendChild(b);}
   let selected=items.find(x=>x.entry.id===aiLibrarySelectedId);if(!selected){selected=items[0];aiLibrarySelectedId=selected.entry.id;}
-  const e=selected.entry;drawAiLibraryPreview(e.blueprint);metaEl.textContent="Name: "+(e.name||"KI-Wissen")+" · "+(e.createdAt?new Date(e.createdAt).toLocaleString("de-DE"):"");summaryEl.textContent=e.understanding||"Noch keine Zusammenfassung vorhanden.";retry.style.display=e.understanding?"none":"inline-block";
+  const e=selected.entry;drawAiLibraryPreview(e.blueprint);metaEl.textContent="Name: "+(e.name||"KI-Wissen")+" · "+(e.createdAt?new Date(e.createdAt).toLocaleString("de-DE"):"");summaryEl.textContent=e.understanding||"Noch keine Zusammenfassung vorhanden.";retry.style.display="inline-block";retry.textContent=e.understanding?"Zusammenfassung aktualisieren":"Zusammenfassen";
 }
 function openAiLibrary(){renderAiLibrary();document.getElementById("aiLibraryPopup").style.display="grid";}
 function closeAiLibrary(){document.getElementById("aiLibraryPopup").style.display="none";}
@@ -727,7 +727,26 @@ document.getElementById("aiLibraryBtn").onclick=openAiLibrary;
 document.getElementById("aiLibraryClose").onclick=closeAiLibrary;
 document.getElementById("aiLibraryBlueprint").onclick=()=>{const e=getAiKnowledgeLibrary().find(x=>x.id===aiLibrarySelectedId);if(!e||!e.blueprint)return;const bp=cloneBlueprint(e.blueprint);bp.name=e.name||bp.name||"KI-Blueprint";blueprints.push(sanitizeBlueprintForStorage(bp));clampBlueprintScroll();renderAiLibrary();};
 document.getElementById("aiLibraryPlace").onclick=()=>{const e=getAiKnowledgeLibrary().find(x=>x.id===aiLibrarySelectedId);if(!e||!e.blueprint)return;placeBlueprint(cloneBlueprint(e.blueprint),Math.max(40,w/2-160),Math.max(40,h/2-80));closeAiLibrary();};
-document.getElementById("aiLibraryRetry").onclick=async()=>{const list=getAiKnowledgeLibrary(),e=list.find(x=>x.id===aiLibrarySelectedId);if(!e||!e.blueprint)return;const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({libraryLearn:true,libraryEntry:e})});const data=await response.json();if(response.ok&&typeof data.text==="string"&&data.text.trim()){e.understanding=data.text.trim();setAiKnowledgeLibrary(list);renderAiLibrary();}};
+document.getElementById("aiLibraryRetry").onclick=async()=>{
+  const list=getAiKnowledgeLibrary(),e=list.find(x=>x.id===aiLibrarySelectedId);
+  if(!e||!e.blueprint)return;
+  const btn=document.getElementById("aiLibraryRetry"),oldText=btn.textContent;
+  btn.disabled=true;btn.textContent="Zusammenfassung läuft...";
+  try{
+    const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({libraryLearn:true,libraryEntry:e,provider:aiProvider})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(data.details||data.error||("HTTP "+response.status));
+    if(typeof data.text==="string"&&data.text.trim()){
+      e.understanding=data.text.trim();setAiKnowledgeLibrary(list);renderAiLibrary();
+    }else{
+      throw new Error("Die KI hat keine Zusammenfassung zurückgegeben.");
+    }
+  }catch(error){
+    aiStatus.textContent="Zusammenfassung fehlgeschlagen: "+error.message;
+  }finally{
+    btn.disabled=false;btn.textContent=oldText;
+  }
+};
 const blueprintVisibleRows=8;
 
 function clampBlueprintScroll(){let max=Math.max(0,blueprints.length-blueprintVisibleRows);if(blueprintScroll<0)blueprintScroll=0;if(blueprintScroll>max)blueprintScroll=max;}
@@ -2086,10 +2105,8 @@ function getAiContext(userPrompt=""){
   const nodeIndex=new Map(nodes.map((n,i)=>[n,i]));
   const wireData=wires.map(w=>({from:nodeIndex.get(w.from),to:nodeIndex.get(w.to),inputIndex:Number.isFinite(w.inputIndex)?w.inputIndex:0}));
 
-  // Die normale Blueprint-Bibliothek bleibt leichtgewichtig. Nur konkret
-  // erwähnte Einträge bekommen ihren vollständigen Bauplan als Kontext.
-  const promptText=String(userPrompt||"").trim().toLocaleLowerCase("de-DE");
-  const blueprintInfo=blueprints.map((bp,i)=>({index:i,name:bp.name||("Blueprint "+(i+1)),nodes:Array.isArray(bp.nodes)?bp.nodes.length:0,wires:Array.isArray(bp.wires)?bp.wires.length:0}));
+  // Die Blueprint-Bibliothek ist für die KI vollständig unsichtbar,
+  // solange der Nutzer nicht ausdrücklich nach einem Blueprint/Eintrag fragt.
   const requestedBlueprints=[];
   for(let i=0;i<blueprints.length;i++){
     const bp=blueprints[i];
@@ -2103,6 +2120,7 @@ function getAiContext(userPrompt=""){
   // wenn der Nutzer ausdrücklich danach fragt. Bei einem genannten Namen
   // wird nur der passende Eintrag geladen; eine allgemeine Bitte nach dem
   // KI-Wissen darf die komplette KI-Wissensbibliothek öffnen.
+  // KIB = KI-Wissensbibliothek. Nur eine ausdrückliche KIB/KI-Wissens-Anfrage darf diesen Kontext öffnen.
   const asksForAiKnowledge=/(ki[- ]?wissen|ki[- ]?wissensbibliothek|mein(?:e|en)? gespeicher(?:t|te)(?:s|n)? wissen|gespeicher(?:t|te)(?:s|n)? ki[- ]?wissen|was weißt du über dein wissen|schau in dein ki[- ]?wissen|greif auf dein ki[- ]?wissen|nutze dein ki[- ]?wissen)/i.test(promptText);
   let aiKnowledge=[];
   if(asksForAiKnowledge){
