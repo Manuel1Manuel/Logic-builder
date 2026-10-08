@@ -2274,6 +2274,27 @@ async function applyAiActions(actions){
           didChange=true;
           details.push("Chip gespeichert");
         }
+      }else if(a.action==="update_ai_knowledge"){
+        const list=getAiKnowledgeLibrary();
+        const i=Number(a.index);
+        if(Number.isInteger(i)&&i>=0&&i<list.length){
+          const entry=list[i];
+          let changedEntry=false;
+          if(typeof a.name==="string"&&a.name.trim()&&a.name.trim()!==String(entry.name||"")){
+            entry.name=a.name.trim();
+            changedEntry=true;
+          }
+          if(typeof a.understanding==="string"&&a.understanding.trim()!==String(entry.understanding||"").trim()){
+            entry.understanding=a.understanding.trim();
+            changedEntry=true;
+          }
+          if(changedEntry){
+            setAiKnowledgeLibrary(list);
+            renderAiLibrary();
+            didChange=true;
+            details.push("KI-Wissenseintrag bearbeitet");
+          }
+        }
       }else if(a.action==="place_blueprint"){
         const bi=Number(a.blueprintIndex);
         const bp=Number.isInteger(bi)&&bi>=0&&bi<blueprints.length?blueprints[bi]:null;
@@ -2357,7 +2378,7 @@ aiAsk.addEventListener("click",async()=>{
     const data=await response.json();
     if(!response.ok)throw new Error((data?.error||"Unbekannter Fehler")+(data?.details?" — "+data.details:""));
     const result=applyAiActions(data.actions);
-    aiStatus.textContent="["+(data.provider||aiProvider)+"] "+(data.text||"Manuel KI hat keine Antwort geliefert.")+(result.changed?"\n\nEditor geändert: "+result.details.join(", ")+".\nDie Änderung wurde an den Server gesendet.":"\n\nKeine Editor-Aktion ausgeführt.");
+    aiStatus.textContent=(data.text||"Manuel KI hat keine Antwort geliefert.")+(result.changed?"\n\nGeändert: "+result.details.join(", ")+".":"\n\nKeine Änderung ausgeführt.");
   }catch(error){aiStatus.textContent="Fehler: "+error.message;}
   finally{aiAsk.disabled=false;aiThinking.style.display="none";}
 });
