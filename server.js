@@ -184,8 +184,8 @@ Antworte nur als JSON mit dem Feld "understanding".`;
 
   // Reine Begrüßungen werden deterministisch beantwortet. So kann ein
   // OpenRouter-Modell daraus keine zufällige Logic-Builder-Aufgabe ableiten.
-  const greetingOnly = /^(hi+|hey+|hallo+|moin|servus|guten\\s+(morgen|tag|abend)|guten\\s+mittag)[!,.\\s]*$/i.test(prompt);
-  if(greetingOnly){
+  const casualGreeting = /^(hi+|hey+|hallo+|moin|servus|guten\\s+(morgen|tag|abend)|guten\\s+mittag)(?:[!,.\\s]+(?:wie\\s+geht(?:s| es)\\s+(?:dir|euch)|wie\\s+gehts|was\\s+geht|alles\\s+klar))?[!,.\\s]*$/i.test(prompt);
+  if(casualGreeting){
     res.json({
       text: "Hallo! Ich bin Manuel KI. Was möchtest du im Logic Builder bauen oder ändern?",
       actions: [],
