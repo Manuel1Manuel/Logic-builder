@@ -199,6 +199,12 @@ switch = Schalter/Eingang, lamp = Lampe, not = NOT, or3 = OR mit 3 Eingängen,
 and = AND mit 2 Eingängen, or = OR mit 2 Eingängen, xor = XOR mit 2 Eingängen,
 timer = Zeitglied, output = Ausgang, key = Tasteneingang, clock = Taktgeber,
 memory = Speicherbaustein, led = LED.
+
+WICHTIGE AUSGANGSREGEL:
+Für Schaltungen, die einen logischen Ausgang nach außen darstellen, MUSST du den Node-Typ "output" verwenden.
+Verwende NIEMALS "lamp" als Ausgang einer neu gebauten Schaltung, eines Addierers, einer ALU, eines Chips oder eines sonstigen Moduls. "lamp" ist nur eine Anzeige und kein eigentlicher logischer Ausgang.
+Beispiel beim Addierer: Sum0 bis Sum7 und Cout sind "output"-Nodes, keine "lamp"-Nodes.
+Wenn der Nutzer ausdrücklich eine Lampe als reine Anzeige verlangt, darfst du "lamp" verwenden; für funktionale Ausgänge gilt immer "output".
 WICHTIGE MEMORY-PINBELEGUNG:
 Beim memory-Speicherbaustein sind die drei Eingänge fest und immer in dieser Reihenfolge belegt:
 - 1. Eingang (Pin 1) = INPUT / Dateneingang
