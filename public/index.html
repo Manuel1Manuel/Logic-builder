@@ -2454,7 +2454,13 @@ updateAiProviderButtons();
 aiAsk.addEventListener("click",async()=>{
   const prompt=aiPrompt.value.trim(); if(!prompt)return;
   aiPrompt.value="";
-  aiAsk.disabled=true; aiThinking.style.display="flex"; aiStatus.textContent=""; updateAiGraphic();
+  aiAsk.disabled=true; aiThinking.style.display="flex"; aiStatus.textContent="Anfrage senden…"; updateAiGraphic();
+  const progressLabels=["Anfrage senden…","Schaltung analysieren…","Aktionen vorbereiten…","Antwort verarbeiten…"];
+  let progressIndex=0;
+  const progressTimer=setInterval(()=>{
+    progressIndex=(progressIndex+1)%progressLabels.length;
+    aiStatus.textContent=progressLabels[progressIndex];
+  },5000);
   try{
     const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,context:getAiContext(prompt),provider:aiProvider})});
     const data=await response.json();
