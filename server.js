@@ -370,7 +370,7 @@ ${prompt}`
         } : {})
       };
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 45000);
+  const timeout = setTimeout(() => controller.abort(), 120000);
   let response;
   try{
     response = await fetch(
@@ -388,7 +388,7 @@ ${prompt}`
     res.status(502).json({
       error: "KI API Fehler.",
       details: error?.name === "AbortError"
-        ? "Die Anfrage hat nach 45 Sekunden abgebrochen."
+        ? "Die Anfrage hat nach 120 Sekunden abgebrochen."
         : String(error?.message || error)
     });
     return;
