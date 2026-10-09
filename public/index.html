@@ -2486,7 +2486,7 @@ aiAsk.addEventListener("click",async()=>{
     const result=await applyAiActions(data.actions);
     aiStatus.textContent=(data.text||"Manuel KI hat keine Antwort geliefert.")+(result.changed?"\n\nGeändert: "+result.details.join(", ")+".":"\n\nKeine Änderung ausgeführt.");
   }catch(error){aiStatus.textContent="Fehler: "+error.message;}
-  finally{aiAsk.disabled=false;aiThinking.style.display="none";}
+  finally{clearInterval(progressTimer);aiAsk.disabled=false;aiThinking.style.display="none";}
 });
 
 /* ===== Gemeinsamer Online-Zustand: Struktur + ausgewählte Einstellungen ===== */
