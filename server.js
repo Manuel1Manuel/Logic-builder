@@ -371,6 +371,11 @@ ${prompt}`
       };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120000);
+  // Wenn der Nutzer im Browser auf das X drückt, wird die laufende
+  // Anfrage an den KI-Anbieter ebenfalls abgebrochen.
+  res.on("close", () => {
+    if(!res.writableEnded) controller.abort();
+  });
   let response;
   try{
     response = await fetch(
@@ -384,11 +389,12 @@ ${prompt}`
     );
   }catch(error){
     clearTimeout(timeout);
+    if(res.destroyed) return;
     console.error(provider+" API Netzwerkfehler:", error);
     res.status(502).json({
       error: "KI API Fehler.",
       details: error?.name === "AbortError"
-        ? "Die Anfrage hat nach 120 Sekunden abgebrochen."
+        ? "Die Anfrage wurde abgebrochen oder hat nach 120 Sekunden das Zeitlimit erreicht."
         : String(error?.message || error)
     });
     return;
