@@ -408,8 +408,11 @@ ${prompt}`
     return;
   }
 
-  const message = data?.choices?.[0]?.message || {};
-  let raw = message?.content;
+  // Gemini verwendet candidates[].content.parts[].text; OpenAI-kompatible APIs
+  // verwenden choices[].message.content. Beide Antwortformate getrennt lesen.
+  let raw = provider === "Gemini"
+    ? (data?.candidates?.[0]?.content?.parts || []).map(part => part?.text || "").join("")
+    : data?.choices?.[0]?.message?.content;
   if(Array.isArray(raw)){
     raw = raw.map(part => typeof part === "string" ? part : (typeof part?.text === "string" ? part.text : (typeof part?.content === "string" ? part.content : ""))).join("");
   }else if(raw && typeof raw === "object"){
@@ -419,9 +422,17 @@ ${prompt}`
   if(raw.startsWith("```json")) raw=raw.slice(7).trim();
   if(raw.startsWith("```")) raw=raw.slice(3).trim();
   if(raw.endsWith("```")) raw=raw.slice(0,-3).trim();
+  if(!raw){
+    const blockReason = data?.promptFeedback?.blockReason;
+    const finishReason = data?.candidates?.[0]?.finishReason;
+    const details = blockReason ? ("Gemini hat die Anfrage blockiert: " + blockReason) : finishReason ? ("Gemini hat keinen Antworttext geliefert. finishReason: " + finishReason) : "Die API-Antwort enthielt keinen Text im erwarteten Antwortfeld.";
+    console.error("Leere KI-Antwort:", provider, {blockReason, finishReason, keys:Object.keys(data||{})});
+    res.status(502).json({error:"Die KI hat keine Antwort geliefert.",details});
+    return;
+  }
   let result;
   try{
-    result = JSON.parse(raw || "{}");
+    result = JSON.parse(raw);
   }catch{
     result = { answer: raw, actions: [] };
   }
