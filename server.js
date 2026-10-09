@@ -107,7 +107,7 @@ Antworte nur als JSON mit dem Feld "understanding".`;
           ? "https://openrouter.ai/api/v1/chat/completions"
           : "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 45000);
+      const timeout = setTimeout(() => controller.abort(), 120000);
       const learnHeaders = {
         "Content-Type": "application/json",
         ...(provider === "Gemini"
