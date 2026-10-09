@@ -2444,6 +2444,24 @@ aiAsk.addEventListener("click",async()=>{
     const response=await fetch("/api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,context:getAiContext(prompt),provider:aiProvider})});
     const data=await response.json();
     if(!response.ok)throw new Error((data?.error||"Unbekannter Fehler")+(data?.details?" — "+data.details:""));
+    // Fallback: Falls ein Modell sein vollständiges Aktions-JSON als Antworttext
+    // statt im actions-Feld zurückgibt, versuche es vor der Anzeige zu retten.
+    if((!Array.isArray(data.actions)||!data.actions.length)&&typeof data.text==="string"){
+      let candidate=data.text.trim();
+      if(candidate.startsWith("```json"))candidate=candidate.slice(7).trim();
+      if(candidate.startsWith("```"))candidate=candidate.slice(3).trim();
+      if(candidate.endsWith("```"))candidate=candidate.slice(0,-3).trim();
+      const first=candidate.indexOf("{"),last=candidate.lastIndexOf("}");
+      if(first>=0&&last>first){
+        try{
+          const recovered=JSON.parse(candidate.slice(first,last+1));
+          if(Array.isArray(recovered.actions)&&recovered.actions.length){
+            data.actions=recovered.actions;
+            if(typeof recovered.answer==="string")data.text=recovered.answer;
+          }
+        }catch{}
+      }
+    }
     const result=await applyAiActions(data.actions);
     aiStatus.textContent=(data.text||"Manuel KI hat keine Antwort geliefert.")+(result.changed?"\n\nGeändert: "+result.details.join(", ")+".":"\n\nKeine Änderung ausgeführt.");
   }catch(error){aiStatus.textContent="Fehler: "+error.message;}
