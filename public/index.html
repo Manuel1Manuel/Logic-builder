@@ -51,7 +51,7 @@ KI-Wissen? <input id="bpAiKnowledge" type="checkbox">
 <button id="bpActionCopy">Kopieren</button>
 <button id="bpActionDelete">Löschen</button>
 <button id="bpActionClose">Schließen</button>
-</div><div id="aiLibraryPopup"><div id="aiLibraryList"></div><div id="aiLibraryDetails"><div style="display:flex;align-items:center;gap:8px;"><strong>B – KI-Bibliothek</strong><button id="aiLibraryClose" type="button">Schließen</button></div><canvas id="aiLibraryPreview" width="700" height="260"></canvas><div id="aiLibraryMeta"></div><div id="aiLibrarySummary"></div><div id="aiLibraryActions"><button id="aiLibraryBlueprint" type="button">Als Blueprint speichern</button><button id="aiLibraryPlace" type="button">Auf Arbeitsfläche platzieren</button><button id="aiLibraryRetry" type="button">Zusammenfassen</button><button id="aiLibraryDelete" type="button">Löschen</button></div></div></div>
+</div><div id="aiLibraryPopup"><div id="aiLibraryList"></div><div id="aiLibraryDetails"><div style="display:flex;align-items:center;gap:8px;"><strong>B – KI-Bibliothek</strong><button id="aiLibraryClose" type="button">Schließen</button></div><canvas id="aiLibraryPreview" width="700" height="260"></canvas><div id="aiLibraryMeta"></div><div id="aiLibrarySummary"></div><div id="aiLibraryActions"><button id="aiLibraryBlueprint" type="button">Als Blueprint speichern</button><button id="aiLibraryPlace" type="button">Auf Arbeitsfläche platzieren</button><button id="aiLibraryRetry" type="button">Zusammenfassen</button><button id="aiLibraryDelete" type="button">Löschen</button><button id="aiLibraryDeleteAll" type="button">Alle Einträge löschen</button></div></div></div>
 <div id="timerMenu">
 <input id="timerDelay" type="number" placeholder="Delay ms">
 <label><input id="timerStay" type="checkbox"> Stay</label>
@@ -740,6 +740,15 @@ document.getElementById("aiLibraryDelete").onclick=()=>{
   aiLibrarySelectedId=null;
   renderAiLibrary();
   aiStatus.textContent="KI-Wissenseintrag gelöscht.";
+};
+document.getElementById("aiLibraryDeleteAll").onclick=()=>{
+  const list=getAiKnowledgeLibrary();
+  if(!list.length){aiStatus.textContent="Die KI-Wissensbibliothek ist bereits leer.";return;}
+  if(!window.confirm("Wirklich alle "+list.length+" Einträge aus der KI-Wissensbibliothek löschen? Diese Aktion kann nicht rückgängig gemacht werden."))return;
+  if(!setAiKnowledgeLibrary([])){aiStatus.textContent="Die KI-Wissensbibliothek konnte nicht geleert werden.";return;}
+  aiLibrarySelectedId=null;
+  renderAiLibrary();
+  aiStatus.textContent="KI-Wissensbibliothek geleert."; 
 };
 document.getElementById("aiLibraryBlueprint").onclick=()=>{const e=getAiKnowledgeLibrary().find(x=>x.id===aiLibrarySelectedId);if(!e||!e.blueprint)return;const bp=cloneBlueprint(e.blueprint);bp.name=e.name||bp.name||"KI-Blueprint";blueprints.push(sanitizeBlueprintForStorage(bp));clampBlueprintScroll();renderAiLibrary();};
 document.getElementById("aiLibraryPlace").onclick=()=>{const e=getAiKnowledgeLibrary().find(x=>x.id===aiLibrarySelectedId);if(!e||!e.blueprint)return;placeBlueprint(cloneBlueprint(e.blueprint),Math.max(40,w/2-160),Math.max(40,h/2-80));closeAiLibrary();};
