@@ -2467,9 +2467,7 @@ aiCancel.addEventListener("click",()=>{
   if(!activeAiController)return;
   aiRequestCancelled=true;
   activeAiController.abort();
-  activeAiController=null;
   aiCancel.style.display="none";
-  aiAsk.disabled=false;
   aiThinking.style.display="none";
   aiStatus.textContent="Anfrage abgebrochen. Du kannst direkt etwas Neues fragen.";
 });
