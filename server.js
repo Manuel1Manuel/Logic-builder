@@ -106,8 +106,6 @@ Antworte nur als JSON mit dem Feld "understanding".`;
         : provider === "OpenRouter"
           ? "https://openrouter.ai/api/v1/chat/completions"
           : "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 120000);
       const learnHeaders = {
         "Content-Type": "application/json",
         ...(provider === "Gemini"
@@ -143,12 +141,10 @@ Antworte nur als JSON mit dem Feld "understanding".`;
         learnUrl,
         {
           method: "POST",
-          signal: controller.signal,
           headers: learnHeaders,
           body: JSON.stringify(learnBody)
         }
       );
-      clearTimeout(timeout);
       const data = await response.json().catch(() => ({}));
       if(!response.ok){
         const details = data?.error?.message || data?.message || ("HTTP " + response.status + " " + response.statusText);
@@ -370,7 +366,6 @@ ${prompt}`
         } : {})
       };
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120000);
   // Wenn der Nutzer im Browser auf das X drückt, wird die laufende
   // Anfrage an den KI-Anbieter ebenfalls abgebrochen.
   res.on("close", () => {
@@ -388,18 +383,16 @@ ${prompt}`
       }
     );
   }catch(error){
-    clearTimeout(timeout);
     if(res.destroyed) return;
     console.error(provider+" API Netzwerkfehler:", error);
     res.status(502).json({
       error: "KI API Fehler.",
       details: error?.name === "AbortError"
-        ? "Die Anfrage wurde abgebrochen oder hat nach 120 Sekunden das Zeitlimit erreicht."
+        ? "Die Anfrage wurde abgebrochen."
         : String(error?.message || error)
     });
     return;
   }
-  clearTimeout(timeout);
 
   const data = await response.json().catch(() => ({}));
 
