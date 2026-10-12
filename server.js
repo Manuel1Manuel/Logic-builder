@@ -84,6 +84,9 @@ app.post("/api/gemini", async (req, res) => {
   }
 
   const prompt = typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
+  const promptImproveMatch = prompt.match(/^\/promp?t\s*:\s*([\s\S]*)$/i);
+  const promptImprove = !!promptImproveMatch;
+  const requestPrompt = promptImprove ? String(promptImproveMatch[1] || "").trim() : prompt;
   const context = typeof req.body?.context === "string" ? req.body.context : "";
   const libraryLearn = req.body?.libraryLearn === true;
   const libraryEntry = req.body?.libraryEntry && typeof req.body.libraryEntry === "object" ? req.body.libraryEntry : null;
@@ -184,6 +187,10 @@ Antworte nur als JSON mit dem Feld "understanding".`;
 
   if(!prompt){
     res.status(400).json({ error: "Kein Prompt angegeben." });
+    return;
+  }
+  if(promptImprove&&!requestPrompt){
+    res.status(400).json({error:"Bitte schreibe nach /prompt: den Prompt, den ich verbessern soll."});
     return;
   }
 
@@ -342,7 +349,14 @@ Wenn eine angeforderte Änderung anhand des aktuellen Kontexts nicht eindeutig m
 ${context ? "\nAKTUELLER APP-KONTEXT:\n" + context : ""}
 
 NUTZERANFRAGE:
-${prompt}`
+${requestPrompt}`
+
+  const effectiveSystemContext = promptImprove
+    ? systemContext + `
+
+SONDERMODUS /prompt: – PROMPT VERBESSERN, NICHT AUSFÜHREN:
+Die letzte Nutzeranfrage beginnt mit /prompt: oder /promt:. Formuliere den danach folgenden Rohtext zu einem klaren, vollständigen, präzisen und direkt kopierbaren Prompt um. Bewahre die Absicht des Nutzers, ergänze sinnvolle Erfolgskriterien, wichtige Spezifikationen und gewünschte Ausgabeformate, aber erfinde keine Anforderungen, die nicht aus dem Text ableitbar sind. Wenn es um eine Logic-Builder-Schaltung geht, mache den Prompt so konkret, dass die komplette gewünschte Schaltung mit tatsächlichen unterstützten Gattern und Verbindungen umgesetzt werden soll. Führe die beschriebene Aufgabe NICHT aus, ändere keine Schaltung und gib immer actions als leeres Array zurück. Das Feld answer enthält ausschließlich den verbesserten Prompt, ohne Einleitung oder Anführungszeichen. Das Feld progress bleibt eine kurze Statuszusammenfassung. Antworte weiter im JSON-Schema mit progress, answer und actions.`
+    : systemContext;
 
   const aiUrl = provider === "Groq"
     ? "https://api.groq.com/openai/v1/chat/completions"
@@ -358,11 +372,11 @@ ${prompt}`
   const requestBody = provider === "Gemini"
     ? {
         systemInstruction: {
-          parts: [{ text: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema. Beginne mit dem kurzen nutzersichtbaren Feld \"progress\", danach \"answer\" und \"actions\"." }]
+          parts: [{ text: effectiveSystemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema. Beginne mit dem kurzen nutzersichtbaren Feld \"progress\", danach \"answer\" und \"actions\"." }]
         },
         contents: [{
           role: "user",
-          parts: [{ text: prompt }]
+          parts: [{ text: requestPrompt }]
         }],
         tools: [{ google_search: {} }],
         generationConfig: {
@@ -374,10 +388,10 @@ ${prompt}`
         model: provider === "Groq" ? "openai/gpt-oss-120b" : "openrouter/auto",
         messages: [{
           role: "system",
-          content: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema. Beginne mit dem kurzen nutzersichtbaren Feld \"progress\", danach \"answer\" und \"actions\"."
+          content: effectiveSystemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema. Beginne mit dem kurzen nutzersichtbaren Feld \"progress\", danach \"answer\" und \"actions\"."
         },{
           role: "user",
-          content: prompt
+          content: requestPrompt
         }],
         ...(provider === "Groq" ? {
           temperature: 0,

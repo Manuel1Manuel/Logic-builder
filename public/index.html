@@ -11,7 +11,7 @@ body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none
 <body>
 <canvas id="c"></canvas>
 <div id="modeToggle">PC</div>
-<div id="touchModeToggle">Links</div><div id="onlineInfo" aria-live="polite">Online: 0</div><button id="aiBtn">KI</button><div id="storageInfo" aria-live="polite"><span id="serverBitsLine" class="storageLine">Server Bits: –</span><span id="clientBitsLine" class="storageLine">Client Bits: –</span><span id="storageCompareLine" class="storageLine">Vergleich: –</span></div><div id="aiPopup"><button id="aiClose" title="Chat schließen">×</button><div id="aiHeader"><div id="aiGraphic" class="complex"><span>◈</span></div><div><div style="font-size:16px;">Manuel KI</div><div style="font-size:11px;opacity:.7;">Logic Builder Assistenz</div></div></div><textarea id="aiPrompt" placeholder="Beschreibe, was du wissen oder mit der Schaltung machen möchtest ..."></textarea><div id="aiProviderRow"><button id="aiProviderGroq" type="button">Groq</button><button id="aiProviderGemini" type="button">Gemini</button><button id="aiProviderOpenRouter" type="button">OpenRouter</button></div><div style="margin-top:9px;display:flex;gap:7px;align-items:center;"><button id="aiAsk">Fragen</button><button id="aiCancel" type="button" title="Anfrage abbrechen" aria-label="Anfrage abbrechen" style="display:none;">×</button><button id="aiVoice" type="button" title="Diktieren">🎙️</button><div id="aiThinking"><span>Manuel KI arbeitet</span><span id="aiThinkingDots"><i></i><i></i><i></i></span></div></div><div id="aiStatus"></div></div>
+<div id="touchModeToggle">Links</div><div id="onlineInfo" aria-live="polite">Online: 0</div><button id="aiBtn">KI</button><div id="storageInfo" aria-live="polite"><span id="serverBitsLine" class="storageLine">Server Bits: –</span><span id="clientBitsLine" class="storageLine">Client Bits: –</span><span id="storageCompareLine" class="storageLine">Vergleich: –</span></div><div id="aiPopup"><button id="aiClose" title="Chat schließen">×</button><div id="aiHeader"><div id="aiGraphic" class="complex"><span>◈</span></div><div><div style="font-size:16px;">Manuel KI</div><div style="font-size:11px;opacity:.7;">Logic Builder Assistenz</div></div></div><textarea id="aiPrompt" placeholder="Beschreibe, was du wissen oder mit der Schaltung machen möchtest ..."></textarea><div id="aiProviderRow"><button id="aiProviderGroq" type="button">Groq</button><button id="aiProviderGemini" type="button">Gemini</button><button id="aiProviderOpenRouter" type="button">OpenRouter</button></div><div style="margin-top:9px;display:flex;gap:7px;align-items:center;"><button id="aiAsk">Fragen</button><button id="aiCancel" type="button" title="Anfrage abbrechen" aria-label="Anfrage abbrechen" style="display:none;">×</button><button id="aiVoice" type="button" title="Diktieren">🎙️</button><div id="aiThinking"><span>Manuel KI arbeitet</span><span id="aiThinkingDots"><i></i><i></i><i></i></span></div></div><div id="aiStatus"></div><button id="aiCopyAnswer" type="button" style="display:none;margin-top:8px;">Antwort kopieren</button></div>
 <div id="menuBtn">Menü</div><button id="aiLibraryBtn" type="button">B</button>
 <div id="menuPopup">
 <label style="color:white;display:flex;gap:8px;align-items:center;">
@@ -2508,8 +2508,33 @@ aiProviderOpenRouter.addEventListener("click",()=>{aiProvider="openrouter";updat
 updateAiProviderButtons();
 
 const aiCancel=document.getElementById("aiCancel");
+const aiCopyAnswer=document.getElementById("aiCopyAnswer");
+let lastAiAnswerText="";
 let activeAiController=null;
 let aiRequestCancelled=false;
+
+aiCopyAnswer.addEventListener("click",async()=>{
+  if(!lastAiAnswerText)return;
+  try{
+    if(navigator.clipboard&&typeof navigator.clipboard.writeText==="function"){
+      await navigator.clipboard.writeText(lastAiAnswerText);
+    }else{
+      const temp=document.createElement("textarea");
+      temp.value=lastAiAnswerText;
+      temp.setAttribute("readonly","");
+      temp.style.position="fixed";
+      temp.style.opacity="0";
+      document.body.appendChild(temp);
+      temp.select();
+      const copied=document.execCommand("copy");
+      temp.remove();
+      if(!copied)throw new Error("Die Zwischenablage ist nicht verfügbar.");
+    }
+    aiCopyAnswer.textContent="Kopiert ✓";
+  }catch(error){
+    aiStatus.textContent+="\n\nKopieren fehlgeschlagen: "+String(error?.message||error);
+  }
+});
 
 function streamedJsonString(raw,key){
   const marker = new RegExp('"'+key+'"\\s*:\\s*"');
@@ -2576,6 +2601,10 @@ aiCancel.addEventListener("click",()=>{
 
 aiAsk.addEventListener("click",async()=>{
   const prompt=aiPrompt.value.trim(); if(!prompt||activeAiController)return;
+  const promptImproveMode=/^\/promp?t\s*:/i.test(prompt);
+  lastAiAnswerText="";
+  aiCopyAnswer.style.display="none";
+  aiCopyAnswer.textContent=promptImproveMode?"Prompt kopieren":"Antwort kopieren";
   aiPrompt.value="";
   const controller=new AbortController();
   activeAiController=controller;
@@ -2674,11 +2703,16 @@ aiAsk.addEventListener("click",async()=>{
       }
     }
     if(controller.signal.aborted||aiRequestCancelled)return;
+    lastAiAnswerText=typeof data.text==="string"?data.text.trim():"";
+    aiCopyAnswer.textContent=promptImproveMode?"Prompt kopieren":"Antwort kopieren";
+    aiCopyAnswer.style.display=lastAiAnswerText?"inline-block":"none";
     aiCancel.style.display="none";
     const result=await applyAiActions(data.actions);
     if(controller.signal.aborted||aiRequestCancelled)return;
     const planLine=data.progress?"Arbeitsplan: "+data.progress+"\n\n":"";
-    aiStatus.textContent=planLine+(data.text||"Manuel KI hat keine Antwort geliefert.")+(result.changed?"\n\nGeändert: "+result.details.join(", ")+".":"\n\nKeine Änderung ausgeführt.");
+    aiStatus.textContent=promptImproveMode
+      ? "Verbesserter Prompt:\n\n"+(data.text||"Manuel KI hat keinen verbesserten Prompt geliefert.")
+      : planLine+(data.text||"Manuel KI hat keine Antwort geliefert.")+(result.changed?"\n\nGeändert: "+result.details.join(", ")+".":"\n\nKeine Änderung ausgeführt.");
   }catch(error){
     if(error?.name==="AbortError"||aiRequestCancelled){
       aiStatus.textContent="Anfrage abgebrochen. Du kannst direkt etwas Neues fragen.";
