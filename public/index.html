@@ -2536,7 +2536,7 @@ function streamedJsonString(raw,key){
 }
 
 function countStreamedActions(raw){
-  const match = /"actions"\\s*:\\s*\\[/.exec(raw);
+  const match = /"actions"\s*:\s*\[/.exec(raw);
   if(!match)return 0;
   let depth=0,count=0,inString=false,escaped=false;
   for(let i=match.index+match[0].length;i<raw.length;i++){

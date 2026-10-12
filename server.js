@@ -489,10 +489,11 @@ ${prompt}`
       const {done,value} = await reader.read();
       if(done) break;
       upstreamBuffer += decoder.decode(value,{stream:true});
-      let boundary;
-      while((boundary = upstreamBuffer.indexOf("\n\n")) >= 0){
+      let boundaryMatch;
+      while((boundaryMatch = /\r?\n\r?\n/.exec(upstreamBuffer))){
+        const boundary = boundaryMatch.index;
         const block = upstreamBuffer.slice(0,boundary);
-        upstreamBuffer = upstreamBuffer.slice(boundary+2);
+        upstreamBuffer = upstreamBuffer.slice(boundary + boundaryMatch[0].length);
         consumeUpstreamEvent(block);
         if(streamError) break;
       }
