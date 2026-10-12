@@ -1299,7 +1299,7 @@ function handleCanvasMouseUp(e){
 }
 
 function focusOnBlueprint(bp,x,y){let f=bp&&bp.focus;if(!f)return;let z=Math.min((w-80)/f.w,(h-200)/f.h);zoom=Math.max(minZoom,Math.min(1,z));offsetX=(w-f.w*zoom)/2-(x+f.x)*zoom;offsetY=((h-84)-f.h*zoom)/2-(y+f.y)*zoom;updateMouseWorld();}
-canvas.addEventListener("mousemove",e=>{sendRemoteCursor(e.clientX,e.clientY,true);handleCanvasMouseMove(e);});
+canvas.addEventListener("mousemove",e=>{handleCanvasMouseMove(e);sendRemoteCursor(e.clientX,e.clientY,true);});
 canvas.addEventListener("mousedown",()=>{let a=document.activeElement;if(a&&a!==document.body&&a.blur)a.blur();});
 canvas.addEventListener("mousedown",handleCanvasMouseDown);
 canvas.addEventListener("mouseup",handleCanvasMouseUp);
@@ -1361,11 +1361,11 @@ canvas.addEventListener("touchmove",e=>{
   }
  }
  if(!t)return;
- sendRemoteCursor(t.clientX,t.clientY,true);
  let dx=t.clientX-lastTouchX,dy=t.clientY-lastTouchY;
  lastTouchX=t.clientX;
  lastTouchY=t.clientY;
  handleCanvasMouseMove({clientX:t.clientX,clientY:t.clientY,button:activeTouchButton,movementX:dx,movementY:dy,ctrlKey:false});
+ sendRemoteCursor(t.clientX,t.clientY,true);
  e.preventDefault();
 },{passive:false});
 
@@ -2145,7 +2145,7 @@ function drawRemoteCursors(){
   ctx.setTransform(1,0,0,1,0,0);
   for(const [id,c] of remoteCursors){
     if(!c || c.visible===false) continue;
-    const x=Number(c.x), y=Number(c.y);
+    const x=Number(c.x)*zoom+offsetX, y=Number(c.y)*zoom+offsetY;
     if(!Number.isFinite(x)||!Number.isFinite(y)) continue;
     const hue=Math.abs(hashString(id))%360;
     ctx.strokeStyle="hsl("+hue+",90%,65%)";
@@ -2592,7 +2592,7 @@ function sendRemoteCursor(clientX,clientY,visible=true){
   const now=performance.now();
   if(now-lastCursorSentAt<30) return;
   lastCursorSentAt=now;
-  logicSocket.emit("cursorMove",{x:clientX,y:clientY,visible});
+  logicSocket.emit("cursorMove",{x:screenToWorldX(clientX),y:screenToWorldY(clientY),visible});
 }
 let logicSyncReady = false;
 let serverRevision = 0;

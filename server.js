@@ -642,8 +642,8 @@ io.on("connection", (socket) => {
 
   socket.on("cursorMove", (cursor) => {
     if(!cursor || !Number.isFinite(cursor.x) || !Number.isFinite(cursor.y)) return;
-    const x = Math.max(0, Math.min(100000, Number(cursor.x)));
-    const y = Math.max(0, Math.min(100000, Number(cursor.y)));
+    const x = Math.max(-100000, Math.min(100000, Number(cursor.x)));
+    const y = Math.max(-100000, Math.min(100000, Number(cursor.y)));
     socket.data.cursor = { x, y, visible: cursor.visible !== false };
     socket.broadcast.emit("remoteCursor", {
       id: socket.id,
