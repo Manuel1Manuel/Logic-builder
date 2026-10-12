@@ -84,7 +84,7 @@ try{const _d=Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx),"shadowB
 let tickMs=0,lastTick=0;
 const nodes=[],wires=[];
 let mouseScreen={x:0,y:0},mouseWorld={x:0,y:0};
-let drag=null,connectFrom=null,selecting=false,selectionStart={x:0,y:0},selectionEnd={x:0,y:0},selectionBox=null,selectedNodes=[],selectionActive=false,groupDragging=false,blueprint=null,blueprints=[],blueprintScroll=0,blueprintScrollDrag=false,blueprintScrollDragOffset=0,libraryDrag=null,pendingBlueprint=null,panning=false,copyPending=null,timerMenuNode=null,nameNode=null,rightRenameCandidate=null,chipDrag=null,timerMenuCandidate=null,keyMenuCandidate=null,clockMenuCandidate=null,keyMenuNode=null,clockMenuNode=null,pressedKeys=new Set(),mode="pc",touchMode="left",activeTouchId=null,activeTouchButton=0,lastTouchX=0,lastTouchY=0,pinchActive=false,pinchStartDist=0,pinchStartZoom=1,pinchWorldMidX=0,pinchWorldMidY=0,selectionWireMode=null,bpActionIndex=-1,batchConnect=null,hiddenInputPins=false;
+let drag=null,connectFrom=null,selecting=false,selectionStart={x:0,y:0},selectionEnd={x:0,y:0},selectionBox=null,selectedNodes=[],selectedWires=[],selectionActive=false,selectingWires=false,groupDragging=false,blueprint=null,blueprints=[],blueprintScroll=0,blueprintScrollDrag=false,blueprintScrollDragOffset=0,libraryDrag=null,pendingBlueprint=null,panning=false,copyPending=null,timerMenuNode=null,nameNode=null,rightRenameCandidate=null,chipDrag=null,timerMenuCandidate=null,keyMenuCandidate=null,clockMenuCandidate=null,keyMenuNode=null,clockMenuNode=null,pressedKeys=new Set(),mode="pc",touchMode="left",activeTouchId=null,activeTouchButton=0,lastTouchX=0,lastTouchY=0,pinchActive=false,pinchStartDist=0,pinchStartZoom=1,pinchWorldMidX=0,pinchWorldMidY=0,selectionWireMode=null,bpActionIndex=-1,batchConnect=null,hiddenInputPins=false;
 let hiddenNames=false;
 const PIN_HIT_RADIUS=22;
 const nodeVisibility={switch:true,lamp:true,not:true,or3:true,and:true,or:true,xor:true,output:true,timer:true,key:true,clock:true,memory:true,led:true};
@@ -608,7 +608,7 @@ function getSavedNodeState(n){return n.type==="switch"?(n.state||n.output):n.sta
 function getNodeSize(n){if(n.hidden)return{w:0,h:0};if(n.chipPin)return{w:22,h:22};if(n.type==="led")return{w:90,h:90};if(n.type==="switch")return{w:80,h:60};if(n.type==="lamp")return{w:90,h:90};if(n.type==="output")return{w:100,h:60};if(n.type==="timer")return{w:110,h:80};if(n.type==="key")return{w:100,h:80};if(n.type==="clock")return{w:100,h:80};if(n.type==="memory")return{w:110,h:100};return{w:120,h:100};}
 function getNodeRect(n){if(n.chipId&&n.chipShell)return{x:n.chipShell.x,y:n.chipShell.y,w:n.chipShell.w,h:n.chipShell.h};let s=getNodeSize(n);return{x:n.x,y:n.y,w:s.w,h:s.h};}
 function getSelectionBounds(list){if(!list.length)return null;let r=list.map(getNodeRect);let minX=Math.min(...r.map(v=>v.x));let minY=Math.min(...r.map(v=>v.y));let maxX=Math.max(...r.map(v=>v.x+v.w));let maxY=Math.max(...r.map(v=>v.y+v.h));return{x:minX,y:minY,w:maxX-minX,h:maxY-minY};}
-function clearSelection(){selectedNodes=[];selectionActive=false;selectionBox=null;selectionWireMode=null;}
+function clearSelection(){selectedNodes=[];selectedWires=[];selectionActive=false;selectionBox=null;selectionWireMode=null;selectingWires=false;}
 function cancelSelectionContext(){batchConnect=null;clearSelection();}
 function restoreTriggerSelection(list){let kept=expandActionNodes(list).filter(n=>!n.hidden&&nodes.includes(n));selectedNodes=kept;selectionActive=!!kept.length;selectionBox=selectionActive?getSelectionBounds(kept):null;}
 function expandActionNodes(list){let out=[],seen=new Set(),chipIds=new Set();for(let n of list){if(n.chipId)chipIds.add(n.chipId);else if(!seen.has(n)){seen.add(n);out.push(n);}}if(chipIds.size){for(let n of nodes){if(n.chipId&&chipIds.has(n.chipId)&&!seen.has(n)){seen.add(n);out.push(n);}}}return out;}
@@ -636,7 +636,7 @@ function pruneSelectionState(){
  if(connectFrom&&!live.has(connectFrom))connectFrom=null;
  if(drag&&!live.has(drag))drag=null;
 }
-function deleteSelection(){if(!selectionActive||!selectedNodes.length)return;let targets=expandActionNodes(selectedNodes);let set=new Set(targets);for(let i=wires.length-1;i>=0;i--){if(set.has(wires[i].from)||set.has(wires[i].to))wires.splice(i,1);}for(let n of [...targets]){let idx=nodes.indexOf(n);if(idx!==-1)nodes.splice(idx,1);}clearSelection();pruneSelectionState();}
+function deleteSelection(){if(!selectionActive&&!selectedNodes.length&&!selectedWires.length)return;let targets=expandActionNodes(selectedNodes);let set=new Set(targets),wireSet=new Set(selectedWires);for(let i=wires.length-1;i>=0;i--){if(wireSet.has(wires[i])||set.has(wires[i].from)||set.has(wires[i].to))wires.splice(i,1);}for(let n of [...targets]){let idx=nodes.indexOf(n);if(idx!==-1)nodes.splice(idx,1);}clearSelection();pruneSelectionState();}
 function screenToWorldX(x){return (x-offsetX)/zoom;}function screenToWorldY(y){return (y-offsetY)/zoom;}
 function updateMouseWorld(){mouseWorld.x=screenToWorldX(mouseScreen.x);mouseWorld.y=screenToWorldY(mouseScreen.y);}
 function getWireAnchor(node,side,inputIndex=0){if(!node)return{x:0,y:0};if(node.chipPin){let p=node.chipPin==="out"?(node.outputs?.[0]||node.inputs?.[0]||{x:11,y:11}):(node.inputs?.[0]||node.outputs?.[0]||{x:11,y:11});return{x:node.x+p.x,y:node.y+p.y};}if(side==="out"){let p=node.outputs?.[0]||{x:0,y:0};return{x:node.x+p.x,y:node.y+p.y};}let p=node.inputs?.[inputIndex]||node.inputs?.[0]||{x:0,y:0};return{x:node.x+p.x,y:node.y+p.y};}
@@ -977,6 +977,21 @@ document.getElementById("bpActionClose").onclick=()=>{closeBlueprintActionPopup(
 
 canvas.addEventListener("wheel",e=>{if(isInLibraryPanel(e.clientX,e.clientY)&&blueprints.length>blueprintVisibleRows){e.preventDefault();blueprintScroll+=e.deltaY>0?1:-1;clampBlueprintScroll();return;}e.preventDefault();let factor=e.deltaY<0?1.1:0.9;let newZoom=Math.max(minZoom,Math.min(maxZoom,zoom*factor));let wx=screenToWorldX(e.clientX);let wy=screenToWorldY(e.clientY);zoom=newZoom;offsetX=e.clientX-wx*zoom;offsetY=e.clientY-wy*zoom;updateMouseWorld();},{passive:false});
 function pointInSelection(x,y){if(!selectionBox)return false;return x>=selectionBox.x&&x<=selectionBox.x+selectionBox.w&&y>=selectionBox.y&&y<=selectionBox.y+selectionBox.h;}
+function wireIntersectsSelectionBox(wire,box){
+ if(!wire||!wire.from||!wire.to||!box)return false;
+ if(wire.from.chipId&&wire.from.chipId===wire.to.chipId)return false;
+ const s=getWireAnchor(wire.from,"out",wire.inputIndex),e=getWireAnchor(wire.to,"in",wire.inputIndex);
+ const pad=6,left=Math.min(box.x,box.x+box.w)-pad,right=Math.max(box.x,box.x+box.w)+pad,top=Math.min(box.y,box.y+box.h)-pad,bottom=Math.max(box.y,box.y+box.h)+pad;
+ const steps=48,dx=simpleGraphics?100:Math.max(80,(e.x-s.x)*.35);
+ if(Math.max(s.x,e.x)+dx<left||Math.min(s.x,e.x)-dx>right||Math.max(s.y,e.y)<top||Math.min(s.y,e.y)>bottom)return false;
+ for(let i=0;i<=steps;i++){
+  const t=i/steps,u=1-t;
+  const x=u*u*u*s.x+3*u*u*t*(s.x+dx)+3*u*t*t*(e.x-dx)+t*t*t*e.x;
+  const y=u*u*u*s.y+3*u*u*t*s.y+3*u*t*t*e.y+t*t*t*e.y;
+  if(x>=left&&x<=right&&y>=top&&y<=bottom)return true;
+ }
+ return false;
+}
 function getChipNodesById(id){return nodes.filter(n=>n.chipId===id);}
 function getChipShellRect(id){let chipNodes=getChipNodesById(id);let shellNode=chipNodes.find(n=>n.chipShell&&Number.isFinite(n.chipShell.x)&&Number.isFinite(n.chipShell.y)&&Number.isFinite(n.chipShell.w)&&Number.isFinite(n.chipShell.h));if(shellNode)return shellNode.chipShell;let rects=chipNodes.map(n=>getNodeRect(n)).filter(r=>Number.isFinite(r.x)&&Number.isFinite(r.y)&&Number.isFinite(r.w)&&Number.isFinite(r.h));if(!rects.length)return null;let minX=Math.min(...rects.map(r=>r.x));let minY=Math.min(...rects.map(r=>r.y));let maxX=Math.max(...rects.map(r=>r.x+r.w));let maxY=Math.max(...rects.map(r=>r.y+r.h));return{x:minX-14,y:minY-14,w:(maxX-minX)+28,h:(maxY-minY)+28};}
 function isChipSelected(id){return selectedNodes.some(n=>n.chipId===id);}
@@ -1017,6 +1032,15 @@ function handleCanvasMouseDown(e){
   return;
 }
  let additiveSelect=e.ctrlKey||e.metaKey||pressedKeys.has("KeyQ");
+ if(pressedKeys.has("KeyQ")&&e.button===2&&!isInLibraryPanel(e.clientX,e.clientY)){
+  cancelSelectionContext();
+  selecting=true;selectingWires=true;
+  selectionStart={x:mouseWorld.x,y:mouseWorld.y};
+  selectionEnd={x:mouseWorld.x,y:mouseWorld.y};
+  drag=null;connectFrom=null;groupDragging=false;panning=false;
+  rightRenameCandidate=null;timerMenuCandidate=null;keyMenuCandidate=null;clockMenuCandidate=null;
+  return;
+ }
  if(!additiveSelect&&!selectionWireMode){
   let inside=selectionActive&&selectionBox&&pointInSelection(mouseWorld.x,mouseWorld.y);
   if(!inside&&(selectionActive||batchConnect))cancelSelectionContext();
@@ -1209,6 +1233,16 @@ function handleCanvasMouseUp(e){
 
  if(selecting){
   selecting=false;
+  if(selectingWires){
+   selectingWires=false;
+   const box={x:Math.min(selectionStart.x,selectionEnd.x),y:Math.min(selectionStart.y,selectionEnd.y),w:Math.abs(selectionEnd.x-selectionStart.x),h:Math.abs(selectionEnd.y-selectionStart.y)};
+   selectedNodes=[];
+   selectedWires=wires.filter(wire=>wireIntersectsSelectionBox(wire,box));
+   selectionBox=null;
+   selectionActive=selectedWires.length>0;
+   selectionWireMode=null;
+   return;
+  }
   let minX=Math.min(selectionStart.x,selectionEnd.x);
   let minY=Math.min(selectionStart.y,selectionEnd.y);
   let maxX=Math.max(selectionStart.x,selectionEnd.x);
@@ -1791,6 +1825,19 @@ function drawWires(v){
   }
  }
  ctx.restore();
+ if(selectedWires.length){
+  ctx.save();
+  ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#00ff66";ctx.lineWidth=8;ctx.shadowBlur=simpleGraphics?0:14;ctx.shadowColor="#00ff66";ctx.globalAlpha=1;
+  for(const wire of selectedWires){
+   if(!wire||!wires.includes(wire)||!wire.from||!wire.to)continue;
+   if(wire.from.chipId&&wire.from.chipId===wire.to.chipId)continue;
+   const s=getWireAnchor(wire.from,"out",wire.inputIndex),e=getWireAnchor(wire.to,"in",wire.inputIndex);
+   if(v&&!wireInView(s,e,v))continue;
+   const dx=simpleGraphics?100:Math.max(80,(e.x-s.x)*0.35);
+   ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.bezierCurveTo(s.x+dx,s.y,e.x-dx,e.y,e.x,e.y);ctx.stroke();
+  }
+  ctx.restore();
+ }
 }
 
 function drawConnectionPreview(){
@@ -1827,8 +1874,8 @@ function drawSelection(){
   let w2=Math.abs(selectionEnd.x-selectionStart.x);
   let h2=Math.abs(selectionEnd.y-selectionStart.y);
   ctx.save();
-  ctx.fillStyle=batchConnect&&batchConnect.phase==="target"?"rgba(255,160,40,.14)":"rgba(0,200,255,.12)";
-  ctx.strokeStyle=batchConnect&&batchConnect.phase==="target"?"#ffb347":"#66d9ff";
+  ctx.fillStyle=selectingWires?"rgba(0,255,100,.12)":batchConnect&&batchConnect.phase==="target"?"rgba(255,160,40,.14)":"rgba(0,200,255,.12)";
+  ctx.strokeStyle=selectingWires?"#00ff66":batchConnect&&batchConnect.phase==="target"?"#ffb347":"#66d9ff";
   ctx.lineWidth=2/zoom;
   ctx.setLineDash([8/zoom,6/zoom]);
   ctx.fillRect(x,y,w2,h2);ctx.strokeRect(x,y,w2,h2);

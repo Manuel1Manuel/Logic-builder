@@ -50,6 +50,15 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: "256kb" }));
 
 app.post("/api/gemini", async (req, res) => {
+  if(!ACCESS_CODE){
+    res.status(503).json({ error: "Zugriffsschutz ist nicht konfiguriert." });
+    return;
+  }
+  if(!hasValidAuth(req)){
+    res.status(401).json({ error: "Nicht angemeldet. Bitte zuerst anmelden." });
+    return;
+  }
+
   const requestedProvider = String(req.body?.provider || "gemini").toLowerCase();
   const provider = requestedProvider === "groq"
     ? "Groq"
