@@ -231,6 +231,9 @@ In der internen inputIndex-Zählung des Editors entspricht das daher Pin 1 -> in
 Wires verbinden einen Quell-Node "from" mit einem Ziel-Node "to". "inputIndex" bestimmt, an welchen Eingang des Zielblocks die Verbindung geht.
 Die aktuelle Schaltung und die Blueprint-Bibliothek werden dir als Kontext übergeben. Unter "aiKnowledge" kann dir auf ausdrückliche Aufforderung des Nutzers die private, chronologisch geordnete KI-Wissensbibliothek bereitgestellt werden. Sie ist absichtlich NICHT Teil jeder normalen Anfrage. Wenn "aiKnowledge" im Kontext vorhanden ist, darfst du die enthaltenen Einträge als interne Referenz verwenden. Wenn der Nutzer ausdrücklich verlangt, einen KI-Wissenseintrag zu ändern, zu korrigieren, umzubenennen oder zu ergänzen, nutze update_ai_knowledge mit dem passenden Index aus dem bereitgestellten aiKnowledge-Kontext. Behaupte nicht, dein Grundmodell sei dadurch neu trainiert worden; es handelt sich um dauerhaft gespeicherten Kontext, den du bei Anfragen wiederverwenden kannst. Der Kontext ist der aktuelle Zustand zum Zeitpunkt der Anfrage; arbeite immer mit diesen aktuellen Indizes und Zuständen. Chip-Nodes enthalten chipId, chipPin und chipName, damit ein kompletter Chip eindeutig vervielfältigt oder gespeichert werden kann.
 
+SICHTBARER ARBEITSPLAN FÜR DEN NUTZER:
+Gib im JSON-Objekt als ERSTES Feld "progress" aus. Dieser Wert ist eine kurze, für den Nutzer gedachte Zusammenfassung des geplanten Vorgehens (1–2 Sätze), konkret bezogen auf seine aktuelle Anfrage. Bei einer großen Schaltung nenne die wesentlichen Bauabschnitte, beispielsweise Teilprodukte, Addierstufen und Ausgänge. Das ist eine knappe, sichtbare Statuszusammenfassung, keine private interne Gedankenkette: gib keine verborgenen Schritt-für-Schritt-Überlegungen oder internen Monolog aus. Erfinde keine allgemeinen, zufälligen Statusmeldungen. Danach folgen "answer" und "actions" wie unten beschrieben. Während die Aktionen generiert werden, wird im UI zusätzlich die tatsächlich empfangene Zahl der Aktionen angezeigt.
+
 SO FUNKTIONIERT DIE AKTIONSAUSGABE:
 Du antwortest ausschließlich mit dem vorgegebenen JSON-Schema. "answer" ist die kurze Erklärung für den Nutzer, "actions" enthält die tatsächlich auszuführenden Editor-Aktionen.
 Verwende ausschließlich diese Aktionen:
@@ -342,7 +345,7 @@ ${prompt}`
     ? "https://api.groq.com/openai/v1/chat/completions"
     : provider === "OpenRouter"
       ? "https://openrouter.ai/api/v1/chat/completions"
-      : "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
+      : "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:streamGenerateContent?alt=sse";
   const requestHeaders = {
     "Content-Type": "application/json",
     ...(provider === "Gemini"
@@ -352,7 +355,7 @@ ${prompt}`
   const requestBody = provider === "Gemini"
     ? {
         systemInstruction: {
-          parts: [{ text: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema." }]
+          parts: [{ text: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema. Beginne mit dem kurzen nutzersichtbaren Feld \"progress\", danach \"answer\" und \"actions\"." }]
         },
         contents: [{
           role: "user",
@@ -367,12 +370,12 @@ ${prompt}`
         model: provider === "Groq" ? "openai/gpt-oss-120b" : "openrouter/auto",
         messages: [{
           role: "system",
-          content: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema."
+          content: systemContext + "\n\nAntworte ausschließlich als JSON nach dem angegebenen Schema. Beginne mit dem kurzen nutzersichtbaren Feld \"progress\", danach \"answer\" und \"actions\"."
         },{
           role: "user",
           content: prompt
         }],
-        ...(provider === "Groq" ? { temperature: 0, max_completion_tokens: 65536 } : { max_tokens: 32768 }),
+        ...(provider === "Groq" ? { temperature: 0, max_completion_tokens: 65536, stream: true } : { max_tokens: 32768, stream: true }),
         ...(provider === "Groq" ? {
           response_format: {
             type: "json_object"
@@ -380,22 +383,19 @@ ${prompt}`
         } : {})
       };
   const controller = new AbortController();
-  // Wenn der Nutzer im Browser auf das X drückt, wird die laufende
-  // Anfrage an den KI-Anbieter ebenfalls abgebrochen.
+  // Schließt der Browser die Anfrage, wird auch der Provider-Stream beendet.
   res.on("close", () => {
     if(!res.writableEnded) controller.abort();
   });
-  let response;
+
+  let upstream;
   try{
-    response = await fetch(
-      aiUrl,
-      {
-        method: "POST",
-        signal: controller.signal,
-        headers: requestHeaders,
-        body: JSON.stringify(requestBody)
-      }
-    );
+    upstream = await fetch(aiUrl, {
+      method: "POST",
+      signal: controller.signal,
+      headers: requestHeaders,
+      body: JSON.stringify(requestBody)
+    });
   }catch(error){
     if(res.destroyed) return;
     console.error(provider+" API Netzwerkfehler:", error);
@@ -408,52 +408,134 @@ ${prompt}`
     return;
   }
 
-  const data = await response.json().catch(() => ({}));
-
-  if(!response.ok){
-    const details = data?.error?.message || data?.message || ("HTTP " + response.status + " " + response.statusText);
-    console.error(provider+" API Fehler:", response.status, data);
+  if(!upstream.ok){
+    const errorData = await upstream.json().catch(() => ({}));
+    const details = errorData?.error?.message || errorData?.message || ("HTTP " + upstream.status + " " + upstream.statusText);
+    console.error(provider+" API Fehler:", upstream.status, errorData);
     res.status(502).json({
       error: "KI API Fehler.",
       details,
-      status: response.status
+      status: upstream.status
     });
     return;
   }
 
-  // Gemini verwendet candidates[].content.parts[].text; OpenAI-kompatible APIs
-  // verwenden choices[].message.content. Beide Antwortformate getrennt lesen.
-  let raw = provider === "Gemini"
-    ? (data?.candidates?.[0]?.content?.parts || []).map(part => part?.text || "").join("")
-    : data?.choices?.[0]?.message?.content;
-  if(Array.isArray(raw)){
-    raw = raw.map(part => typeof part === "string" ? part : (typeof part?.text === "string" ? part.text : (typeof part?.content === "string" ? part.content : ""))).join("");
-  }else if(raw && typeof raw === "object"){
-    raw = typeof raw.text === "string" ? raw.text : JSON.stringify(raw);
-  }
-  raw = typeof raw === "string" ? raw.trim() : "";
-  if(raw.startsWith("```json")) raw=raw.slice(7).trim();
-  if(raw.startsWith("```")) raw=raw.slice(3).trim();
-  if(raw.endsWith("```")) raw=raw.slice(0,-3).trim();
-  if(!raw){
-    const blockReason = data?.promptFeedback?.blockReason;
-    const finishReason = data?.candidates?.[0]?.finishReason;
-    const details = blockReason ? ("Gemini hat die Anfrage blockiert: " + blockReason) : finishReason ? ("Gemini hat keinen Antworttext geliefert. finishReason: " + finishReason) : "Die API-Antwort enthielt keinen Text im erwarteten Antwortfeld.";
-    console.error("Leere KI-Antwort:", provider, {blockReason, finishReason, keys:Object.keys(data||{})});
-    res.status(502).json({error:"Die KI hat keine Antwort geliefert.",details});
+  // Server-Sent Events: die Oberfläche erhält echte Textteile während der
+  // Ausgabe, statt zufällige Fortschrittstexte durch einen Timer zu wechseln.
+  res.status(200);
+  res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  if(typeof res.flushHeaders === "function") res.flushHeaders();
+
+  const sendEvent = payload => {
+    if(res.destroyed || res.writableEnded) return;
+    res.write("data: " + JSON.stringify(payload) + "\n\n");
+  };
+
+  const reader = upstream.body?.getReader();
+  if(!reader){
+    sendEvent({type:"error", error:"Der KI-Anbieter hat keinen Stream geliefert."});
+    res.end();
     return;
   }
-  let result;
-  try{
-    result = JSON.parse(raw);
-  }catch{
-    result = { answer: raw, actions: [] };
+
+  const decoder = new TextDecoder();
+  let upstreamBuffer = "";
+  let raw = "";
+  let streamError = "";
+
+  function consumeUpstreamEvent(block){
+    const dataText = block.split(/\r?\n/)
+      .filter(line => line.startsWith("data:"))
+      .map(line => line.slice(5).trimStart())
+      .join("\n");
+    if(!dataText || dataText === "[DONE]") return;
+
+    let chunk;
+    try{ chunk = JSON.parse(dataText); }catch{ return; }
+
+    if(chunk?.error){
+      streamError = chunk.error.message || "Fehler während der KI-Ausgabe.";
+      return;
+    }
+
+    let parts = [];
+    if(provider === "Gemini"){
+      parts = (chunk?.candidates?.[0]?.content?.parts || [])
+        .map(part => typeof part?.text === "string" ? part.text : "");
+    }else{
+      // Absichtlich nur sichtbaren Antwortinhalt streamen, nie delta.reasoning.
+      parts = (chunk?.choices || []).map(choice => {
+        const content = choice?.delta?.content;
+        if(typeof content === "string") return content;
+        if(Array.isArray(content)){
+          return content.map(part => typeof part === "string" ? part : (typeof part?.text === "string" ? part.text : "")).join("");
+        }
+        return "";
+      });
+    }
+
+    const textPart = parts.join("");
+    if(textPart){
+      raw += textPart;
+      sendEvent({type:"delta", text:textPart});
+    }
   }
-  res.json({
-    text: result.answer || "",
-    actions: Array.isArray(result.actions) ? result.actions : [],
-    provider
-  });
+
+  try{
+    while(true){
+      const {done,value} = await reader.read();
+      if(done) break;
+      upstreamBuffer += decoder.decode(value,{stream:true});
+      let boundary;
+      while((boundary = upstreamBuffer.indexOf("\n\n")) >= 0){
+        const block = upstreamBuffer.slice(0,boundary);
+        upstreamBuffer = upstreamBuffer.slice(boundary+2);
+        consumeUpstreamEvent(block);
+        if(streamError) break;
+      }
+      if(streamError) break;
+    }
+    upstreamBuffer += decoder.decode();
+    if(!streamError && upstreamBuffer.trim()) consumeUpstreamEvent(upstreamBuffer);
+
+    if(streamError){
+      sendEvent({type:"error",error:streamError});
+      res.end();
+      return;
+    }
+
+    let cleanRaw = raw.trim();
+    if(cleanRaw.startsWith("```json")) cleanRaw = cleanRaw.slice(7).trim();
+    if(cleanRaw.startsWith("```")) cleanRaw = cleanRaw.slice(3).trim();
+    if(cleanRaw.endsWith("```")) cleanRaw = cleanRaw.slice(0,-3).trim();
+
+    let parsed = null;
+    try{ parsed = JSON.parse(cleanRaw); }catch{}
+    if(!raw.trim()){
+      sendEvent({type:"error",error:"Die KI hat keinen Antworttext im Stream geliefert."});
+      res.end();
+      return;
+    }
+
+    sendEvent({
+      type:"complete",
+      provider,
+      progress: typeof parsed?.progress === "string" ? parsed.progress : "",
+      parseOk: !!parsed
+    });
+    res.end();
+  }catch(error){
+    if(res.destroyed) return;
+    console.error(provider+" Stream-Verarbeitungsfehler:",error);
+    sendEvent({
+      type:"error",
+      error: error?.name === "AbortError" ? "Anfrage abgebrochen." : String(error?.message || error)
+    });
+    res.end();
+  }
 });
 
 app.get("/login", (req, res) => {
