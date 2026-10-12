@@ -416,19 +416,60 @@ Die letzte Nutzeranfrage beginnt mit /prompt: oder /promt:. Formuliere den danac
         })
       };
   const controller = new AbortController();
-  // Schließt der Browser die Anfrage, wird auch der Provider-Stream beendet.
+  // Wenn der Nutzer im Browser auf das X drückt, wird die laufende
+  // Anfrage an den KI-Anbieter ebenfalls abgebrochen.
   res.on("close", () => {
     if(!res.writableEnded) controller.abort();
   });
 
   let upstream;
   try{
-    upstream = await fetch(aiUrl, {
-      method: "POST",
-      signal: controller.signal,
-      headers: requestHeaders,
-      body: JSON.stringify(requestBody)
-    });
+    for(let attempt=0;attempt<2;attempt++){
+      upstream = await fetch(
+        aiUrl,
+        {
+          method: "POST",
+          signal: controller.signal,
+          headers: requestHeaders,
+          body: JSON.stringify(requestBody)
+        }
+      );
+
+      // Groq antwortet bei TPM-Spitzen oft mit einer konkreten Retry-Zeit.
+      // Warte höchstens 30 Sekunden und versuche die Anfrage nur ein einziges Mal erneut.
+      if(provider!=="Groq" || upstream.status!==429 || attempt!==0) break;
+
+      const firstError = await upstream.json().catch(() => ({}));
+      const firstDetails = firstError?.error?.message || firstError?.message || "";
+      const retryHeader = Number(upstream.headers.get("retry-after"));
+      const retryMatch = String(firstDetails).match(/try again in\\s+([\\d.]+)\\s*s/i);
+      const suggestedWait = Number.isFinite(retryHeader) && retryHeader>0
+        ? retryHeader*1000
+        : retryMatch
+          ? Number(retryMatch[1])*1000
+          : 5000;
+      const waitMs = Math.max(1000,Math.min(30000,Math.ceil(suggestedWait)));
+
+      console.warn("Groq Rate Limit (429). Wiederhole Anfrage nach "+waitMs+" ms.");
+      await new Promise((resolve,reject)=>{
+        if(controller.signal.aborted){
+          reject(Object.assign(new Error("Die Anfrage wurde abgebrochen."),{name:"AbortError"}));
+          return;
+        }
+        const timer=setTimeout(done,waitMs);
+        function done(){
+          controller.signal.removeEventListener("abort",abortWait);
+          resolve();
+        }
+        function abortWait(){
+          clearTimeout(timer);
+          controller.signal.removeEventListener("abort",abortWait);
+          reject(Object.assign(new Error("Die Anfrage wurde abgebrochen."),{name:"AbortError"}));
+        }
+        controller.signal.addEventListener("abort",abortWait,{once:true});
+      });
+      if(controller.signal.aborted || res.destroyed) return;
+    }
   }catch(error){
     if(res.destroyed) return;
     console.error(provider+" API Netzwerkfehler:", error);
@@ -446,7 +487,9 @@ Die letzte Nutzeranfrage beginnt mit /prompt: oder /promt:. Formuliere den danac
     const details = errorData?.error?.message || errorData?.message || ("HTTP " + upstream.status + " " + upstream.statusText);
     console.error(provider+" API Fehler:", upstream.status, errorData);
     res.status(502).json({
-      error: "KI API Fehler.",
+      error: provider==="Groq" && upstream.status===429
+        ? "Groq ist gerade ausgelastet (Token-Limit erreicht)."
+        : "KI API Fehler.",
       details,
       status: upstream.status
     });
