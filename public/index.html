@@ -2820,7 +2820,9 @@ function serializeLogicState(){
         type:n.type || "switch",
         chipId:n.chipId || null,
         chipPin:n.chipPin || "",
-        chipShell:n.chipShell || null
+        chipShell:n.chipShell || null,
+        hidden:!!n.hidden,
+        chipName:n.chipName || ""
       };
 
       // Diese Einstellungen werden bewusst gemeinsam übertragen:
@@ -2873,6 +2875,10 @@ function applyLogicState(state){
       n.chipId = d.chipId || null;
       n.chipPin = d.chipPin || null;
       n.chipShell = d.chipShell || null;
+      n.chipName = d.chipName || "";
+      // Chip-Interngatter bleiben verborgen. Auch ältere Snapshots ohne
+      // hidden-Feld lassen sich anhand von chipId ohne Pin wiederherstellen.
+      n.hidden = d.hidden === true || (!!n.chipId && !n.chipPin);
       if(n.chipPin){
         n.inputs=[{x:9,y:9,value:false}];
         n.outputs=[{x:11,y:11}];
