@@ -977,6 +977,38 @@ document.getElementById("bpActionClose").onclick=()=>{closeBlueprintActionPopup(
 
 canvas.addEventListener("wheel",e=>{if(isInLibraryPanel(e.clientX,e.clientY)&&blueprints.length>blueprintVisibleRows){e.preventDefault();blueprintScroll+=e.deltaY>0?1:-1;clampBlueprintScroll();return;}e.preventDefault();let factor=e.deltaY<0?1.1:0.9;let newZoom=Math.max(minZoom,Math.min(maxZoom,zoom*factor));let wx=screenToWorldX(e.clientX);let wy=screenToWorldY(e.clientY);zoom=newZoom;offsetX=e.clientX-wx*zoom;offsetY=e.clientY-wy*zoom;updateMouseWorld();},{passive:false});
 function pointInSelection(x,y){if(!selectionBox)return false;return x>=selectionBox.x&&x<=selectionBox.x+selectionBox.w&&y>=selectionBox.y&&y<=selectionBox.y+selectionBox.h;}
+function getWireAtPoint(x,y){
+ if(!wiresVisible||!Number.isFinite(x)||!Number.isFinite(y))return null;
+ const tolerance=Math.max(4,9/Math.max(0.05,zoom));
+ // Von oben nach unten prüfen, damit bei überlagerten Leitungen die zuletzt
+ // gezeichnete Leitung zuerst ausgewählt wird.
+ for(let wi=wires.length-1;wi>=0;wi--){
+  const wire=wires[wi];
+  if(!wire||!wire.from||!wire.to)continue;
+  if(wire.from.chipId&&wire.from.chipId===wire.to.chipId)continue;
+  const start=getWireAnchor(wire.from,"out",wire.inputIndex);
+  const end=getWireAnchor(wire.to,"in",wire.inputIndex);
+  const dx=simpleGraphics?100:Math.max(80,(end.x-start.x)*0.35);
+  const steps=48;
+  let previous={x:start.x,y:start.y};
+  let found=false;
+  for(let step=1;step<=steps;step++){
+   const t=step/steps,u=1-t;
+   const current={
+    x:u*u*u*start.x+3*u*u*t*(start.x+dx)+3*u*t*t*(end.x-dx)+t*t*t*end.x,
+    y:u*u*u*start.y+3*u*u*t*start.y+3*u*t*t*end.y+t*t*t*end.y
+   };
+   const vx=current.x-previous.x,vy=current.y-previous.y;
+   const lengthSq=vx*vx+vy*vy;
+   const projection=lengthSq>0?Math.max(0,Math.min(1,((x-previous.x)*vx+(y-previous.y)*vy)/lengthSq)):0;
+   const nearX=previous.x+projection*vx,nearY=previous.y+projection*vy;
+   if(Math.hypot(x-nearX,y-nearY)<=tolerance){found=true;break;}
+   previous=current;
+  }
+  if(found)return wire;
+ }
+ return null;
+}
 function wireIntersectsSelectionBox(wire,box){
  if(!wire||!wire.from||!wire.to||!box)return false;
  if(wire.from.chipId&&wire.from.chipId===wire.to.chipId)return false;
@@ -1678,6 +1710,19 @@ addEventListener("keydown",e=>{
    selectionBox=selectionActive?getSelectionBounds(selectedNodes):null;
    selectionWireMode=null;
    if(selectionActive)deleteSelection();
+   e.preventDefault();
+   return;
+  }
+
+  // Liegt kein Gatter unter dem Mauszeiger, lösche das Kabel direkt darunter.
+  const wire=getWireAtPoint(mouseWorld.x,mouseWorld.y);
+  if(wire){
+   const index=wires.indexOf(wire);
+   if(index!==-1){
+    wires.splice(index,1);
+    selectedWires=selectedWires.filter(item=>item!==wire);
+    if(typeof sendLogicState==="function")sendLogicState();
+   }
    e.preventDefault();
    return;
   }
