@@ -1660,8 +1660,26 @@ addEventListener("keydown",e=>{
 
  if(e.key==="Delete"||e.key==="Backspace"){
   if(selectionActive){
+   // Bestehende Auswahl (auch mehrere Gatter oder markierte Leitungen) behalten.
    deleteSelection();
    e.preventDefault();
+   return;
+  }
+
+  // Ohne Auswahl das oberste sichtbare Gatter direkt unter dem Mauszeiger löschen.
+  // Bei einem Chip löscht expandActionNodes den gesamten Chip-Verbund, nicht nur einen Pin.
+  for(let i=nodes.length-1;i>=0;i--){
+   const target=nodes[i];
+   if(!target||target.hidden||nodeVisibility[target.type]===false)continue;
+   if(!target.contains(mouseWorld.x,mouseWorld.y))continue;
+   selectedNodes=expandActionNodes([target]).filter(n=>n&&!n.hidden&&nodes.includes(n));
+   selectedWires=[];
+   selectionActive=selectedNodes.length>0;
+   selectionBox=selectionActive?getSelectionBounds(selectedNodes):null;
+   selectionWireMode=null;
+   if(selectionActive)deleteSelection();
+   e.preventDefault();
+   return;
   }
  }
 
