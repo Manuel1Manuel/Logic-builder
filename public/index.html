@@ -1576,8 +1576,7 @@ function runQuickConnect(mode){
  let sourceNodes=collectConnectionSources(selectedNodes);
  let targetNodes=collectConnectionTargets(selectedNodes);
  if(!sourceNodes.length||!targetNodes.length)return false;
- if(mode==="parallel")connectSelectionsParallel(sourceNodes,targetNodes);
- else if(mode==="firstFree")connectSelectionsFirstFree(sourceNodes,targetNodes);
+ if(mode==="firstFree")connectSelectionsFirstFree(sourceNodes,targetNodes);
  else if(mode==="chunked")connectSelectionsChunked(sourceNodes,targetNodes);
  else connectSelectionsPairwise(sourceNodes,targetNodes);
  restoreTriggerSelection(sourceNodes);
@@ -1649,12 +1648,12 @@ addEventListener("keydown",e=>{
    e.preventDefault();
    return;
   }
-  if(runQuickConnect("parallel")){
+  if(runQuickConnect("firstFree")){
    e.preventDefault();
    return;
   }
   if(selectionActive&&selectedNodes.length){
-   startBatchConnect("parallel");
+   startBatchConnect("firstFree");
    e.preventDefault();
   }
   return;
