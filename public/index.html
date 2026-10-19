@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Logic Builder Ultra</title>
 <style>
-body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none;}canvas{display:block;background:radial-gradient(circle at center,#1a1a1a,#050505);touch-action:none;}#modeToggle{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:8px 14px;z-index:120;cursor:pointer;}#touchModeToggle{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:70;display:none;cursor:pointer;}#onlineInfo{position:fixed;right:10px;top:calc(50% + 34px);background:#111;border:1px solid #78dcff;color:#fff;padding:6px 10px;z-index:69;font-size:12px;border-radius:10px;box-shadow:0 0 8px rgba(120,220,255,.12);white-space:nowrap;}#menuBtn{position:fixed;left:10px;top:50%;transform:translateY(80px);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:80;cursor:pointer;}#menuPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:90;display:none;flex-direction:column;gap:10px;color:white;min-width:250px;max-width:min(92vw,420px);max-height:80vh;overflow:auto;}#menuPopup input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#menuPopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#bpPopup{position:fixed;top:-220px;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:10;transition:top 0.3s;display:flex;flex-direction:column;gap:10px;}#bpPopup input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;}#bpPopup button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImport{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:8px;z-index:20;display:flex;gap:6px;align-items:center;}#bpImport input,#bpImport textarea{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;width:220px;min-width:0;box-sizing:border-box;font:12px monospace;user-select:text;-webkit-user-select:text;}#bpImport textarea{height:20px;min-height:20px;max-height:20px;resize:none;overflow-x:auto;overflow-y:hidden;white-space:pre;overflow-wrap:normal;tab-size:2;cursor:text;}#blueprintLoadBar{height:100%;width:0%;transform:none;transition:width .08s linear;animation:none!important;}#blueprintLoadStatus.loading #blueprintLoadBar{animation:none!important;transform:none;}#bpImport:focus-within{z-index:130;}#bpImport button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#storageInfo{position:fixed;left:10px;top:94px;background:#111;border:1px solid #78dcff;color:#fff;padding:6px 9px;z-index:80;font-size:12px;border-radius:10px;box-shadow:0 0 8px rgba(120,220,255,.12);white-space:nowrap;}#storageInfo.simple{border-color:#00ffff;border-radius:0;box-shadow:none;}#aiLibraryBtn{position:fixed;left:10px;top:calc(50% + 126px);z-index:81;background:#111;color:#fff;border:1px solid #78dcff;border-radius:12px;padding:9px 14px;cursor:pointer;box-shadow:0 0 10px rgba(120,220,255,.18);font-weight:bold;}#aiLibraryBtn.simple{border-color:#00ffff;border-radius:0;box-shadow:none;}#aiLibraryBtn.complex{border-color:#17384a;border-radius:12px;background:#0d1822;}#aiLibraryPopup{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(900px,92vw);height:min(620px,82vh);z-index:210;display:none;grid-template-columns:280px 1fr;gap:12px;padding:14px;background:#0b0f16;color:#fff;border:1px solid #78dcff;border-radius:16px;box-sizing:border-box;}#aiLibraryPopup.simple{border-color:#00ffff;border-radius:0;background:#101418;}#aiLibraryPopup.complex{border-color:#17384a;border-radius:16px;}#aiLibraryList{overflow:auto;border:1px solid #31404d;padding:8px;min-width:0;}#aiLibraryDetails{min-width:0;display:flex;flex-direction:column;gap:10px;}#aiLibraryPreview{width:100%;height:260px;background:#05070a;border:1px solid #31404d;box-sizing:border-box;}#aiLibrarySummary{overflow:auto;white-space:pre-wrap;line-height:1.35;min-height:70px;max-height:170px;padding:9px;border:1px solid #31404d;background:#080c12;}#aiLibraryMeta{font-size:12px;opacity:.8;}#aiLibraryActions{display:flex;flex-wrap:wrap;gap:7px;}#aiLibraryPopup button{background:#00ffff;border:0;padding:7px 10px;cursor:pointer;}#aiLibraryPopup.simple button{border-radius:0;}#aiLibraryPopup.complex button{background:#17384a;color:#fff;border-radius:9px;}#aiLibraryClose{margin-left:auto;}#storageInfo .storageLine{display:block;line-height:1.35;}#blueprintLoadStatus{position:fixed;left:10px;top:164px;width:min(300px,calc(100vw - 24px));box-sizing:border-box;padding:8px 10px;z-index:79;color:#fff;font-size:12px;line-height:1.35;background:rgba(8,12,18,.96);border:1px solid #78dcff;border-radius:10px;box-shadow:0 0 10px rgba(120,220,255,.16);}#blueprintLoadStatus[hidden]{display:none;}#blueprintLoadStatus:not([hidden]){display:block;}#blueprintLoadStatus.simple{background:#101418;border-color:#00ffff;border-radius:0;box-shadow:none;}#blueprintLoadStatus.complex{background:linear-gradient(180deg,rgba(14,22,32,.98),rgba(6,10,16,.98));border-color:#78dcff;border-radius:12px;box-shadow:0 0 12px rgba(120,220,255,.18);}#blueprintLoadMessage{display:block;overflow-wrap:anywhere;}#blueprintLoadTrack{height:5px;margin-top:7px;position:relative;overflow:hidden;background:rgba(120,220,255,.14);border-radius:0;}#blueprintLoadBar{height:100%;width:34%;transform:translateX(-110%);background:#00ffff;animation:blueprintLoadSimple .9s steps(6,end) infinite;}#blueprintLoadStatus.complex #blueprintLoadTrack{background:rgba(120,220,255,.12);border-radius:4px;}#blueprintLoadStatus.complex #blueprintLoadBar{background:linear-gradient(90deg,#00ffff,#78dcff,#fff);border-radius:4px;box-shadow:0 0 9px rgba(120,220,255,.7);animation:blueprintLoadComplex 1.15s ease-in-out infinite;}#blueprintLoadStatus:not(.loading) #blueprintLoadBar{width:100%;transform:translateX(0);animation:none;}#blueprintLoadStatus.success #blueprintLoadBar{background:#38d996;}#blueprintLoadStatus.error{border-color:#ff7070;}#blueprintLoadStatus.error #blueprintLoadBar{background:#ff7070;}@keyframes blueprintLoadSimple{0%{transform:translateX(-110%)}100%{transform:translateX(310%)}}@keyframes blueprintLoadComplex{0%{transform:translateX(-110%)}100%{transform:translateX(310%)}}#copyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:50;display:none;flex-direction:column;gap:10px;align-items:center;}#copyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#timerMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:100;display:none;flex-direction:column;align-items:center;gap:8px;color:white;width:min(340px,calc(100vw - 32px));box-sizing:border-box;max-height:80vh;overflow:auto;}#timerMenu input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#timerMenu button{background:#00ffff;border:none;padding:5px;cursor:pointer;}#menuList{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;padding-right:4px;}#menuList label{display:flex;align-items:center;gap:8px;white-space:nowrap;}#namePopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;}#namePopup input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#namePopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#keyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#keyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#clockMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#clockMenu input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#clockMenu button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#bpActionPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:14px;z-index:110;display:none;flex-direction:column;gap:10px;align-items:center;}#bpActionPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;width:140px;}@media (pointer:coarse){#touchModeToggle{display:block;}}
+body{margin:0;overflow:hidden;background:#111;font-family:Arial;user-select:none;}canvas{display:block;background:radial-gradient(circle at center,#1a1a1a,#050505);touch-action:none;}#modeToggle{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #00ffff;color:#fff;padding:8px 14px;z-index:120;cursor:pointer;}#touchModeToggle{position:fixed;right:10px;top:50%;transform:translateY(-50%);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:70;display:none;cursor:pointer;}#onlineInfo{position:fixed;right:10px;top:calc(50% + 34px);background:#111;border:1px solid #78dcff;color:#fff;padding:6px 10px;z-index:69;font-size:12px;border-radius:10px;box-shadow:0 0 8px rgba(120,220,255,.12);white-space:nowrap;}#onlineInfo.simple{border-width:3px;border-color:#00ffff;border-radius:0;box-shadow:none;}#onlineInfo.complex{border-width:1px;}#menuBtn{position:fixed;left:10px;top:50%;transform:translateY(80px);background:#111;border:1px solid #00ffff;color:white;padding:10px 14px;z-index:80;cursor:pointer;}#menuPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:90;display:none;flex-direction:column;gap:10px;color:white;min-width:250px;max-width:min(92vw,420px);max-height:80vh;overflow:auto;}#menuPopup input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#menuPopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#bpPopup{position:fixed;top:-220px;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:10;transition:top 0.3s;display:flex;flex-direction:column;gap:10px;}#bpPopup input{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;}#bpPopup button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImport{position:fixed;top:10px;left:10px;background:#111;border:1px solid #00ffff;padding:8px;z-index:20;display:flex;gap:6px;align-items:center;}#bpImport input,#bpImport textarea{background:#222;color:white;border:1px solid #00ffff;outline:none;padding:5px;width:220px;min-width:0;box-sizing:border-box;font:12px monospace;user-select:text;-webkit-user-select:text;}#bpImport textarea{height:20px;min-height:20px;max-height:20px;resize:none;overflow-x:auto;overflow-y:hidden;white-space:pre;overflow-wrap:normal;tab-size:2;cursor:text;}#blueprintLoadBar{height:100%;width:0%;transform:none;transition:width .08s linear;animation:none!important;}#blueprintLoadStatus.loading #blueprintLoadBar{animation:none!important;transform:none;}#bpImport:focus-within{z-index:130;}#bpImport button{background:#00ffff;border:none;padding:5px 10px;cursor:pointer;}#bpImport.simple,#bpPopup.simple,#bpActionPopup.simple{border-width:3px;border-radius:0;box-shadow:none;}#storageInfo{position:fixed;left:10px;top:94px;background:#111;border:1px solid #78dcff;color:#fff;padding:6px 9px;z-index:80;font-size:12px;border-radius:10px;box-shadow:0 0 8px rgba(120,220,255,.12);white-space:nowrap;}#storageInfo.simple{border-width:3px;border-color:#00ffff;border-radius:0;box-shadow:none;}#aiLibraryBtn{position:fixed;left:10px;top:calc(50% + 126px);z-index:81;background:#111;color:#fff;border:1px solid #78dcff;border-radius:12px;padding:9px 14px;cursor:pointer;box-shadow:0 0 10px rgba(120,220,255,.18);font-weight:bold;}#aiLibraryBtn.simple{border-width:3px;border-color:#00ffff;border-radius:0;box-shadow:none;}#aiLibraryBtn.complex{border-color:#17384a;border-radius:12px;background:#0d1822;}#aiLibraryPopup{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(900px,92vw);height:min(620px,82vh);z-index:210;display:none;grid-template-columns:280px 1fr;gap:12px;padding:14px;background:#0b0f16;color:#fff;border:1px solid #78dcff;border-radius:16px;box-sizing:border-box;}#aiLibraryPopup.simple{border-width:3px;border-color:#00ffff;border-radius:0;background:#101418;}#aiLibraryPopup.complex{border-color:#17384a;border-radius:16px;}#aiLibraryList{overflow:auto;border:1px solid #31404d;padding:8px;min-width:0;}#aiLibraryDetails{min-width:0;display:flex;flex-direction:column;gap:10px;}#aiLibraryPreview{width:100%;height:260px;background:#05070a;border:1px solid #31404d;box-sizing:border-box;}#aiLibrarySummary{overflow:auto;white-space:pre-wrap;line-height:1.35;min-height:70px;max-height:170px;padding:9px;border:1px solid #31404d;background:#080c12;}#aiLibraryMeta{font-size:12px;opacity:.8;}#aiLibraryActions{display:flex;flex-wrap:wrap;gap:7px;}#aiLibraryPopup button{background:#00ffff;border:0;padding:7px 10px;cursor:pointer;}#aiLibraryPopup.simple button{border-radius:0;}#aiLibraryPopup.complex button{background:#17384a;color:#fff;border-radius:9px;}#aiLibraryClose{margin-left:auto;}#storageInfo .storageLine{display:block;line-height:1.35;}#blueprintLoadStatus{position:fixed;left:10px;top:164px;width:min(300px,calc(100vw - 24px));box-sizing:border-box;padding:8px 10px;z-index:79;color:#fff;font-size:12px;line-height:1.35;background:rgba(8,12,18,.96);border:1px solid #78dcff;border-radius:10px;box-shadow:0 0 10px rgba(120,220,255,.16);}#blueprintLoadStatus[hidden]{display:none;}#blueprintLoadStatus:not([hidden]){display:block;}#blueprintLoadStatus.simple{background:#101418;border-color:#00ffff;border-radius:0;box-shadow:none;}#blueprintLoadStatus.complex{background:linear-gradient(180deg,rgba(14,22,32,.98),rgba(6,10,16,.98));border-color:#78dcff;border-radius:12px;box-shadow:0 0 12px rgba(120,220,255,.18);}#blueprintLoadMessage{display:block;overflow-wrap:anywhere;}#blueprintLoadTrack{height:5px;margin-top:7px;position:relative;overflow:hidden;background:rgba(120,220,255,.14);border-radius:0;}#blueprintLoadBar{height:100%;width:34%;transform:translateX(-110%);background:#00ffff;animation:blueprintLoadSimple .9s steps(6,end) infinite;}#blueprintLoadStatus.complex #blueprintLoadTrack{background:rgba(120,220,255,.12);border-radius:4px;}#blueprintLoadStatus.complex #blueprintLoadBar{background:linear-gradient(90deg,#00ffff,#78dcff,#fff);border-radius:4px;box-shadow:0 0 9px rgba(120,220,255,.7);animation:blueprintLoadComplex 1.15s ease-in-out infinite;}#blueprintLoadStatus:not(.loading) #blueprintLoadBar{width:100%;transform:translateX(0);animation:none;}#blueprintLoadStatus.success #blueprintLoadBar{background:#38d996;}#blueprintLoadStatus.error{border-color:#ff7070;}#blueprintLoadStatus.error #blueprintLoadBar{background:#ff7070;}@keyframes blueprintLoadSimple{0%{transform:translateX(-110%)}100%{transform:translateX(310%)}}@keyframes blueprintLoadComplex{0%{transform:translateX(-110%)}100%{transform:translateX(310%)}}#copyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:50;display:none;flex-direction:column;gap:10px;align-items:center;}#copyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#timerMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:10px;z-index:100;display:none;flex-direction:column;align-items:center;gap:8px;color:white;width:min(340px,calc(100vw - 32px));box-sizing:border-box;max-height:80vh;overflow:auto;}#timerMenu input{background:#222;color:white;border:1px solid #00ffff;padding:5px;outline:none;}#timerMenu button{background:#00ffff;border:none;padding:5px;cursor:pointer;}#menuList{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;padding-right:4px;}#menuList label{display:flex;align-items:center;gap:8px;white-space:nowrap;}#namePopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;}#namePopup input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#namePopup button{background:#00ffff;border:none;padding:6px;cursor:pointer;}#keyPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#keyPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#clockMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:15px;z-index:100;display:none;flex-direction:column;gap:10px;align-items:center;}#clockMenu input{background:#222;color:white;border:1px solid #00ffff;padding:6px;outline:none;width:240px;}#clockMenu button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;}#bpActionPopup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #00ffff;padding:14px;z-index:110;display:none;flex-direction:column;gap:10px;align-items:center;}#bpActionPopup button{background:#00ffff;border:none;padding:6px 12px;cursor:pointer;width:140px;}@media (pointer:coarse){#touchModeToggle{display:block;}}
 #aiBtn{position:fixed;left:10px;top:54px;background:#111;border:1px solid #78dcff;color:#fff;padding:7px 12px 7px 34px;z-index:80;cursor:pointer;border-radius:12px;box-shadow:0 0 10px rgba(120,220,255,.18);}#aiBtn::before{content:"◈";position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:#78dcff;}#aiBtn.simple{border-color:#00ffff;border-radius:0;box-shadow:none;}#aiBtn.simple::before{color:#00ffff;}#aiBtn.complex{border-color:#78dcff;border-radius:12px;}#aiPopup{position:fixed;right:10px;top:50%;transform:translateY(-50%);width:min(420px,calc(100vw - 30px));background:#0b0f16;border:1px solid #78dcff;border-radius:18px;padding:14px;z-index:200;display:none;box-shadow:0 14px 45px rgba(0,0,0,.55);color:#fff;}#aiPopup textarea{width:100%;height:120px;box-sizing:border-box;resize:vertical;background:#161b24;color:#fff;border:1px solid #78dcff;border-radius:10px;padding:9px;outline:none;}#aiPopup button{background:#00ffff;border:0;padding:7px 12px;border-radius:9px;cursor:pointer;}#aiProviderRow{display:flex;gap:7px;margin:9px 0 0;}#aiProviderRow button{flex:1;background:#161b24;color:#fff;border:1px solid #78dcff;}#aiProviderRow button.active{background:#00ffff;color:#111;border-color:#00ffff;font-weight:bold;}#aiClose{float:right;font-size:18px;}#aiHeader{display:flex;align-items:center;gap:10px;margin-bottom:10px;}#aiGraphic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid #78dcff;overflow:hidden;}#aiGraphic.simple{background:#111;font-size:22px;}#aiGraphic.complex{background:radial-gradient(circle,#17384a 0,#0b1119 68%);position:relative;}#aiGraphic.complex::before{content:"";width:18px;height:18px;border:2px solid #78dcff;border-radius:5px;box-shadow:0 0 12px rgba(120,220,255,.7),0 0 0 5px rgba(0,255,255,.08);animation:manuelPulse 1.3s infinite;}#aiGraphic.complex::after{content:"";position:absolute;width:30px;height:30px;border:1px dashed rgba(0,255,255,.7);border-radius:50%;animation:manuelSpin 3s linear infinite;}#aiStatus{white-space:pre-wrap;margin-top:10px;min-height:24px;line-height:1.35;max-height:min(45vh,360px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;}#aiThinking{display:none;align-items:center;gap:8px;margin-top:8px;font-size:12px;opacity:.9;}#aiThinkingDots{display:flex;gap:3px;}#aiThinkingDots i{width:5px;height:5px;border-radius:50%;background:#00ffff;animation:manuelDot 1s infinite;}#aiThinkingDots i:nth-child(2){animation-delay:.15s;}#aiThinkingDots i:nth-child(3){animation-delay:.3s;}@keyframes manuelPulse{50%{transform:scale(1.12);opacity:.7;}}@keyframes manuelSpin{to{transform:rotate(360deg);}}@keyframes manuelDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}</style>
 </head>
 <body>
@@ -125,7 +125,14 @@ function updateUiTheme(){
  const radius=simpleGraphics?"0px":"14px";
  const buttonRadius=simpleGraphics?"0px":"9px";
  const inputRadius=simpleGraphics?"0px":"7px";
- const ids=["modeToggle","touchModeToggle","menuBtn","menuPopup","bpPopup","copyPopup","bpActionPopup","timerMenu","keyPopup","clockMenu","namePopup","bpImport"];
+ const simpleIds=["onlineInfo","storageInfo","aiLibraryBtn","aiLibraryPopup","bpImport","bpPopup","bpActionPopup"];
+ for(const id of simpleIds){
+  const el=document.getElementById(id);
+  if(!el)continue;
+  el.classList.toggle("simple",simpleGraphics);
+  el.classList.toggle("complex",!simpleGraphics);
+ }
+ const ids=["modeToggle","touchModeToggle","menuBtn","menuPopup","bpPopup","copyPopup","bpActionPopup","timerMenu","keyPopup","clockMenu","namePopup","bpImport","onlineInfo","storageInfo","aiLibraryBtn","aiLibraryPopup"];
  for(const id of ids){const el=document.getElementById(id);if(!el)continue;el.style.borderColor=blue;el.style.borderRadius=radius;}
  for(const el of document.querySelectorAll("#menuPopup button,#bpPopup button,#copyPopup button,#timerMenu button,#namePopup button,#keyPopup button,#clockMenu button,#bpActionPopup button,#bpImport button")){el.style.background=blue;el.style.borderColor=blue;el.style.borderRadius=buttonRadius;}
  for(const el of document.querySelectorAll("#menuPopup input,#bpPopup input,#bpImport input,#bpImport textarea,#timerMenu input,#namePopup input,#clockMenu input")){el.style.borderColor=blue;el.style.borderRadius=inputRadius;}
@@ -643,7 +650,7 @@ function screenToWorldX(x){return (x-offsetX)/zoom;}function screenToWorldY(y){r
 function updateMouseWorld(){mouseWorld.x=screenToWorldX(mouseScreen.x);mouseWorld.y=screenToWorldY(mouseScreen.y);}
 function getWireAnchor(node,side,inputIndex=0){if(!node)return{x:0,y:0};if(node.chipPin){let p=node.chipPin==="out"?(node.outputs?.[0]||node.inputs?.[0]||{x:11,y:11}):(node.inputs?.[0]||node.outputs?.[0]||{x:11,y:11});return{x:node.x+p.x,y:node.y+p.y};}if(side==="out"){let p=node.outputs?.[0]||{x:0,y:0};return{x:node.x+p.x,y:node.y+p.y};}let p=node.inputs?.[inputIndex]||node.inputs?.[0]||{x:0,y:0};return{x:node.x+p.x,y:node.y+p.y};}
 function cloneBlueprint(bp){return JSON.parse(JSON.stringify(bp));}
-function sortByPosition(list){return [...list].sort((a,b)=>(a.relY||0)-(b.relY||0)||(a.relX||0)-(b.relX||0));}
+function sortByPosition(list){const y=n=>Number.isFinite(n?.y)?n.y:(Number.isFinite(n?.relY)?n.relY:0);const x=n=>Number.isFinite(n?.x)?n.x:(Number.isFinite(n?.relX)?n.relX:0);return [...list].sort((a,b)=>y(a)-y(b)||x(a)-x(b));}
 function blueprintHasEmbeddedChip(bp){return !!(bp&&bp.nodes&&bp.nodes.some(n=>n.chipId||n.chipPin||n.chipShell));}
 function expandBlueprint(bp){if(!bp)return bp;if(Array.isArray(bp.nodes))bp.nodes=bp.nodes.map(n=>Array.isArray(n)?Object.assign({id:n[0],type:n[1],relX:n[2],relY:n[3]},typeof n[4]==="string"?{name:n[4]}:(n[4]||{})):n);if(Array.isArray(bp.wires))bp.wires=bp.wires.map(x=>Array.isArray(x)?{from:x[0],to:x[1],inputIndex:x[2]}:x);return bp;}
 function loadPreblueprints(){for(let i=0;i<Math.min(15,preblueprints.length);i++){let bp=preblueprints[i];if(typeof bp==="string"){try{bp=JSON.parse(bp);}catch(e){continue;}}bp=expandBlueprint(bp);if(bp&&bp.nodes)blueprints.push(cloneBlueprint(bp));}clampBlueprintScroll();}
@@ -920,23 +927,26 @@ function connectSelectionToTarget(target,pinHit){
  }
 }
 function connectSelectionsParallel(sourceNodes,targetNodes){
+  const connectionPins=(list,kind)=>sortByPosition(expandActionNodes(list).filter(n=>{
+    if(!n||n.hidden)return false;
+    if(kind==="outputs")return n.chipId?n.chipPin==="out":!!(n.outputs&&n.outputs.length);
+    return n.chipId?n.chipPin==="in":!!(n.inputs&&n.inputs.length);
+  }));
   let sources,targetList;
   if(targetNodes===null){
-    const ordered=sortByPosition(expandActionNodes(sourceNodes).filter(n=>!n.hidden))
-      .sort((a,b)=>(a.x||0)-(b.x||0)||(a.y||0)-(b.y||0));
+    const ordered=sortByPosition(expandActionNodes(sourceNodes).filter(n=>n&&!n.hidden));
     const mid=Math.floor(ordered.length/2);
-    sources=ordered.slice(0,mid).filter(n=>n.outputs&&n.outputs.length);
-    targetList=ordered.slice(mid).filter(n=>n.inputs&&n.inputs.length);
+    sources=connectionPins(ordered.slice(0,mid),"outputs");
+    targetList=connectionPins(ordered.slice(mid),"inputs");
   }else{
-    sources=sortByPosition(expandActionNodes(sourceNodes).filter(n=>!n.hidden&&n.outputs&&n.outputs.length));
-    targetList=sortByPosition(expandActionNodes(targetNodes).filter(n=>!n.hidden&&n.inputs&&n.inputs.length));
+    sources=connectionPins(sourceNodes,"outputs");
+    targetList=connectionPins(targetNodes,"inputs");
   }
-
   const count=Math.min(sources.length,targetList.length);
   for(let i=0;i<count;i++){
     const src=sources[i],target=targetList[i];
     if(!canConnectNodes(src,target))continue;
-    const idx=getFreeSlot(target);
+    const idx=target.chipPin?0:getFreeSlot(target);
     if(idx!==-1)wires.push({from:src,to:target,inputIndex:idx});
   }
 }
@@ -1566,7 +1576,8 @@ function runQuickConnect(mode){
  let sourceNodes=collectConnectionSources(selectedNodes);
  let targetNodes=collectConnectionTargets(selectedNodes);
  if(!sourceNodes.length||!targetNodes.length)return false;
- if(mode==="firstFree")connectSelectionsFirstFree(sourceNodes,targetNodes);
+ if(mode==="parallel")connectSelectionsParallel(sourceNodes,targetNodes);
+ else if(mode==="firstFree")connectSelectionsFirstFree(sourceNodes,targetNodes);
  else if(mode==="chunked")connectSelectionsChunked(sourceNodes,targetNodes);
  else connectSelectionsPairwise(sourceNodes,targetNodes);
  restoreTriggerSelection(sourceNodes);
@@ -1638,12 +1649,12 @@ addEventListener("keydown",e=>{
    e.preventDefault();
    return;
   }
-  if(runQuickConnect("firstFree")){
+  if(runQuickConnect("parallel")){
    e.preventDefault();
    return;
   }
   if(selectionActive&&selectedNodes.length){
-   startBatchConnect("firstFree");
+   startBatchConnect("parallel");
    e.preventDefault();
   }
   return;
@@ -1864,13 +1875,9 @@ function drawChipShells(){
 function drawWires(v){
  if(!wiresVisible)return;
  let on=new Path2D(),off=new Path2D(),nOn=0,nOff=0;
- let big=wires.length>1500&&zoom<0.5,skipOff=wires.length>1500&&zoom<0.25,fan=null;
- if(big){fan=new Map();for(let w of wires){if(w&&w.from)fan.set(w.from,(fan.get(w.from)||0)+1);}}
  for(let w of wires){
   if(!w||!w.from||!w.to)continue;
   if(w.from.chipId&&w.from.chipId===w.to.chipId)continue;
-  if(big&&fan.get(w.from)>48)continue;
-  if(skipOff&&!w.from.output)continue;
   let s=getWireAnchor(w.from,"out",w.inputIndex);
   let e=getWireAnchor(w.to,"in",w.inputIndex);
   if(v&&!wireInView(s,e,v))continue;
@@ -2065,6 +2072,7 @@ function drawBlueprintPreview(){
 function drawPanel(){
  ctx.setTransform(1,0,0,1,0,0);
  if(simpleGraphics){
+  ctx.lineWidth=3;
   let barH=mode==="pc"?90:56;
   ctx.fillStyle="rgba(0,0,0,0.6)";
   ctx.fillRect(0,h-barH,w,barH);
@@ -2261,11 +2269,11 @@ const aiVoice=document.getElementById("aiVoice");
 
 function updateAiGraphic(){
   if(!aiGraphic)return;
-  const complex=!simpleGraphics;
+  const complex=true;
   aiGraphic.classList.toggle("complex",complex);
   aiGraphic.classList.toggle("simple",!complex);
   if(aiBtn){aiBtn.classList.toggle("complex",complex);aiBtn.classList.toggle("simple",!complex);}
-  aiGraphic.innerHTML=complex ? "" : "<span>✦</span>";
+  aiGraphic.innerHTML="";
 }
 updateAiGraphic();
 
@@ -2823,6 +2831,7 @@ function sendRemoteCursor(clientX,clientY,visible=true){
 let logicSyncReady = false;
 let serverRevision = 0;
 let lastLogicSnapshot = "";
+let pendingLogicSnapshot = "";
 let lastBlueprintSnapshot = "";
 
 const storageInfo = document.getElementById("storageInfo");
@@ -2997,16 +3006,16 @@ function applyLogicState(state){
 }
 
 function sendLogicState(){
-  if(!logicSyncReady || applyingRemoteLogicState) return;
+  if(!logicSyncReady || applyingRemoteLogicState || pendingLogicSnapshot) return;
   const snapshot = serializeLogicState();
   if(snapshot === lastLogicSnapshot) return;
   lastLogicSnapshot = snapshot;
 
-  // Der Zustand wird immer gegen die zuletzt vom Server bestätigte
-  // Revision geschrieben. Dadurch können alte Tabs keinen neueren Stand
-  // mehr überschreiben.
+  // Nur einen unbestätigten Vollzustand gleichzeitig senden. So kann eine
+  // verspätete Bestätigung keine neuere lokale Änderung überrollen.
   const payload = JSON.parse(snapshot);
   payload.baseRevision = serverRevision;
+  pendingLogicSnapshot = snapshot;
   logicSocket.emit("stateChange", payload);
 }
 
@@ -3031,12 +3040,18 @@ logicSocket.on("state", state => {
   const legacyState = !state || Number(state.version || 1) < 3;
   serverRevision = Number.isInteger(state?.serverRevision) ? state.serverRevision : serverRevision;
 
-  if(state && Array.isArray(state.nodes) && Array.isArray(state.wires)){
-    if(applyLogicState(state)){
+  const hasLogicState=state&&Array.isArray(state.nodes)&&Array.isArray(state.wires);
+  const localLogicChanged=logicSyncReady&&hasLogicState&&!legacyState&&serializeLogicState()!==lastLogicSnapshot;
+  const unconfirmedWriteFromAnotherSource=logicSyncReady&&hasLogicState&&!legacyState&&!!pendingLogicSnapshot&&state.sourceSocketId!==logicSocket.id;
+  const preserveLocalLogic=!!(localLogicChanged||unconfirmedWriteFromAnotherSource);
+  if(hasLogicState){
+    if(!preserveLocalLogic&&applyLogicState(state)){
       // Alte gespeicherte Zustände werden nach dem Einlesen einmal
       // in das neue Format mit Keys/Namen/Timer/Clocks umgewandelt.
       if(!legacyState) lastLogicSnapshot = serializeLogicState();
     }
+    // Neuere lokale Änderungen bleiben erhalten und werden nach der
+    // Antwort erneut gegen die aktuelle Serverrevision gesendet.
   }
 
   // Die Blueprint-Bibliothek kommt beim Start zusammen mit dem Serverstand.
@@ -3065,12 +3080,18 @@ logicSocket.on("state", state => {
 logicSocket.on("stateAck", ack => {
   if(!ack) return;
   if(Number.isInteger(ack.serverRevision)) serverRevision = ack.serverRevision;
+  pendingLogicSnapshot = "";
   updateStorageInfo(Number.isFinite(ack.serverStorageBytes) ? ack.serverStorageBytes : lastServerStorageBytes);
   logicSocket.emit("stateApplied", serverRevision);
 });
 
 logicSocket.on("stateRejected", info => {
   if(info && Number.isInteger(info.serverRevision)) serverRevision = info.serverRevision;
+  if(pendingLogicSnapshot){
+    pendingLogicSnapshot = "";
+    // Erzwingt einen erneuten Schreibversuch gegen die neueste Revision.
+    lastLogicSnapshot = "";
+  }
 });
 
 logicSocket.on("blueprintLibrary", library => {
@@ -3102,11 +3123,12 @@ setInterval(() => {
 
   const snapshot = serializeLogicState();
   const logicChanged = snapshot !== lastLogicSnapshot;
-  if(logicChanged){
+  if(logicChanged&&!pendingLogicSnapshot){
     if(!historyApplying && lastLogicSnapshot) rememberHistorySnapshot(lastLogicSnapshot);
     lastLogicSnapshot = snapshot;
     const payload = JSON.parse(snapshot);
     payload.baseRevision = serverRevision;
+    pendingLogicSnapshot = snapshot;
     logicSocket.emit("stateChange", payload);
   }
 
