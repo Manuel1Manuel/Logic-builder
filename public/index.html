@@ -1615,6 +1615,26 @@ addEventListener("keydown",e=>{
   return;
  }
 
+ if(e.key.toLowerCase()==="j"){
+  if(batchConnect&&batchConnect.phase==="target"){
+   batchConnect.connectMode="pairwise";
+   if(batchConnect.targetNodes.length){
+    finalizeBatchConnect();
+   }
+   e.preventDefault();
+   return;
+  }
+  if(runQuickConnect("pairwise")){
+   e.preventDefault();
+   return;
+  }
+  if(selectionActive&&selectedNodes.length){
+   startBatchConnect("pairwise");
+   e.preventDefault();
+  }
+  return;
+ }
+
  if(e.key.toLowerCase()==="k"){
   if(batchConnect&&batchConnect.phase==="target"){
    batchConnect.connectMode="chunked";
