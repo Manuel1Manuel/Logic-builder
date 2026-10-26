@@ -1680,6 +1680,32 @@ addEventListener("keydown",e=>{
  }
 
  if(e.key.toLowerCase()==="q"){
+  if(!e.repeat){
+   for(let i=nodes.length-1;i>=0;i--){
+    const target=nodes[i];
+    if(!target||target.hidden||nodeVisibility[target.type]===false)continue;
+    if(!target.contains(mouseWorld.x,mouseWorld.y))continue;
+    const previousSelectedNodes=selectedNodes;
+    const previousSelectionActive=selectionActive;
+    const previousSelectionBox=selectionBox;
+    const previousSelectionWireMode=selectionWireMode;
+    const previousBlueprint=blueprint;
+    selectedNodes=expandActionNodes([target]).filter(n=>n&&!n.hidden&&nodes.includes(n));
+    selectionActive=selectedNodes.length>0;
+    selectionBox=selectionActive?getSelectionBounds(selectedNodes):null;
+    selectionWireMode=null;
+    blueprint=null;
+    if(selectionActive)saveSelectedToClipboard();
+    selectedNodes=previousSelectedNodes;
+    selectionActive=previousSelectionActive;
+    selectionBox=previousSelectionBox;
+    selectionWireMode=previousSelectionWireMode;
+    blueprint=previousBlueprint;
+    if(selectionActive&&selectedNodes.length)selectionBox=getSelectionBounds(selectedNodes);
+    e.preventDefault();
+    break;
+   }
+  }
   return;
  }
 
