@@ -3054,6 +3054,7 @@ function sendLogicState(){
   if(!logicSyncReady || applyingRemoteLogicState || pendingLogicSnapshot) return;
   const snapshot = serializeLogicState();
   if(snapshot === lastLogicSnapshot) return;
+  if(!historyApplying && lastLogicSnapshot) rememberHistorySnapshot(lastLogicSnapshot);
   lastLogicSnapshot = snapshot;
 
   // Nur einen unbestätigten Vollzustand gleichzeitig senden. So kann eine
@@ -3198,7 +3199,7 @@ function rememberHistorySnapshot(snapshot){
   if(historyApplying || !snapshot) return;
   if(undoStack[undoStack.length-1] === snapshot) return;
   undoStack.push(snapshot);
-  if(undoStack.length > 50) undoStack.shift();
+  if(undoStack.length > 30) undoStack.shift();
   redoStack.length = 0;
 }
 
@@ -3224,7 +3225,7 @@ function redoLogic(){
   const current = serializeLogicState();
   const next = redoStack.pop();
   undoStack.push(current);
-  if(undoStack.length > 50) undoStack.shift();
+  if(undoStack.length > 30) undoStack.shift();
   applyHistorySnapshot(next);
 }
 
