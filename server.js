@@ -762,6 +762,123 @@ function broadcastOnlineCount(){
   io.emit("onlineCount", onlineSockets.size);
 }
 
+
+function normalizeLogicState(value){
+  const sourceNodes = Array.isArray(value?.nodes) ? value.nodes : [];
+  const nodes = sourceNodes.map((node,index) => {
+    const clean = node && typeof node === "object" ? { ...node } : {};
+    clean.id = typeof clean.id === "string" && clean.id ? clean.id : "legacy_" + index;
+    return clean;
+  });
+  const wires = (Array.isArray(value?.wires) ? value.wires : []).filter(wire =>
+    wire &&
+    Number.isInteger(wire.from) &&
+    Number.isInteger(wire.to) &&
+    wire.from >= 0 &&
+    wire.to >= 0 &&
+    wire.from < nodes.length &&
+    wire.to < nodes.length
+  ).map(wire => ({
+    from: wire.from,
+    to: wire.to,
+    inputIndex: Number.isFinite(wire.inputIndex) ? wire.inputIndex : 0
+  }));
+  return { version: 3, nodes, wires };
+}
+
+function readStoredState(){
+  try{
+    return JSON.parse(getState.get()?.data || "{}");
+  }catch{
+    return {};
+  }
+}
+
+function getWireMap(logicState){
+  const result = new Map();
+  for(const wire of logicState.wires){
+    const fromId = logicState.nodes[wire.from]?.id;
+    const toId = logicState.nodes[wire.to]?.id;
+    if(!fromId || !toId) continue;
+    const inputIndex = Number.isFinite(wire.inputIndex) ? wire.inputIndex : 0;
+    const key = JSON.stringify([fromId,toId,inputIndex]);
+    result.set(key,{ fromId,toId,inputIndex });
+  }
+  return result;
+}
+
+function mergeLogicProposal(currentStored,baseValue,proposalValue){
+  const currentLogic = normalizeLogicState(currentStored);
+  const baseLogic = normalizeLogicState(baseValue);
+  const proposalLogic = normalizeLogicState(proposalValue);
+  const nodes = currentLogic.nodes.map(node => ({ ...node }));
+  const nodeMap = new Map(nodes.map(node => [node.id,node]));
+  const baseMap = new Map(baseLogic.nodes.map(node => [node.id,node]));
+  const proposalMap = new Map(proposalLogic.nodes.map(node => [node.id,node]));
+
+  for(const [id,baseNode] of baseMap){
+    const proposedNode = proposalMap.get(id);
+    const currentNode = nodeMap.get(id);
+    if(!proposedNode){
+      if(currentNode){
+        nodeMap.delete(id);
+        const index = nodes.indexOf(currentNode);
+        if(index >= 0) nodes.splice(index,1);
+      }
+      continue;
+    }
+    if(!currentNode) continue;
+    const keys = new Set([...Object.keys(baseNode),...Object.keys(proposedNode)]);
+    keys.delete("id");
+    for(const key of keys){
+      const baseHas = Object.prototype.hasOwnProperty.call(baseNode,key);
+      const proposedHas = Object.prototype.hasOwnProperty.call(proposedNode,key);
+      const baseValue = baseHas ? JSON.stringify(baseNode[key]) : undefined;
+      const proposedValue = proposedHas ? JSON.stringify(proposedNode[key]) : undefined;
+      if(baseHas === proposedHas && baseValue === proposedValue) continue;
+      if(proposedHas) currentNode[key] = proposedNode[key];
+      else delete currentNode[key];
+    }
+  }
+
+  for(const proposedNode of proposalLogic.nodes){
+    if(!baseMap.has(proposedNode.id) && !nodeMap.has(proposedNode.id)){
+      const copy = { ...proposedNode };
+      nodes.push(copy);
+      nodeMap.set(copy.id,copy);
+    }
+  }
+
+  const baseWires = getWireMap(baseLogic);
+  const proposedWires = getWireMap(proposalLogic);
+  const mergedWires = getWireMap(currentLogic);
+
+  for(const [key] of baseWires){
+    if(!proposedWires.has(key)) mergedWires.delete(key);
+  }
+  for(const [key,wire] of proposedWires){
+    if(!baseWires.has(key) && nodeMap.has(wire.fromId) && nodeMap.has(wire.toId)){
+      mergedWires.set(key,wire);
+    }
+  }
+
+  const nodeIndexes = new Map(nodes.map((node,index) => [node.id,index]));
+  const wires = [];
+  for(const wire of mergedWires.values()){
+    const from = nodeIndexes.get(wire.fromId);
+    const to = nodeIndexes.get(wire.toId);
+    if(from === undefined || to === undefined) continue;
+    wires.push({ from,to,inputIndex:wire.inputIndex });
+  }
+
+  return {
+    ...currentStored,
+    version: 3,
+    nodes,
+    wires
+  };
+}
+
 io.on("connection", (socket) => {
   onlineSockets.add(socket.id);
   socket.data.cursor = { x: 0, y: 0, visible: false };
@@ -781,26 +898,28 @@ io.on("connection", (socket) => {
     }
   }
 
-  // Aktuellen Logic-Builder-Zustand an neuen Besucher senden
   const row = getState.get();
+  const storedState = (() => {
+    try{return JSON.parse(row?.data || "{}");}catch{return {};}
+  })();
+  const initialLogic = normalizeLogicState(storedState);
+  socket.emit("state", {
+    ...storedState,
+    ...initialLogic,
+    serverRevision: stateRevision,
+    serverStorageBytes: getServerStorageBytes()
+  });
 
-  try {
-    const initialState = JSON.parse(row.data);
-    initialState.serverRevision = stateRevision;
-    initialState.serverStorageBytes = getServerStorageBytes();
-    socket.emit("state", initialState);
-  } catch {
-    socket.emit("state", { serverRevision: stateRevision });
-  }
-
-  // Erst nach dem Empfang und Anwenden des initialen Server-Zustands darf
-  // dieser Client wieder schreiben. Dadurch kann ein alter lokaler Stand
-  // niemals den gerade geladenen Serverstand überschreiben.
   socket.lastAppliedRevision = stateRevision - 1;
+  socket.data.logicBaseline = null;
+  socket.data.logicBaselineRevision = null;
 
   socket.on("stateApplied", (revision) => {
     if(Number.isInteger(revision) && revision === stateRevision){
+      const latest = readStoredState();
       socket.lastAppliedRevision = revision;
+      socket.data.logicBaseline = normalizeLogicState(latest);
+      socket.data.logicBaselineRevision = revision;
     }
   });
 
@@ -823,92 +942,66 @@ io.on("connection", (socket) => {
     broadcastOnlineCount();
   });
 
-  // Änderung von einem Besucher empfangen
   socket.on("stateChange", (state) => {
-
-    try {
+    try{
       const baseRevision = Number.isInteger(state?.baseRevision) ? state.baseRevision : null;
+      const baselineRevision = socket.data.logicBaselineRevision;
+      const baseline = socket.data.logicBaseline;
 
-      // Alte/offene Browser-Tabs aus einer früheren Client-Version haben keine
-      // baseRevision. Sie dürfen niemals einen aktuellen Serverstand überschreiben.
-      if(baseRevision === null){
-        const current = getState.get();
-        const currentState = JSON.parse(current.data || "{}");
-        currentState.serverRevision = stateRevision;
-        currentState.serverStorageBytes = getServerStorageBytes();
-        currentState.sourceSocketId = "server-rejected-legacy";
-        socket.emit("state", currentState);
-        socket.emit("stateRejected", { serverRevision: stateRevision, reason: "missing-base-revision" });
+      if(
+        baseRevision === null ||
+        !baseline ||
+        baseRevision !== baselineRevision ||
+        socket.lastAppliedRevision !== baselineRevision ||
+        !Array.isArray(state?.nodes) ||
+        !Array.isArray(state?.wires) ||
+        Number(state.version || 0) < 3
+      ){
+        const currentState = readStoredState();
+        const currentLogic = normalizeLogicState(currentState);
+        socket.emit("state", {
+          ...currentState,
+          ...currentLogic,
+          serverRevision: stateRevision,
+          serverStorageBytes: getServerStorageBytes(),
+          sourceSocketId: "server-rejected"
+        });
+        socket.emit("stateRejected", {
+          serverRevision: stateRevision,
+          reason: "missing-or-outdated-client-baseline"
+        });
         return;
       }
 
-      // Veraltete Vollzustände dürfen niemals einen neueren Zustand zurücksetzen.
-      // Das verhindert, dass z.B. eine Löschung durch einen alten Poll-Zustand
-      // von einem anderen Client wieder auftaucht.
-      if(baseRevision !== stateRevision || socket.lastAppliedRevision !== stateRevision){
-        const current = getState.get();
-        const currentState = JSON.parse(current.data || "{}");
-        currentState.serverRevision = stateRevision;
-        currentState.serverStorageBytes = getServerStorageBytes();
-        currentState.sourceSocketId = "server-rejected";
-        socket.emit("state", currentState);
-        socket.emit("stateRejected", { serverRevision: stateRevision });
-        return;
-      }
-      // Der normale Realtime-Zustand enthält absichtlich keine komplette
-      // Blueprint-Bibliothek mehr. Dadurch bleiben große Blueprints aus dem
-      // schnellen Block-/Positionskanal heraus.
-      const current = getState.get();
-      let stored = {};
-      try {
-        stored = JSON.parse(current.data);
-      } catch {}
-
-      // Der Transportwert baseRevision gehört niemals in den gespeicherten
-      // Zustand. Er dient nur dazu, veraltete Clients zu erkennen.
-      const cleanState = { ...state };
-      delete cleanState.baseRevision;
-      delete cleanState.serverRevision;
-
-      // Alte gespeicherte Blueprint-Daten bleiben erhalten.
-      // Neue Block-/Wire-Daten werden nur darübergelegt.
-      Object.assign(stored, cleanState);
-      if(current && Array.isArray(JSON.parse(current.data || "{}").blueprints)){
-        stored.blueprints = JSON.parse(current.data).blueprints;
-      }
-
-      // Erst speichern, dann die neue Revision dauerhaft sichern.
-      // Dadurch geht die Versionsnummer bei einem Render-Neustart nicht zurück.
-      const storedJson = JSON.stringify(stored);
+      const currentStored = readStoredState();
+      const merged = mergeLogicProposal(
+        currentStored,
+        baseline,
+        state
+      );
+      const storedJson = JSON.stringify(merged);
       saveState.run(storedJson);
-      const serverStorageBytes = Buffer.byteLength(storedJson, "utf8");
+      const serverStorageBytes = Buffer.byteLength(storedJson,"utf8");
       stateRevision++;
       saveRevision.run(stateRevision);
-      socket.lastAppliedRevision = stateRevision;
 
-      // Wirklich den gespeicherten Serverstand zurückgeben, nicht nur das
-      // eingegangene Paket. Der Absender bekommt ihn ebenfalls zurück.
       const broadcastState = {
-        ...stored,
+        ...merged,
         serverRevision: stateRevision,
         serverStorageBytes,
         sourceSocketId: socket.id
       };
 
-      const nodeCount = Array.isArray(stored.nodes) ? stored.nodes.length : 0;
-      const wireCount = Array.isArray(stored.wires) ? stored.wires.length : 0;
-
       io.emit("state", broadcastState);
       socket.emit("stateAck", {
         serverRevision: stateRevision,
         confirmed: true,
-        nodeCount,
-        wireCount,
+        nodeCount: merged.nodes.length,
+        wireCount: merged.wires.length,
         serverStorageBytes
       });
-
-    } catch (error) {
-      console.error("Fehler beim Speichern des Zustands:", error);
+    }catch(error){
+      console.error("Fehler beim Zusammenführen des Zustands:",error);
     }
   });
 
@@ -944,8 +1037,6 @@ io.on("connection", (socket) => {
 
       stateRevision++;
       saveRevision.run(stateRevision);
-      socket.lastAppliedRevision = stateRevision;
-
       const payload = {
         blueprints: library.blueprints,
         serverRevision: stateRevision,

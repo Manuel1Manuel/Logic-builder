@@ -2878,6 +2878,7 @@ let serverRevision = 0;
 let lastLogicSnapshot = "";
 let pendingLogicSnapshot = "";
 let lastBlueprintSnapshot = "";
+let deferredServerState = null;
 
 const storageInfo = document.getElementById("storageInfo");
 const serverBitsLine = document.getElementById("serverBitsLine");
@@ -2933,6 +2934,100 @@ function getLogicSyncId(n){
     n.__logicSyncId = "node_" + Math.random().toString(36).slice(2) + "_" + Date.now().toString(36);
   }
   return n.__logicSyncId;
+}
+
+
+function parseLogicSnapshot(snapshot){
+  try{
+    const value = typeof snapshot === "string" ? JSON.parse(snapshot || "{}") : snapshot || {};
+    return {
+      version: 3,
+      nodes: Array.isArray(value.nodes) ? value.nodes.map(node => ({ ...node })) : [],
+      wires: Array.isArray(value.wires) ? value.wires.map(wire => ({ ...wire })) : []
+    };
+  }catch{
+    return { version: 3, nodes: [], wires: [] };
+  }
+}
+
+function getLogicWireMap(state){
+  const result = new Map();
+  for(const wire of state.wires){
+    const fromId = state.nodes[wire.from]?.id;
+    const toId = state.nodes[wire.to]?.id;
+    if(!fromId || !toId) continue;
+    const inputIndex = Number.isFinite(wire.inputIndex) ? wire.inputIndex : 0;
+    const key = JSON.stringify([fromId,toId,inputIndex]);
+    result.set(key,{ fromId,toId,inputIndex });
+  }
+  return result;
+}
+
+function mergeLocalLogicSnapshots(baseSnapshot,localSnapshot,remoteState){
+  const base = parseLogicSnapshot(baseSnapshot);
+  const local = parseLogicSnapshot(localSnapshot);
+  const remote = parseLogicSnapshot(remoteState);
+  const nodes = remote.nodes.map(node => ({ ...node }));
+  const nodeMap = new Map(nodes.map(node => [node.id,node]));
+  const baseMap = new Map(base.nodes.map(node => [node.id,node]));
+  const localMap = new Map(local.nodes.map(node => [node.id,node]));
+
+  for(const [id,baseNode] of baseMap){
+    const localNode = localMap.get(id);
+    const remoteNode = nodeMap.get(id);
+    if(!localNode){
+      if(remoteNode){
+        nodeMap.delete(id);
+        const index = nodes.indexOf(remoteNode);
+        if(index >= 0) nodes.splice(index,1);
+      }
+      continue;
+    }
+    if(!remoteNode) continue;
+    const keys = new Set([...Object.keys(baseNode),...Object.keys(localNode)]);
+    keys.delete("id");
+    for(const key of keys){
+      const baseHas = Object.prototype.hasOwnProperty.call(baseNode,key);
+      const localHas = Object.prototype.hasOwnProperty.call(localNode,key);
+      const baseValue = baseHas ? JSON.stringify(baseNode[key]) : undefined;
+      const localValue = localHas ? JSON.stringify(localNode[key]) : undefined;
+      if(baseHas === localHas && baseValue === localValue) continue;
+      if(localHas) remoteNode[key] = localNode[key];
+      else delete remoteNode[key];
+    }
+  }
+
+  for(const localNode of local.nodes){
+    if(!baseMap.has(localNode.id) && !nodeMap.has(localNode.id)){
+      const copy = { ...localNode };
+      nodes.push(copy);
+      nodeMap.set(copy.id,copy);
+    }
+  }
+
+  const baseWires = getLogicWireMap(base);
+  const localWires = getLogicWireMap(local);
+  const mergedWires = getLogicWireMap(remote);
+
+  for(const [key] of baseWires){
+    if(!localWires.has(key)) mergedWires.delete(key);
+  }
+  for(const [key,wire] of localWires){
+    if(!baseWires.has(key) && nodeMap.has(wire.fromId) && nodeMap.has(wire.toId)){
+      mergedWires.set(key,wire);
+    }
+  }
+
+  const nodeIndexes = new Map(nodes.map((node,index) => [node.id,index]));
+  const wires = [];
+  for(const wire of mergedWires.values()){
+    const from = nodeIndexes.get(wire.fromId);
+    const to = nodeIndexes.get(wire.toId);
+    if(from === undefined || to === undefined) continue;
+    wires.push({ from,to,inputIndex:wire.inputIndex });
+  }
+
+  return { version: 3, nodes, wires };
 }
 
 function serializeLogicState(){
@@ -3055,10 +3150,6 @@ function sendLogicState(){
   const snapshot = serializeLogicState();
   if(snapshot === lastLogicSnapshot) return;
   if(!historyApplying && lastLogicSnapshot) rememberHistorySnapshot(lastLogicSnapshot);
-  lastLogicSnapshot = snapshot;
-
-  // Nur einen unbestätigten Vollzustand gleichzeitig senden. So kann eine
-  // verspätete Bestätigung keine neuere lokale Änderung überrollen.
   const payload = JSON.parse(snapshot);
   payload.baseRevision = serverRevision;
   pendingLogicSnapshot = snapshot;
@@ -3082,27 +3173,39 @@ function applyBlueprintLibrary(list){
   return true;
 }
 
-logicSocket.on("state", state => {
-  const legacyState = !state || Number(state.version || 1) < 3;
-  serverRevision = Number.isInteger(state?.serverRevision) ? state.serverRevision : serverRevision;
+function processServerLogicState(state){
+  const remoteLogic = parseLogicSnapshot(state);
+  const remoteSnapshot = JSON.stringify(remoteLogic);
+  const sourceSocketId = state?.sourceSocketId || "";
+  const mergeBase = sourceSocketId === logicSocket.id && pendingLogicSnapshot
+    ? pendingLogicSnapshot
+    : lastLogicSnapshot;
+  const localSnapshot = serializeLogicState();
+  const mergedLogic = mergeLocalLogicSnapshots(mergeBase,localSnapshot,remoteLogic);
 
-  const hasLogicState=state&&Array.isArray(state.nodes)&&Array.isArray(state.wires);
-  const localLogicChanged=logicSyncReady&&hasLogicState&&!legacyState&&serializeLogicState()!==lastLogicSnapshot;
-  const unconfirmedWriteFromAnotherSource=logicSyncReady&&hasLogicState&&!legacyState&&!!pendingLogicSnapshot&&state.sourceSocketId!==logicSocket.id;
-  const preserveLocalLogic=!!(localLogicChanged||unconfirmedWriteFromAnotherSource);
-  if(hasLogicState){
-    if(!preserveLocalLogic&&applyLogicState(state)){
-      // Alte gespeicherte Zustände werden nach dem Einlesen einmal
-      // in das neue Format mit Keys/Namen/Timer/Clocks umgewandelt.
-      if(!legacyState) lastLogicSnapshot = serializeLogicState();
-    }
-    // Neuere lokale Änderungen bleiben erhalten und werden nach der
-    // Antwort erneut gegen die aktuelle Serverrevision gesendet.
+  if(!applyLogicState(mergedLogic)){
+    deferredServerState = state;
+    return false;
   }
 
-  // Die Blueprint-Bibliothek kommt beim Start zusammen mit dem Serverstand.
-  // Fehlt sie bei einem alten/noch leeren Serverstand, bleibt die lokale
-  // Vorlagenbibliothek erhalten und wird anschließend hochgeladen.
+  deferredServerState = null;
+  lastLogicSnapshot = remoteSnapshot;
+  if(Number.isInteger(state?.serverRevision)) serverRevision = Math.max(serverRevision,state.serverRevision);
+  logicSyncReady = true;
+
+  if(
+    sourceSocketId === logicSocket.id ||
+    sourceSocketId === "server-rejected" ||
+    sourceSocketId === "server-rejected-legacy"
+  ){
+    pendingLogicSnapshot = "";
+  }
+
+  logicSocket.emit("stateApplied", serverRevision);
+  return true;
+}
+
+logicSocket.on("state", state => {
   if(state && Array.isArray(state.blueprints)){
     if(applyBlueprintLibrary(state.blueprints)){
       lastBlueprintSnapshot = serializeBlueprintLibrary();
@@ -3111,34 +3214,28 @@ logicSocket.on("state", state => {
     lastBlueprintSnapshot = "";
   }
 
-  updateStorageInfo(Number.isFinite(state?.serverStorageBytes) ? state.serverStorageBytes : lastServerStorageBytes);
-  logicSyncReady = true;
-  logicSocket.emit("stateApplied", serverRevision);
+  updateStorageInfo(
+    Number.isFinite(state?.serverStorageBytes)
+      ? state.serverStorageBytes
+      : lastServerStorageBytes
+  );
 
-  if(legacyState){
-    lastLogicSnapshot = "";
-    sendLogicState();
-  }else if(!lastLogicSnapshot){
-    lastLogicSnapshot = serializeLogicState();
-  }
+  processServerLogicState(state || {});
 });
 
 logicSocket.on("stateAck", ack => {
   if(!ack) return;
-  if(Number.isInteger(ack.serverRevision)) serverRevision = ack.serverRevision;
-  pendingLogicSnapshot = "";
-  updateStorageInfo(Number.isFinite(ack.serverStorageBytes) ? ack.serverStorageBytes : lastServerStorageBytes);
-  logicSocket.emit("stateApplied", serverRevision);
+  if(!deferredServerState && Number.isInteger(ack.serverRevision)){
+    serverRevision = Math.max(serverRevision,ack.serverRevision);
+  }
+  updateStorageInfo(
+    Number.isFinite(ack.serverStorageBytes)
+      ? ack.serverStorageBytes
+      : lastServerStorageBytes
+  );
 });
 
-logicSocket.on("stateRejected", info => {
-  if(info && Number.isInteger(info.serverRevision)) serverRevision = info.serverRevision;
-  if(pendingLogicSnapshot){
-    pendingLogicSnapshot = "";
-    // Erzwingt einen erneuten Schreibversuch gegen die neueste Revision.
-    lastLogicSnapshot = "";
-  }
-});
+logicSocket.on("stateRejected", () => {});
 
 logicSocket.on("blueprintLibrary", library => {
   if(!library || !Array.isArray(library.blueprints)) return;
@@ -3146,8 +3243,14 @@ logicSocket.on("blueprintLibrary", library => {
     lastBlueprintSnapshot = serializeBlueprintLibrary();
   }
   if(Number.isInteger(library.serverRevision)) serverRevision = library.serverRevision;
-  updateStorageInfo(Number.isFinite(library.serverStorageBytes) ? library.serverStorageBytes : lastServerStorageBytes);
-  logicSocket.emit("stateApplied", serverRevision);
+  updateStorageInfo(
+    Number.isFinite(library.serverStorageBytes)
+      ? library.serverStorageBytes
+      : lastServerStorageBytes
+  );
+  if(!deferredServerState){
+    logicSocket.emit("stateApplied", serverRevision);
+  }
 });
 
 // Synchronisiert nur:
@@ -3161,17 +3264,19 @@ logicSocket.on("blueprintLibrary", library => {
 // Laufende Zustände wie Memory-Zustände, Clock-/Timer-Laufzustände
 // und gedrückte Tasten bleiben lokal. Der Switch-AN/AUS-Zustand wird bewusst synchronisiert.
 setInterval(() => {
-  if(!logicSyncReady || applyingRemoteLogicState || aiActionInProgress) return;
+  const interactionActive = !!(drag || groupDragging || chipDrag || libraryDrag || selecting);
 
-  // Während man einen Block bewegt, darf der Server die Mausbewegung
-  // nicht zurücksetzen. Danach wird der aktuelle Stand übertragen.
-  if(drag || groupDragging || chipDrag || libraryDrag || selecting) return;
+  if(deferredServerState && !interactionActive && !applyingRemoteLogicState && !aiActionInProgress){
+    processServerLogicState(deferredServerState);
+  }
+
+  if(!logicSyncReady || applyingRemoteLogicState || aiActionInProgress) return;
+  if(interactionActive) return;
 
   const snapshot = serializeLogicState();
   const logicChanged = snapshot !== lastLogicSnapshot;
-  if(logicChanged&&!pendingLogicSnapshot){
+  if(logicChanged && !pendingLogicSnapshot){
     if(!historyApplying && lastLogicSnapshot) rememberHistorySnapshot(lastLogicSnapshot);
-    lastLogicSnapshot = snapshot;
     const payload = JSON.parse(snapshot);
     payload.baseRevision = serverRevision;
     pendingLogicSnapshot = snapshot;
@@ -3180,7 +3285,7 @@ setInterval(() => {
 
   const blueprintSnapshot = serializeBlueprintLibrary();
   const blueprintChanged = blueprintSnapshot !== lastBlueprintSnapshot;
-  if(blueprintChanged){
+  if(blueprintChanged && !pendingLogicSnapshot && !deferredServerState){
     lastBlueprintSnapshot = blueprintSnapshot;
     logicSocket.emit("blueprintLibraryChange", {
       blueprints: JSON.parse(blueprintSnapshot),
