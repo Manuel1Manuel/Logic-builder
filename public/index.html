@@ -653,7 +653,7 @@ function cloneBlueprint(bp){return JSON.parse(JSON.stringify(bp));}
 function sortByPosition(list){const y=n=>Number.isFinite(n?.y)?n.y:(Number.isFinite(n?.relY)?n.relY:0);const x=n=>Number.isFinite(n?.x)?n.x:(Number.isFinite(n?.relX)?n.relX:0);return [...list].sort((a,b)=>y(a)-y(b)||x(a)-x(b));}
 function blueprintHasEmbeddedChip(bp){return !!(bp&&bp.nodes&&bp.nodes.some(n=>n.chipId||n.chipPin||n.chipShell));}
 function expandBlueprint(bp){if(!bp)return bp;if(Array.isArray(bp.nodes))bp.nodes=bp.nodes.map(n=>Array.isArray(n)?Object.assign({id:n[0],type:n[1],relX:n[2],relY:n[3]},typeof n[4]==="string"?{name:n[4]}:(n[4]||{})):n);if(Array.isArray(bp.wires))bp.wires=bp.wires.map(x=>Array.isArray(x)?{from:x[0],to:x[1],inputIndex:x[2]}:x);return bp;}
-async function loadPreblueprints(){try{const response=await fetch("/Pre%20bp",{cache:"no-store"});if(!response.ok)throw new Error("HTTP "+response.status);const bp=JSON.parse(await response.text());if(bp&&Array.isArray(bp.nodes)){const expanded=expandBlueprint(bp);blueprints.push(cloneBlueprint(expanded));}else{throw new Error("Die Pre-Blueprint-Datei enthält keine gültige nodes-Liste.");}}catch(error){console.error("Pre-Blueprints konnten nicht geladen werden:",error);}clampBlueprintScroll();}
+async function loadPreblueprints(){try{const response=await fetch("/Pre%20bp",{cache:"no-store"});if(!response.ok)throw new Error("HTTP "+response.status);const bp=JSON.parse(await response.text());if(bp&&Array.isArray(bp.nodes)){const expanded=expandBlueprint(bp);preblueprints.length=0;preblueprints.push(expanded);blueprints.unshift(cloneBlueprint(expanded));}else{throw new Error("Die Pre-Blueprint-Datei enthält keine gültige nodes-Liste.");}}catch(error){console.error("Pre-Blueprints konnten nicht geladen werden:",error);}clampBlueprintScroll();}
 function resetBlueprintNodeState(node){if(!node)return;node.state=false;node.memoryState=false;node.timerRunning=false;node.offTimerRunning=false;node.timerStart=0;node.offTimerStart=0;node.clockState=true;node.clockLastToggle=0;if(node.type==="switch"||node.type==="output")node.state=false;if(node.type==="timer")node.timerSweep=0;}
 function sanitizeBlueprintForStorage(bp){if(!bp||!bp.nodes)return bp;let out=cloneBlueprint(bp);for(let n of out.nodes)resetBlueprintNodeState(n);return out;}
 function flattenChipBlueprint(bp){if(!bp||!bp.nodes)return bp;if(!bp.chip)return cloneBlueprint(bp);let out=cloneBlueprint(bp);for(let n of out.nodes){if(n.chipId){if(n.type==="switch"||n.type==="output")n.type="or3";n.chipId=null;n.chipName="";n.chipPin=null;n.chipShell=null;n.hidden=false;}else if(n.chipPin){if(n.type==="switch"||n.type==="output")n.type="or3";n.chipPin=null;n.chipShell=null;n.hidden=false;}}out.mixedChipSelection=false;return out;}
@@ -3163,6 +3163,11 @@ function serializeBlueprintLibrary(){
 function applyBlueprintLibrary(list){
   if(!Array.isArray(list)) return false;
   blueprints.length = 0;
+  for(const preset of preblueprints){
+    try{
+      if(preset && Array.isArray(preset.nodes)) blueprints.push(sanitizeBlueprintForStorage(cloneBlueprint(preset)));
+    }catch{}
+  }
   for(const raw of list){
     try{
       const bp = expandBlueprint(cloneBlueprint(raw));
